@@ -67,3 +67,53 @@ You should see checkmarks (✓) for:
 - ✓ Android Studio (version 2024.x)
 
 ---
+
+## Project Structure
+
+```
+mobile/
+├── lib/                          # Application source code
+│   ├── main.dart                 # App entry point
+│   ├── design_system/            # Design system components
+│   │   ├── colors/               # Brand colors and space colors
+│   │   ├── typography/           # Text styles and font system
+│   │   ├── spacing/              # 8px-based spacing system
+│   │   └── widgets/              # Reusable UI components
+│   ├── features/                 # Feature modules (coming soon)
+│   │   ├── auth/                 # Authentication (login, signup)
+│   │   ├── home/                 # Home screen and navigation
+│   │   ├── links/                # Link management (save, view, edit)
+│   │   ├── spaces/               # Space management
+│   │   └── tags/                 # Tag management
+│   ├── services/                 # Business logic and API calls
+│   │   ├── supabase/             # Supabase client and auth
+│   │   ├── storage/              # Local storage with Hive
+│   │   └── api/                  # API service layer
+│   └── utils/                    # Helper functions and constants
+│
+├── test/                         # Unit and widget tests
+├── android/                      # Android platform code
+├── ios/                          # iOS platform code
+├── pubspec.yaml                  # Dependencies and assets
+└── README.md                     # This file
+```
+
+### Key Directories
+
+**`lib/design_system/`** - Complete design system implementation
+- `colors.dart` - Anchor Teal, Anchor Slate, 14 space colors
+- `typography.dart` - Geist font system with Material Design 3 text styles
+- `spacing.dart` - 8px-based spacing with helpers (padding, margins, gaps)
+- `widgets/` - AnchorButton, button styles, and more reusable components
+
+**`lib/features/`** - Feature-based architecture (coming soon)
+- Each feature is self-contained with its own screens, logic, and state
+- Uses Riverpod for state management
+- Uses Go Router for navigation
+
+**`lib/services/`** - Service layer (coming soon)
+- Supabase integration for backend
+- Hive for offline-first local storage
+- HTTP client for API calls
+
+---
