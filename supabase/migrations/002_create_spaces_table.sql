@@ -41,13 +41,16 @@ CREATE TABLE IF NOT EXISTS spaces (
 
   -- Timestamps
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
-  -- UNIQUE CONSTRAINT: User cannot have duplicate space names
-  -- Case-insensitive comparison using LOWER()
-  -- Prevents: Creating "Design" and "design" as separate spaces
-  CONSTRAINT unique_user_space_name UNIQUE (user_id, LOWER(name))
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- ============================================
+-- UNIQUE CONSTRAINT: Case-insensitive space names per user
+-- ============================================
+-- User cannot have duplicate space names (case-insensitive)
+-- Prevents: Creating "Design" and "design" as separate spaces
+CREATE UNIQUE INDEX IF NOT EXISTS unique_user_space_name_lower
+ON spaces(user_id, LOWER(name));
 
 -- ============================================
 -- COLOR PALETTE CONSTRAINT
