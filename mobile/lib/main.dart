@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'design_system/design_system.dart';
 
 void main() {
   runApp(const AnchorApp());
@@ -11,10 +12,23 @@ class AnchorApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Anchor',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF0D9488), // Anchor Teal
+          seedColor: AnchorColors.anchorTeal,
+          primary: AnchorColors.anchorTeal,
+          secondary: AnchorColors.anchorSlate,
+        ),
+        textTheme: AnchorTypography.textTheme,
+        chipTheme: AnchorButtonStyles.chipTheme,
+        scaffoldBackgroundColor: AnchorColors.white,
+        appBarTheme: AppBarTheme(
+          backgroundColor: AnchorColors.white,
+          foregroundColor: AnchorColors.anchorSlate,
+          elevation: 0,
+          centerTitle: false,
+          titleTextStyle: AnchorTypography.headlineSmall,
         ),
       ),
       home: const HomeScreen(),
@@ -29,14 +43,190 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Anchor'),
+        title: const Text('Anchor Design System'),
       ),
-      body: const Center(
-        child: Text(
-          'Welcome to Anchor',
-          style: TextStyle(fontSize: 24),
+      body: SingleChildScrollView(
+        padding: AnchorSpacing.screenPadding,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Welcome Section
+            Text(
+              'Welcome to Anchor',
+              style: AnchorTypography.displaySmall,
+            ),
+            AnchorSpacing.verticalSpaceSM,
+            Text(
+              'Your visual bookmark manager',
+              style: AnchorTypography.bodyLarge.copyWith(
+                color: AnchorColors.gray600,
+              ),
+            ),
+            AnchorSpacing.verticalSpaceXL,
+
+            // Colors Section
+            Text('Brand Colors', style: AnchorTypography.headlineSmall),
+            AnchorSpacing.verticalSpaceMD,
+            Row(
+              children: [
+                _ColorBox(
+                  color: AnchorColors.anchorTeal,
+                  label: 'Anchor Teal',
+                ),
+                AnchorSpacing.horizontalSpaceMD,
+                _ColorBox(
+                  color: AnchorColors.anchorSlate,
+                  label: 'Anchor Slate',
+                ),
+              ],
+            ),
+            AnchorSpacing.verticalSpaceXL,
+
+            // Space Colors Section
+            Text('Space Colors', style: AnchorTypography.headlineSmall),
+            AnchorSpacing.verticalSpaceMD,
+            Wrap(
+              spacing: AnchorSpacing.sm,
+              runSpacing: AnchorSpacing.sm,
+              children: AnchorColors.allSpaceColors
+                  .map((color) => Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: color,
+                          borderRadius: AnchorSpacing.radiusSM,
+                        ),
+                      ))
+                  .toList(),
+            ),
+            AnchorSpacing.verticalSpaceXL,
+
+            // Buttons Section
+            Text('Buttons', style: AnchorTypography.headlineSmall),
+            AnchorSpacing.verticalSpaceMD,
+            AnchorButton(
+              label: 'Primary Button',
+              onPressed: () {},
+              fullWidth: true,
+            ),
+            AnchorSpacing.verticalSpaceSM,
+            AnchorButton(
+              label: 'Secondary Button',
+              onPressed: () {},
+              type: AnchorButtonType.secondary,
+              fullWidth: true,
+            ),
+            AnchorSpacing.verticalSpaceSM,
+            AnchorButton(
+              label: 'Tertiary Button',
+              onPressed: () {},
+              type: AnchorButtonType.tertiary,
+              fullWidth: true,
+            ),
+            AnchorSpacing.verticalSpaceSM,
+            Row(
+              children: [
+                Expanded(
+                  child: AnchorButton(
+                    label: 'With Icon',
+                    onPressed: () {},
+                    icon: Icons.bookmark,
+                  ),
+                ),
+                AnchorSpacing.horizontalSpaceSM,
+                Expanded(
+                  child: AnchorButton(
+                    label: 'Loading',
+                    onPressed: () {},
+                    isLoading: true,
+                  ),
+                ),
+              ],
+            ),
+            AnchorSpacing.verticalSpaceMD,
+            Row(
+              children: [
+                AnchorIconButton(
+                  icon: Icons.favorite_border,
+                  onPressed: () {},
+                  tooltip: 'Like',
+                ),
+                AnchorSpacing.horizontalSpaceSM,
+                AnchorIconButton(
+                  icon: Icons.share,
+                  onPressed: () {},
+                  filled: true,
+                  tooltip: 'Share',
+                ),
+                AnchorSpacing.horizontalSpaceSM,
+                AnchorIconButton(
+                  icon: Icons.add,
+                  onPressed: () {},
+                  primary: true,
+                  tooltip: 'Add',
+                ),
+              ],
+            ),
+            AnchorSpacing.verticalSpaceXL,
+
+            // Typography Section
+            Text('Typography', style: AnchorTypography.headlineSmall),
+            AnchorSpacing.verticalSpaceMD,
+            Text('Display Large', style: AnchorTypography.displayLarge),
+            Text('Headline Medium', style: AnchorTypography.headlineMedium),
+            Text('Title Large', style: AnchorTypography.titleLarge),
+            Text('Body Large', style: AnchorTypography.bodyLarge),
+            Text('Label Medium', style: AnchorTypography.labelMedium),
+            AnchorSpacing.verticalSpaceXL,
+
+            // Spacing Section
+            Text('Spacing System', style: AnchorTypography.headlineSmall),
+            AnchorSpacing.verticalSpaceMD,
+            Text(
+              '8px-based spacing system',
+              style: AnchorTypography.bodyMedium.copyWith(
+                color: AnchorColors.gray600,
+              ),
+            ),
+            AnchorSpacing.verticalSpaceHuge,
+          ],
         ),
       ),
+    );
+  }
+}
+
+class _ColorBox extends StatelessWidget {
+  final Color color;
+  final String label;
+
+  const _ColorBox({
+    required this.color,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: AnchorSpacing.radiusSM,
+            border: Border.all(
+              color: AnchorColors.gray200,
+              width: 1,
+            ),
+          ),
+        ),
+        AnchorSpacing.verticalSpaceXS,
+        Text(
+          label,
+          style: AnchorTypography.labelSmall,
+        ),
+      ],
     );
   }
 }
