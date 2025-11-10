@@ -10,6 +10,14 @@
 
 ---
 
+> ⚠️ **IMPLEMENTATION NOTE:** This document contains the original product specification. During implementation, critical design conflicts were discovered and resolved. **See [AMENDMENTS.md](./AMENDMENTS.md) for the actual implementation architecture.**
+>
+> **Key Change:** The implementation uses a **Spaces-Only organizational model** (no `status` field). Default spaces "Unread" and "Reference" replace the status field concept. This resolves 9 conflicts found in the original specification and provides a cleaner user experience.
+>
+> **For Developers:** Always refer to [AMENDMENTS.md](./AMENDMENTS.md) and the database schema files in `supabase/migrations/` for the authoritative implementation specification.
+
+---
+
 ## Executive Summary
 
 ### Elevator Pitch
