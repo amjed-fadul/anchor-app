@@ -307,3 +307,77 @@ AnchorIconButton(
 ```
 
 ---
+
+## Development Commands
+
+### Run the App
+
+```bash
+# Run in debug mode (default)
+flutter run
+
+# Run on specific device
+flutter run -d android
+flutter run -d ios
+
+# Run in release mode (optimized, no debug info)
+flutter run --release
+
+# Run in profile mode (performance profiling)
+flutter run --profile
+```
+
+### Code Analysis & Testing
+
+```bash
+# Analyze code for issues and warnings
+flutter analyze
+
+# Run all tests
+flutter test
+
+# Run tests with coverage
+flutter test --coverage
+
+# Run specific test file
+flutter test test/widget_test.dart
+```
+
+### Build
+
+```bash
+# Build Android APK (debug)
+flutter build apk
+
+# Build Android APK (release)
+flutter build apk --release
+
+# Build Android App Bundle (for Play Store)
+flutter build appbundle --release
+
+# Build iOS app (requires macOS)
+flutter build ios --release
+```
+
+### Clean & Reset
+
+```bash
+# Clean build artifacts
+flutter clean
+
+# Get dependencies again
+flutter pub get
+
+# Update dependencies to latest compatible versions
+flutter pub upgrade
+```
+
+### Useful Development Tips
+
+**Hot Reload** - Press `r` in terminal while app is running to instantly reload changes
+**Hot Restart** - Press `R` to fully restart the app
+**Quit** - Press `q` to stop the running app
+
+**VS Code / Android Studio** - Install Flutter extension for better IDE support, debugging, and hot reload in the editor
+
+---
