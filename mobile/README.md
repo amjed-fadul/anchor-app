@@ -182,3 +182,128 @@ flutter run -d ios
 ```
 
 ---
+
+## Design System Usage
+
+The Anchor design system is fully implemented and ready to use. Import it in your Flutter files:
+
+```dart
+import 'package:mobile/design_system/design_system.dart';
+```
+
+### Colors
+
+```dart
+// Brand colors
+Container(color: AnchorColors.anchorTeal)
+Container(color: AnchorColors.anchorSlate)
+
+// Grayscale
+Container(color: AnchorColors.gray100)
+Container(color: AnchorColors.gray900)
+
+// Space colors (14 colors for visual organization)
+Container(color: AnchorColors.spacePurple)  // Default "Unread"
+Container(color: AnchorColors.spaceRed)     // Default "Reference"
+
+// Semantic colors
+Container(color: AnchorColors.success)  // Green
+Container(color: AnchorColors.error)    // Red
+Container(color: AnchorColors.warning)  // Yellow
+```
+
+### Typography
+
+```dart
+// Display styles (large headings)
+Text('Welcome', style: AnchorTypography.displayLarge)
+
+// Headlines (page titles)
+Text('My Links', style: AnchorTypography.headlineMedium)
+
+// Body text (most common)
+Text('Description...', style: AnchorTypography.bodyMedium)
+
+// Labels (buttons, tabs)
+Text('Save', style: AnchorTypography.labelLarge)
+
+// Custom Anchor styles
+Text('example.com', style: AnchorTypography.linkDomain)
+Text('My note here', style: AnchorTypography.note)
+```
+
+### Spacing
+
+```dart
+// Padding
+Padding(
+  padding: AnchorSpacing.allMD,  // 16px all sides
+  child: Text('Content'),
+)
+
+// Vertical gaps
+Column(
+  children: [
+    Text('Title'),
+    AnchorSpacing.verticalSpaceMD,  // 16px gap
+    Text('Body'),
+  ],
+)
+
+// Horizontal gaps
+Row(
+  children: [
+    Icon(Icons.star),
+    AnchorSpacing.horizontalSpaceSM,  // 12px gap
+    Text('Favorite'),
+  ],
+)
+
+// Border radius
+Container(
+  decoration: BoxDecoration(
+    borderRadius: AnchorSpacing.radiusSM,  // 8px
+  ),
+)
+```
+
+### Buttons
+
+```dart
+// Primary button
+AnchorButton(
+  label: 'Save Link',
+  onPressed: () => print('Saved'),
+  type: AnchorButtonType.primary,
+)
+
+// Secondary button
+AnchorButton(
+  label: 'Cancel',
+  onPressed: () => Navigator.pop(context),
+  type: AnchorButtonType.secondary,
+)
+
+// With icon
+AnchorButton(
+  label: 'Share',
+  icon: Icons.share,
+  onPressed: () => print('Share'),
+)
+
+// Loading state
+AnchorButton(
+  label: 'Saving...',
+  onPressed: () {},
+  isLoading: true,
+)
+
+// Icon button
+AnchorIconButton(
+  icon: Icons.favorite_border,
+  onPressed: () => print('Liked'),
+  tooltip: 'Like',
+)
+```
+
+---
