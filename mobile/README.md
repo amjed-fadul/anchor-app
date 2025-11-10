@@ -381,3 +381,133 @@ flutter pub upgrade
 **VS Code / Android Studio** - Install Flutter extension for better IDE support, debugging, and hot reload in the editor
 
 ---
+
+## Troubleshooting
+
+### "flutter: command not found"
+
+**Problem:** Flutter is not in your PATH
+
+**Solution:**
+```bash
+# For macOS with Homebrew installation
+export PATH="$PATH:/opt/homebrew/bin/flutter"
+
+# Or add to ~/.zshrc permanently
+echo 'export PATH="$PATH:/opt/homebrew/bin/flutter"' >> ~/.zshrc
+source ~/.zshrc
+
+# Verify
+flutter --version
+```
+
+### "No devices found"
+
+**Problem:** Flutter can't detect emulator or physical device
+
+**Solution:**
+```bash
+# Check what Flutter sees
+flutter devices
+
+# For Android emulator
+flutter emulators --launch Pixel_6_Pro
+
+# For physical Android device:
+# 1. Enable Developer Options on device
+# 2. Enable USB Debugging
+# 3. Connect via USB
+# 4. Accept USB debugging prompt on device
+```
+
+### "Gradle build failed" (Android)
+
+**Problem:** Android build issues
+
+**Solution:**
+```bash
+# Clean and rebuild
+flutter clean
+flutter pub get
+flutter run
+
+# If still failing, delete build folder
+rm -rf android/build
+rm -rf build
+flutter run
+```
+
+### "Pod install failed" (iOS)
+
+**Problem:** iOS dependency installation failed
+
+**Solution:**
+```bash
+cd ios
+rm -rf Pods Podfile.lock
+pod install
+cd ..
+flutter run
+```
+
+### "Dependency conflict" errors
+
+**Problem:** Package version incompatibility
+
+**Solution:**
+```bash
+# Delete pubspec.lock and reinstall
+rm pubspec.lock
+flutter pub get
+
+# Or use pub upgrade
+flutter pub upgrade
+```
+
+### App runs but shows errors/warnings
+
+**Problem:** Code issues or analysis warnings
+
+**Solution:**
+```bash
+# Run analysis to see all issues
+flutter analyze
+
+# Fix issues shown in output
+# Then verify
+flutter analyze
+```
+
+### macOS Gatekeeper blocking Flutter/Dart
+
+**Problem:** "Apple could not verify 'dart' is free of malware"
+
+**Solution:**
+```bash
+# Remove quarantine attribute
+sudo xattr -r -d com.apple.quarantine /opt/homebrew/Caskroom/flutter/
+
+# Or for specific binary
+sudo xattr -d com.apple.quarantine /path/to/flutter/bin/dart
+```
+
+---
+
+## Additional Resources
+
+- **Flutter Docs**: https://docs.flutter.dev
+- **Supabase Docs**: https://supabase.com/docs
+- **Riverpod Docs**: https://riverpod.dev
+- **Go Router Docs**: https://pub.dev/packages/go_router
+- **Hive Docs**: https://pub.dev/packages/hive
+
+---
+
+**Questions or Issues?**
+- Check `../supabase/README.md` for backend setup
+- Review design system files in `lib/design_system/`
+- See `../PRD/AMENDMENTS.md` for design decisions
+
+---
+
+*Last updated: November 2025 - Phase 0 Foundation*
