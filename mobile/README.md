@@ -1,16 +1,27 @@
-# mobile
+# Anchor Mobile App
 
-A new Flutter project.
+**Last Updated:** November 2025 | **Status:** Phase 0 - Foundation
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## What is This?
 
-A few resources to get you started if this is your first Flutter project:
+This is the Flutter mobile application for **Anchor** - your visual bookmark manager. Anchor helps you save, organize, and rediscover web content through an intuitive mobile experience.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+Built with Flutter for cross-platform support (iOS & Android), this app provides:
+- Fast, native performance on mobile devices
+- Beautiful, consistent UI following Material Design 3
+- Seamless sync with Supabase backend
+- Offline-first architecture with local caching
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Current Status
+
+**Phase 0: Foundation** ✅ In Progress
+- ✅ Project structure created
+- ✅ Core dependencies added (Supabase, Riverpod, Go Router, Hive)
+- ✅ Design system implemented (colors, typography, spacing, buttons)
+- 🚧 Backend integration (next step)
+- 🚧 Authentication flow (next step)
+- 🚧 Link saving functionality (next step)
+
+---
