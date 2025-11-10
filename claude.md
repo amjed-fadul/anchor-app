@@ -175,13 +175,15 @@ Our User class shows:
 
 ## 🐛 Bug Fixing Workflow
 
-When fixing a bug:
+**CRITICAL:** When fixing a bug:
 1. **Identify** the root cause (not just the symptom)
 2. **Implement** the fix with clear code changes
 3. **Verify** with linting (`flutter analyze` or equivalent)
-4. **Summarize** with one sentence ending with 🏄
+4. **ALWAYS end** with a simple one-sentence summary using exactly 3 alarm emojis (🚨🚨🚨)
 
-Example: "Fixed deprecated Color accessor usage in colorToHex method 🏄"
+**This is MANDATORY and must be the very last sentence in your response.**
+
+Example: "Fixed deprecated Color accessor usage in colorToHex method 🚨🚨🚨"
 
 ---
 
