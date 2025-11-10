@@ -184,13 +184,16 @@ CREATE TABLE IF NOT EXISTS tags (
   usage_count INTEGER NOT NULL DEFAULT 0,
 
   -- Timestamps
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
-  -- UNIQUE CONSTRAINT: User cannot have duplicate tag names
-  -- Case-insensitive (LOWER function)
-  -- Prevents: "Design" and "design" as separate tags
-  CONSTRAINT unique_user_tag_name UNIQUE (user_id, LOWER(name))
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- ============================================
+-- UNIQUE CONSTRAINT: Case-insensitive tag names per user
+-- ============================================
+-- User cannot have duplicate tag names (case-insensitive)
+-- Prevents: "Design" and "design" as separate tags
+CREATE UNIQUE INDEX IF NOT EXISTS unique_user_tag_name_lower
+ON tags(user_id, LOWER(name));
 
 -- ============================================
 -- INDEXES FOR TAGS TABLE
