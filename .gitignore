@@ -1,13 +1,95 @@
-# macOS
+# Anchor App - Root .gitignore
+# This file tells Git which files to ignore across the entire project
+
+# ============================================
+# macOS Files
+# ============================================
+# macOS creates these hidden files automatically
 .DS_Store
+.AppleDouble
+.LSOverride
 
-# IDE
+# Thumbnails
+._*
+
+# ============================================
+# IDE & Editor Files
+# ============================================
+# VS Code settings (personal preferences)
 .vscode/
+.history/
+
+# IntelliJ / Android Studio
 .idea/
+*.iml
+*.ipr
+*.iws
+.idea_modules/
 
-# Dependencies
-node_modules/
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
 
-# Environment variables
+# ============================================
+# Environment Variables & Secrets
+# ============================================
+# NEVER commit these - they contain API keys and passwords!
 .env
 .env.local
+.env.*.local
+*.env
+
+# Supabase local config (may contain secrets)
+.supabase/
+
+# ============================================
+# Logs
+# ============================================
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ============================================
+# Dependencies (will be installed via package managers)
+# ============================================
+node_modules/
+.pnp/
+.pnp.js
+
+# ============================================
+# Build Output (generated files)
+# ============================================
+dist/
+build/
+out/
+.next/
+.nuxt/
+
+# ============================================
+# Testing
+# ============================================
+coverage/
+.nyc_output/
+
+# ============================================
+# Temporary Files
+# ============================================
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# ============================================
+# OS Generated Files
+# ============================================
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ============================================
+# Project Specific
+# ============================================
+# We'll add more as needed during development
