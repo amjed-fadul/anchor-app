@@ -117,3 +117,68 @@ mobile/
 - HTTP client for API calls
 
 ---
+
+## Getting Started
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/amjed-fadul/anchor-app.git
+cd anchor-app/mobile
+```
+
+### 2. Install Dependencies
+
+```bash
+flutter pub get
+```
+
+This will install all packages defined in `pubspec.yaml` including:
+- Supabase Flutter (backend)
+- Riverpod (state management)
+- Go Router (navigation)
+- Hive (local storage)
+- And more...
+
+### 3. Run on Android Emulator
+
+**Start the emulator:**
+```bash
+# List available emulators
+flutter emulators
+
+# Launch Pixel 6 Pro emulator
+flutter emulators --launch Pixel_6_Pro
+```
+
+**Run the app:**
+```bash
+flutter run
+```
+
+The app will build and launch on the emulator. Hot reload is enabled - press `r` to reload, `R` to restart.
+
+### 4. Run on Physical Android Device
+
+1. Enable **Developer Options** on your Android device
+2. Enable **USB Debugging**
+3. Connect device via USB
+4. Verify connection: `flutter devices`
+5. Run: `flutter run`
+
+### 5. Run on iOS Simulator (macOS only)
+
+**Requires Xcode installed**
+
+```bash
+# List available simulators
+xcrun simctl list devices available
+
+# Or use Flutter command
+flutter devices
+
+# Run on iOS
+flutter run -d ios
+```
+
+---
