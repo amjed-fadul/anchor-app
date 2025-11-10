@@ -173,6 +173,18 @@ Our User class shows:
 
 ---
 
+## 🐛 Bug Fixing Workflow
+
+When fixing a bug:
+1. **Identify** the root cause (not just the symptom)
+2. **Implement** the fix with clear code changes
+3. **Verify** with linting (`flutter analyze` or equivalent)
+4. **Summarize** with one sentence ending with 🏄
+
+Example: "Fixed deprecated Color accessor usage in colorToHex method 🏄"
+
+---
+
 ## ✅ Success Criteria
 
 Changes are successful when:
