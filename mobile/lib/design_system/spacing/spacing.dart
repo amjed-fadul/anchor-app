@@ -44,6 +44,9 @@ class AnchorSpacing {
   /// 64px - Huge (8x base)
   static const double huge = baseUnit * 8; // 64px
 
+  /// 80px - Extra huge (10x base)
+  static const double extraHuge = baseUnit * 10; // 80px
+
   // ============================================
   // EDGE INSETS (Padding shortcuts)
   // ============================================
@@ -199,6 +202,9 @@ class AnchorSpacing {
 
   /// 48px vertical space
   static const SizedBox verticalSpaceXXXL = SizedBox(height: xxxl);
+
+  /// 64px vertical space
+  static const SizedBox verticalSpaceHuge = SizedBox(height: huge);
 
   // ============================================
   // SIZED BOXES (Horizontal spacing)

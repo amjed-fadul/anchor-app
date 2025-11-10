@@ -1,17 +1,17 @@
-/// Anchor App Design System
-/// Export all design system components from a single file
-///
-/// Usage:
-/// ```dart
-/// import 'package:mobile/design_system/design_system.dart';
-///
-/// // Now you can use:
-/// // - AnchorColors
-/// // - AnchorTypography
-/// // - AnchorSpacing
-/// // - AnchorButton
-/// // - AnchorButtonStyles
-/// ```
+// Anchor App Design System
+// Export all design system components from a single file
+//
+// Usage:
+// import 'package:mobile/design_system/design_system.dart';
+//
+// Now you can use:
+// - AnchorColors
+// - AnchorTypography
+// - AnchorSpacing
+// - AnchorButton
+// - AnchorButtonStyles
+
+library;
 
 // Colors
 export 'colors/colors.dart';

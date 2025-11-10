@@ -137,6 +137,13 @@ class AnchorColors {
   /// Convert Color to hex string (for database storage)
   /// Example: Color(0xFF9333EA) -> "9333EA"
   static String colorToHex(Color color) {
-    return color.value.toRadixString(16).substring(2).toUpperCase();
+    // Get alpha, red, green, blue using non-deprecated accessors
+    final int a = (color.a * 255.0).round() & 0xff;
+    final int r = (color.r * 255.0).round() & 0xff;
+    final int g = (color.g * 255.0).round() & 0xff;
+    final int b = (color.b * 255.0).round() & 0xff;
+
+    final int argb = a << 24 | r << 16 | g << 8 | b;
+    return argb.toRadixString(16).substring(2).toUpperCase();
   }
 }

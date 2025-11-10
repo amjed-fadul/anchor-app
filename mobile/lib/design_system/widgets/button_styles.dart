@@ -219,39 +219,4 @@ class AnchorButtonStyles {
     ),
   );
 
-  // ============================================
-  // FLOATING ACTION BUTTON STYLES
-  // ============================================
-
-  /// FAB style - Primary (for main action like "Save Link")
-  static ButtonStyle fab = FloatingActionButton.styleFrom(
-    backgroundColor: AnchorColors.anchorTeal,
-    foregroundColor: AnchorColors.white,
-    elevation: 4,
-    shape: const CircleBorder(),
-    minimumSize: const Size(56, 56),
-  );
-
-  /// FAB style - Extended (with text)
-  static ButtonStyle fabExtended = FloatingActionButton.styleFrom(
-    backgroundColor: AnchorColors.anchorTeal,
-    foregroundColor: AnchorColors.white,
-    elevation: 4,
-    shape: RoundedRectangleBorder(
-      borderRadius: AnchorSpacing.radiusMD,
-    ),
-    padding: AnchorSpacing.symmetric(
-      horizontal: AnchorSpacing.md,
-      vertical: AnchorSpacing.md,
-    ),
-  );
-
-  /// FAB style - Small variant
-  static ButtonStyle fabSmall = FloatingActionButton.styleFrom(
-    backgroundColor: AnchorColors.anchorTeal,
-    foregroundColor: AnchorColors.white,
-    elevation: 4,
-    shape: const CircleBorder(),
-    minimumSize: const Size(40, 40),
-  );
 }

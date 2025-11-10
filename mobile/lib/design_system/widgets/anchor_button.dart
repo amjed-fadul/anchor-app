@@ -67,9 +67,6 @@ class AnchorButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Get appropriate button style based on type and size
-    final ButtonStyle style = _getButtonStyle();
-
     // Build button content
     Widget buttonContent = _buildButtonContent();
 
