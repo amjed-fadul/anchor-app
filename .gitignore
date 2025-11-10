@@ -1,0 +1,13 @@
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.local
