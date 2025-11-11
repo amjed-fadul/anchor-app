@@ -47,6 +47,24 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   bool _isSuccess = false;
 
   @override
+  void initState() {
+    super.initState();
+
+    // Check if we have a valid recovery session after widget builds
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final session = ref.read(authServiceProvider).currentSession;
+
+      if (session == null) {
+        // No session = invalid/expired link
+        setState(() {
+          _errorMessage =
+              'This reset link is invalid or has expired. Please request a new one.';
+        });
+      }
+    });
+  }
+
+  @override
   void dispose() {
     // Clean up controllers when widget is disposed
     _passwordController.dispose();
