@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../design_system/design_system.dart';
 import '../providers/auth_provider.dart';
@@ -58,9 +59,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // App stack icon from Figma
-              Image.asset(
-                'assets/images/app_stack_icon.png',
+              // App stack icon SVG
+              SvgPicture.asset(
+                'assets/images/app_stack_icon.svg',
                 width: 48,
                 height: 48,
               ),

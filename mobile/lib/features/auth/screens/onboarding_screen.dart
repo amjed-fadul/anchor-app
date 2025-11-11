@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../design_system/design_system.dart';
 
@@ -123,9 +124,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   top: 262,
                   child: Row(
                     children: [
-                      // App stack icon from Figma
-                      Image.asset(
-                        'assets/images/app_stack_icon.png',
+                      // App stack icon SVG
+                      SvgPicture.asset(
+                        'assets/images/app_stack_icon.svg',
                         width: 32,
                         height: 32,
                       ),
