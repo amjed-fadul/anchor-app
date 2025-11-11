@@ -9,6 +9,8 @@ import '../../../design_system/design_system.dart';
 /// Shows the Anchor brand with animated "Instant" and "Find" text
 /// that fades in sequentially, along with the tagline "Find It Anytime"
 /// and a call-to-action button.
+///
+/// RESPONSIVE: Uses Column with Spacer for flexible layout across all device sizes
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -91,155 +93,163 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
           ),
-          // Content with iOS picker-style carousel
+
+          // Content with iOS picker-style carousel - RESPONSIVE LAYOUT
           SafeArea(
-          child: SizedBox(
-            width: double.infinity,
-            child: Stack(
+            child: Column(
               children: [
-                // iOS-style ListWheelScrollView carousel
-                Positioned(
-                  left: 0,
-                  top: 140,
-                  right: 0,
+                // Top spacing - flexible
+                const Spacer(flex: 2),
+
+                // iOS-style ListWheelScrollView carousel - fixed height
+                SizedBox(
                   height: 300,
                   child: ClipRect(
                     child: ListWheelScrollView.useDelegate(
-                    controller: _scrollController,
-                    itemExtent: 120.0, // Height of each item slot - increased for better spacing
-                    diameterRatio: 1.5, // Controls curvature (smaller = more curved)
-                    perspective: 0.003, // 3D depth effect
-                    offAxisFraction: 0.0, // Keep items centered
-                    useMagnifier: false, // We'll handle scaling manually
-                    physics: const FixedExtentScrollPhysics(),
-                    overAndUnderCenterOpacity: 0.01, // Nearly invisible - ClipRect handles masking
-                    childDelegate: ListWheelChildLoopingListDelegate(
-                      children: List.generate(_carouselItems.length, (index) {
-                        final item = _carouselItems[index];
-                        return Center(
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              SvgPicture.asset(
-                                item['icon']!,
-                                width: 32,
-                                height: 32,
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                item['word']!,
-                                style: const TextStyle(
-                                  fontSize: activeFontSize,
-                                  fontWeight: FontWeight.w700,
-                                  color: activeColor,
-                                  letterSpacing: -0.44,
-                                  height: 1.2,
+                      controller: _scrollController,
+                      itemExtent: 120.0, // Height of each item slot
+                      diameterRatio: 1.5, // Controls curvature
+                      perspective: 0.003, // 3D depth effect
+                      offAxisFraction: 0.0, // Keep items centered
+                      useMagnifier: false,
+                      physics: const FixedExtentScrollPhysics(),
+                      overAndUnderCenterOpacity: 0.01, // Nearly invisible
+                      childDelegate: ListWheelChildLoopingListDelegate(
+                        children: List.generate(_carouselItems.length, (index) {
+                          final item = _carouselItems[index];
+                          return Center(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                SvgPicture.asset(
+                                  item['icon']!,
+                                  width: 32,
+                                  height: 32,
                                 ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  item['word']!,
+                                  style: const TextStyle(
+                                    fontSize: activeFontSize,
+                                    fontWeight: FontWeight.w700,
+                                    color: activeColor,
+                                    letterSpacing: -0.44,
+                                    height: 1.2,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                      ),
+                      onSelectedItemChanged: (index) {
+                        // Optional: track selected item
+                      },
+                    ),
+                  ),
+                ),
+
+                // Middle spacing - flexible (largest flex to push content apart)
+                const Spacer(flex: 3),
+
+                // App icon and tagline - left-aligned
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 26),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // App icon
+                        Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
                               ),
                             ],
                           ),
-                        );
-                      }),
-                    ),
-                    onSelectedItemChanged: (index) {
-                      // Optional: track selected item
-                    },
-                  ),
-                  ),
-                ),
+                          child: const Center(
+                            child: Text(
+                              'A',
+                              style: TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF2C3E50), // Anchor slate
+                              ),
+                            ),
+                          ),
+                        ),
 
-                // App icon display
-                Positioned(
-                  left: 26,
-                  top: 564,
-                  child: Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
+                        const SizedBox(height: 16),
+
+                        // "Find It Anytime" tagline
+                        Text(
+                          'Find It\nAnytime',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w400,
+                            color: AnchorColors.anchorSlate, // #2C3E50
+                            letterSpacing: -0.22,
+                            height: 1.2,
+                          ),
                         ),
                       ],
                     ),
-                    child: const Center(
-                      child: Text(
-                        'A',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF2C3E50), // Anchor slate
-                        ),
+                  ),
+                ),
+
+                // Bottom spacing - flexible (smaller to keep button visible)
+                const Spacer(flex: 1),
+
+                // "Get Started" button - always visible
+                Center(
+                  child: GestureDetector(
+                    onTap: () {
+                      // Navigate to signup screen
+                      context.go('/signup');
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 12,
                       ),
-                    ),
-                  ),
-                ),
-
-                // "Find It Anytime" tagline
-                Positioned(
-                  left: 26,
-                  top: 630,
-                  child: Text(
-                    'Find It\nAnytime',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w400,
-                      color: AnchorColors.anchorSlate, // #2C3E50
-                      letterSpacing: -0.22,
-                      height: 1.2,
-                    ),
-                  ),
-                ),
-
-                // "Get Started" button - centered at bottom
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: 746,
-                  child: Center(
-                    child: GestureDetector(
-                      onTap: () {
-                        // Navigate to signup screen
-                        context.go('/signup');
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 2,
-                              offset: const Offset(0, 1),
-                            ),
-                          ],
-                        ),
-                        child: Text(
-                          'Get Started',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: AnchorColors.anchorTeal,
-                            height: 1.43, // 20px line height / 14px font size
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 2,
+                            offset: const Offset(0, 1),
                           ),
+                        ],
+                      ),
+                      child: Text(
+                        'Get Started',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AnchorColors.anchorTeal,
+                          height: 1.43, // 20px line height / 14px font size
                         ),
                       ),
                     ),
                   ),
                 ),
+
+                // Fixed bottom padding to ensure button doesn't touch bottom edge
+                const SizedBox(height: 40),
               ],
             ),
           ),
-        ),
         ],
       ),
     );
