@@ -42,39 +42,29 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        // Horizontal gradient background: lime green to cyan
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            stops: [0.02, 0.81],
-            colors: [
-              Color(0xFF94F533), // Lime green at 2%
-              Color(0xFF2AD0CA), // Cyan at 81%
-            ],
-          ),
-        ),
-        child: Center(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // App stack icon SVG
-              SvgPicture.asset(
-                'assets/images/app_stack_icon.svg',
-                width: 48,
-                height: 48,
+      // Clean white background instead of gradient
+      backgroundColor: Colors.white,
+      body: Center(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // App stack icon SVG - slightly larger
+            SvgPicture.asset(
+              'assets/images/app_stack_icon.svg',
+              width: 50,
+              height: 50,
+            ),
+            const SizedBox(width: 16),
+            // Dark text instead of white, with tighter letter spacing
+            Text(
+              'Anchor',
+              style: AnchorTypography.displayLarge.copyWith(
+                color: const Color(0xFF1E1E1E), // Dark gray
+                fontSize: 40, // Reduced from 48
+                letterSpacing: -0.44, // Tighter spacing
               ),
-              const SizedBox(width: 16),
-              Text(
-                'Anchor',
-                style: AnchorTypography.displayLarge.copyWith(
-                  color: AnchorColors.white,
-                  fontSize: 48,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
