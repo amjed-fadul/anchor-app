@@ -48,8 +48,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       _currentItem++;
       _scrollController.animateToItem(
         _currentItem,
-        duration: const Duration(milliseconds: 600),
-        curve: Curves.easeInOutCubic,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeOut,
       );
     });
   }
@@ -105,13 +105,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   height: 300,
                   child: ListWheelScrollView.useDelegate(
                     controller: _scrollController,
-                    itemExtent: 100.0, // Height of each item slot
+                    itemExtent: 120.0, // Height of each item slot - increased for better spacing
                     diameterRatio: 1.5, // Controls curvature (smaller = more curved)
                     perspective: 0.003, // 3D depth effect
                     offAxisFraction: 0.0, // Keep items centered
                     useMagnifier: false, // We'll handle scaling manually
                     physics: const FixedExtentScrollPhysics(),
-                    overAndUnderCenterOpacity: 0.3, // Fade out non-centered items to prevent text clashing
+                    overAndUnderCenterOpacity: 0.15, // Heavily fade non-centered items for clean transitions
                     childDelegate: ListWheelChildLoopingListDelegate(
                       children: List.generate(_carouselItems.length, (index) {
                         final item = _carouselItems[index];
