@@ -18,43 +18,78 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
-  late Animation<double> _instantOpacity;
-  late Animation<double> _findOpacity;
+
+  // Icon opacity animations for each word
+  late Animation<double> _anchorIconOpacity;
+  late Animation<double> _instantIconOpacity;
+  late Animation<double> _findIconOpacity;
+
+  // Text color animations for each word
+  late Animation<Color?> _anchorTextColor;
+  late Animation<Color?> _instantTextColor;
+  late Animation<Color?> _findTextColor;
 
   @override
   void initState() {
     super.initState();
 
-    // Set up animation controller for 2-second duration
+    // Set up animation controller for 6-second duration (2s per word)
+    // Loop continuously
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 6000),
       vsync: this,
-    );
+    )..repeat();
 
-    // "Instant" fades in from 0 to 1 second
-    _instantOpacity = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.0, 0.5, curve: Curves.easeIn),
-      ),
-    );
+    // Active color (dark) and inactive color (light gray)
+    const activeColor = Color(0xFF1E1E1E);
+    const inactiveColor = Color(0xFFE9E9E9);
 
-    // "Find" fades in from 0.5 to 1.5 seconds
-    _findOpacity = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.5, 1.0, curve: Curves.easeIn),
-      ),
-    );
+    // ANCHOR animations (active 0.0-0.33)
+    _anchorIconOpacity = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.0), weight: 33),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 5),
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 0.0), weight: 57),
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 5),
+    ]).animate(_animationController);
 
-    // Start animation automatically
-    _animationController.forward();
+    _anchorTextColor = TweenSequence<Color?>([
+      TweenSequenceItem(tween: ColorTween(begin: activeColor, end: activeColor), weight: 33),
+      TweenSequenceItem(tween: ColorTween(begin: activeColor, end: inactiveColor), weight: 5),
+      TweenSequenceItem(tween: ColorTween(begin: inactiveColor, end: inactiveColor), weight: 57),
+      TweenSequenceItem(tween: ColorTween(begin: inactiveColor, end: activeColor), weight: 5),
+    ]).animate(_animationController);
+
+    // INSTANT animations (active 0.33-0.66)
+    _instantIconOpacity = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 0.0), weight: 28),
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 5),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.0), weight: 33),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 5),
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 0.0), weight: 29),
+    ]).animate(_animationController);
+
+    _instantTextColor = TweenSequence<Color?>([
+      TweenSequenceItem(tween: ColorTween(begin: inactiveColor, end: inactiveColor), weight: 28),
+      TweenSequenceItem(tween: ColorTween(begin: inactiveColor, end: activeColor), weight: 5),
+      TweenSequenceItem(tween: ColorTween(begin: activeColor, end: activeColor), weight: 33),
+      TweenSequenceItem(tween: ColorTween(begin: activeColor, end: inactiveColor), weight: 5),
+      TweenSequenceItem(tween: ColorTween(begin: inactiveColor, end: inactiveColor), weight: 29),
+    ]).animate(_animationController);
+
+    // FIND animations (active 0.66-1.0)
+    _findIconOpacity = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 0.0), weight: 61),
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 5),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.0), weight: 33),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 1),
+    ]).animate(_animationController);
+
+    _findTextColor = TweenSequence<Color?>([
+      TweenSequenceItem(tween: ColorTween(begin: inactiveColor, end: inactiveColor), weight: 61),
+      TweenSequenceItem(tween: ColorTween(begin: inactiveColor, end: activeColor), weight: 5),
+      TweenSequenceItem(tween: ColorTween(begin: activeColor, end: activeColor), weight: 33),
+      TweenSequenceItem(tween: ColorTween(begin: activeColor, end: inactiveColor), weight: 1),
+    ]).animate(_animationController);
   }
 
   @override
@@ -99,69 +134,111 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             width: double.infinity,
             child: Stack(
               children: [
-                // "Instant" text - fades in first
+                // "Instant" text with animated icon and color
                 Positioned(
                   left: 37,
                   top: 180,
-                  child: FadeTransition(
-                    opacity: _instantOpacity,
-                    child: Text(
-                      'Instant',
-                      style: const TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFFE9E9E9), // Light gray
-                        letterSpacing: -0.352,
-                        height: 1.2,
-                      ),
-                    ),
+                  child: AnimatedBuilder(
+                    animation: _animationController,
+                    builder: (context, child) {
+                      return Row(
+                        children: [
+                          // Instant icon - fades in/out
+                          Opacity(
+                            opacity: _instantIconOpacity.value,
+                            child: SvgPicture.asset(
+                              'assets/images/instant_icon.svg',
+                              width: 32,
+                              height: 32,
+                            ),
+                          ),
+                          SizedBox(width: _instantIconOpacity.value > 0 ? 12 : 0),
+                          // Instant text with animated color
+                          Text(
+                            'Instant',
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.w500,
+                              color: _instantTextColor.value,
+                              letterSpacing: -0.352,
+                              height: 1.2,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
 
-                // Anchor brand (logo + text)
+                // "Anchor" text with animated icon and color
                 Positioned(
                   left: 37,
                   top: 262,
-                  child: Row(
-                    children: [
-                      // App stack icon SVG
-                      SvgPicture.asset(
-                        'assets/images/app_stack_icon.svg',
-                        width: 32,
-                        height: 32,
-                      ),
-                      const SizedBox(width: 12),
-                      // "Anchor" text
-                      const Text(
-                        'Anchor',
-                        style: TextStyle(
-                          fontSize: 40,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF1E1E1E), // Almost black
-                          letterSpacing: -0.44,
-                          height: 1.2,
-                        ),
-                      ),
-                    ],
+                  child: AnimatedBuilder(
+                    animation: _animationController,
+                    builder: (context, child) {
+                      return Row(
+                        children: [
+                          // Anchor icon - fades in/out
+                          Opacity(
+                            opacity: _anchorIconOpacity.value,
+                            child: SvgPicture.asset(
+                              'assets/images/app_stack_icon.svg',
+                              width: 32,
+                              height: 32,
+                            ),
+                          ),
+                          SizedBox(width: _anchorIconOpacity.value > 0 ? 12 : 0),
+                          // Anchor text with animated color
+                          Text(
+                            'Anchor',
+                            style: TextStyle(
+                              fontSize: 40,
+                              fontWeight: FontWeight.w700,
+                              color: _anchorTextColor.value,
+                              letterSpacing: -0.44,
+                              height: 1.2,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
 
-                // "Find" text - fades in second
+                // "Find" text with animated icon and color
                 Positioned(
                   left: 37,
                   top: 354,
-                  child: FadeTransition(
-                    opacity: _findOpacity,
-                    child: Text(
-                      'Find',
-                      style: const TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFFE9E9E9), // Light gray
-                        letterSpacing: -0.352,
-                        height: 1.2,
-                      ),
-                    ),
+                  child: AnimatedBuilder(
+                    animation: _animationController,
+                    builder: (context, child) {
+                      return Row(
+                        children: [
+                          // Find icon - fades in/out
+                          Opacity(
+                            opacity: _findIconOpacity.value,
+                            child: SvgPicture.asset(
+                              'assets/images/find_icon.svg',
+                              width: 32,
+                              height: 32,
+                            ),
+                          ),
+                          SizedBox(width: _findIconOpacity.value > 0 ? 12 : 0),
+                          // Find text with animated color
+                          Text(
+                            'Find',
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.w500,
+                              color: _findTextColor.value,
+                              letterSpacing: -0.352,
+                              height: 1.2,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
 
