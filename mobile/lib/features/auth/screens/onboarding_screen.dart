@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -18,8 +17,9 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  late PageController _pageController;
+  late FixedExtentScrollController _scrollController;
   Timer? _autoScrollTimer;
+  int _currentItem = 1000; // Start high for infinite scrolling
 
   // The three words in carousel order
   final List<Map<String, String>> _carouselItems = [
@@ -29,20 +29,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   ];
 
   // Style constants
-  static const double inactiveFontSize = 32.0;
   static const double activeFontSize = 40.0;
   static const Color activeColor = Color(0xFF1E1E1E);
-  static const Color inactiveColor = Color(0xFFE9E9E9);
 
   @override
   void initState() {
     super.initState();
 
-    // Initialize PageController with high initial page for infinite effect
-    _pageController = PageController(
-      initialPage: 999,
-      viewportFraction: 0.4, // Show partial views of adjacent items
-    );
+    // Initialize FixedExtentScrollController for ListWheelScrollView
+    _scrollController = FixedExtentScrollController(initialItem: _currentItem);
 
     // Start auto-scroll timer
     _startAutoScroll();
@@ -50,21 +45,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _startAutoScroll() {
     _autoScrollTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
-      if (_pageController.hasClients) {
-        final nextPage = _pageController.page! + 1;
-        _pageController.animateToPage(
-          nextPage.toInt(),
-          duration: const Duration(milliseconds: 600),
-          curve: Curves.easeInOutCubic,
-        );
-      }
+      _currentItem++;
+      _scrollController.animateToItem(
+        _currentItem,
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.easeInOutCubic,
+      );
     });
   }
 
   @override
   void dispose() {
     _autoScrollTimer?.cancel();
-    _pageController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -98,88 +91,57 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
           ),
-          // Content with carousel
+          // Content with iOS picker-style carousel
           SafeArea(
           child: SizedBox(
             width: double.infinity,
             child: Stack(
               children: [
-                // Vertical PageView carousel
+                // iOS-style ListWheelScrollView carousel
                 Positioned(
-                  left: 37,
-                  top: 180,
-                  bottom: 400,
-                  width: 320,
-                  child: PageView.builder(
-                    controller: _pageController,
-                    scrollDirection: Axis.vertical,
-                    itemBuilder: (context, index) {
-                      final itemIndex = index % _carouselItems.length;
-                      final item = _carouselItems[itemIndex];
-
-                      return AnimatedBuilder(
-                        animation: _pageController,
-                        builder: (context, child) {
-                          double value = 0.0;
-                          if (_pageController.position.haveDimensions) {
-                            value = index.toDouble() - (_pageController.page ?? 0);
-                          }
-
-                          // Calculate scale and opacity based on distance from center
-                          final double absValue = value.abs();
-                          final double scale = ui.lerpDouble(1.0, 0.8, absValue.clamp(0.0, 1.0))!;
-                          final double opacity = ui.lerpDouble(1.0, 0.3, absValue.clamp(0.0, 1.0))!;
-                          final double fontSize = ui.lerpDouble(
-                            activeFontSize,
-                            inactiveFontSize,
-                            absValue.clamp(0.0, 1.0),
-                          )!;
-                          final Color textColor = Color.lerp(
-                            activeColor,
-                            inactiveColor,
-                            absValue.clamp(0.0, 1.0),
-                          )!;
-
-                          // Only show icon when item is centered
-                          final bool showIcon = absValue < 0.2;
-
-                          return Transform.scale(
-                            scale: scale,
-                            child: Opacity(
-                              opacity: opacity,
-                              child: Center(
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    // Icon (only visible when centered)
-                                    if (showIcon) ...[
-                                      SvgPicture.asset(
-                                        item['icon']!,
-                                        width: 32,
-                                        height: 32,
-                                      ),
-                                      const SizedBox(width: 12),
-                                    ],
-                                    // Text
-                                    Text(
-                                      item['word']!,
-                                      style: TextStyle(
-                                        fontSize: fontSize,
-                                        fontWeight: fontSize > 35
-                                            ? FontWeight.w700
-                                            : FontWeight.w500,
-                                        color: textColor,
-                                        letterSpacing: fontSize > 35 ? -0.44 : -0.352,
-                                        height: 1.2,
-                                      ),
-                                    ),
-                                  ],
+                  left: 0,
+                  top: 140,
+                  right: 0,
+                  height: 300,
+                  child: ListWheelScrollView.useDelegate(
+                    controller: _scrollController,
+                    itemExtent: 100.0, // Height of each item slot
+                    diameterRatio: 1.5, // Controls curvature (smaller = more curved)
+                    perspective: 0.003, // 3D depth effect
+                    offAxisFraction: 0.0, // Keep items centered
+                    useMagnifier: false, // We'll handle scaling manually
+                    physics: const FixedExtentScrollPhysics(),
+                    childDelegate: ListWheelChildLoopingListDelegate(
+                      children: List.generate(_carouselItems.length, (index) {
+                        final item = _carouselItems[index];
+                        return Center(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              SvgPicture.asset(
+                                item['icon']!,
+                                width: 32,
+                                height: 32,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                item['word']!,
+                                style: const TextStyle(
+                                  fontSize: activeFontSize,
+                                  fontWeight: FontWeight.w700,
+                                  color: activeColor,
+                                  letterSpacing: -0.44,
+                                  height: 1.2,
                                 ),
                               ),
-                            ),
-                          );
-                        },
-                      );
+                            ],
+                          ),
+                        );
+                      }),
+                    ),
+                    onSelectedItemChanged: (index) {
+                      // Optional: track selected item
                     },
                   ),
                 ),
