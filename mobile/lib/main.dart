@@ -1,8 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'design_system/design_system.dart';
+import 'core/config/supabase_config.dart';
 
-void main() {
-  runApp(const AnchorApp());
+/// App entry point
+///
+/// This function:
+/// 1. Initializes Flutter framework
+/// 2. Initializes Supabase (loads credentials, sets up auth)
+/// 3. Launches the app wrapped in ProviderScope for state management
+Future<void> main() async {
+  // Ensure Flutter is initialized before running async operations
+  // Think of this like turning on the power before using appliances
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Supabase (loads .env, connects to backend)
+  // This MUST happen before the app runs, otherwise auth won't work
+  await initializeSupabase();
+
+  // Run the app
+  // ProviderScope wraps the whole app to enable Riverpod state management
+  runApp(
+    const ProviderScope(
+      child: AnchorApp(),
+    ),
+  );
 }
 
 class AnchorApp extends StatelessWidget {
