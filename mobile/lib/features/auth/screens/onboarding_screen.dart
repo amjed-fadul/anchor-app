@@ -48,8 +48,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       _currentItem++;
       _scrollController.animateToItem(
         _currentItem,
-        duration: const Duration(milliseconds: 350),
-        curve: Curves.easeOut,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
       );
     });
   }
