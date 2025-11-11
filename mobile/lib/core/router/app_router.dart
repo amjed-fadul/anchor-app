@@ -7,6 +7,7 @@ import '../../features/auth/screens/signup_screen.dart';
 import '../../features/auth/screens/signup_email_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/forgot_password_screen.dart';
+import '../../features/auth/screens/reset_password_screen.dart';
 import '../../features/home/screens/home_screen.dart';
 import '../../features/auth/providers/auth_provider.dart';
 
@@ -38,6 +39,12 @@ final routerProvider = Provider<GoRouter>((ref) {
     // Redirect logic based on authentication
     redirect: (context, state) {
       final path = state.matchedLocation;
+
+      // Allow reset-password for authenticated users
+      // (they're authenticated via recovery session from email link)
+      if (path == '/reset-password') {
+        return null; // Don't redirect
+      }
 
       // If user is authenticated and tries to access auth screens,
       // redirect to home
@@ -107,6 +114,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'forgot-password',
         pageBuilder: (context, state) => const MaterialPage(
           child: ForgotPasswordScreen(),
+        ),
+      ),
+
+      // Reset password screen (accessed via email link)
+      GoRoute(
+        path: '/reset-password',
+        name: 'reset-password',
+        pageBuilder: (context, state) => const MaterialPage(
+          child: ResetPasswordScreen(),
         ),
       ),
 
