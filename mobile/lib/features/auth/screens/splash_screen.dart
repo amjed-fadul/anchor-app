@@ -41,55 +41,40 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AnchorColors.white,
-      body: Stack(
-        children: [
-          // Gradient background - positioned to cover bottom portion only
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            top: MediaQuery.of(context).size.height * 0.4, // Start gradient 40% down
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  stops: const [0.0, 0.4, 1.0],
-                  colors: [
-                    // White/transparent at top (where "Find" text is)
-                    Colors.white.withValues(alpha: 0.0),
-                    // Bright cyan/turquoise in middle
-                    const Color(0xFF00D4AA),
-                    // Bright lime green at bottom
-                    const Color(0xFF00FF85),
-                  ],
+      body: Container(
+        // Horizontal gradient background: lime green to cyan
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            stops: [0.02, 0.81],
+            colors: [
+              Color(0xFF94F533), // Lime green at 2%
+              Color(0xFF2AD0CA), // Cyan at 81%
+            ],
+          ),
+        ),
+        child: Center(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // App stack icon from Figma
+              Image.asset(
+                'assets/images/app_stack_icon.png',
+                width: 48,
+                height: 48,
+              ),
+              const SizedBox(width: 16),
+              Text(
+                'Anchor',
+                style: AnchorTypography.displayLarge.copyWith(
+                  color: AnchorColors.white,
+                  fontSize: 48,
                 ),
               ),
-            ),
+            ],
           ),
-          // Content centered on screen
-          Center(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // App stack icon from Figma
-                Image.asset(
-                  'assets/images/app_stack_icon.png',
-                  width: 32,
-                  height: 32,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Anchor',
-                  style: AnchorTypography.displayLarge.copyWith(
-                    color: AnchorColors.anchorSlate,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
