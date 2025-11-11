@@ -111,6 +111,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     offAxisFraction: 0.0, // Keep items centered
                     useMagnifier: false, // We'll handle scaling manually
                     physics: const FixedExtentScrollPhysics(),
+                    overAndUnderCenterOpacity: 0.3, // Fade out non-centered items to prevent text clashing
                     childDelegate: ListWheelChildLoopingListDelegate(
                       children: List.generate(_carouselItems.length, (index) {
                         final item = _carouselItems[index];
