@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'design_system/design_system.dart';
 import 'core/config/supabase_config.dart';
+import 'core/router/app_router.dart';
 
 /// App entry point
 ///
@@ -27,14 +28,18 @@ Future<void> main() async {
   );
 }
 
-class AnchorApp extends StatelessWidget {
+class AnchorApp extends ConsumerWidget {
   const AnchorApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Get the router from our provider
+    final router = ref.watch(routerProvider);
+
+    return MaterialApp.router(
       title: 'Anchor',
       debugShowCheckedModeBanner: false,
+      routerConfig: router,
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
@@ -53,7 +58,6 @@ class AnchorApp extends StatelessWidget {
           titleTextStyle: AnchorTypography.headlineSmall,
         ),
       ),
-      home: const HomeScreen(),
     );
   }
 }

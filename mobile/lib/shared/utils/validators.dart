@@ -1,9 +1,9 @@
-/// Validation utilities for form inputs
-///
-/// These validators return `null` if the input is valid,
-/// or an error message string if the input is invalid.
-///
-/// This follows Flutter's FormField validator pattern.
+// Validation utilities for form inputs
+//
+// These validators return `null` if the input is valid,
+// or an error message string if the input is invalid.
+//
+// This follows Flutter's FormField validator pattern.
 
 class Validators {
   // Private constructor to prevent instantiation

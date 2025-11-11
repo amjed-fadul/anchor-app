@@ -38,7 +38,7 @@ class LoadingOverlay extends StatelessWidget {
 
             // Optional message
             if (message != null) ...[
-              AnchorSpacing.verticalMd,
+              AnchorSpacing.verticalSpaceMD,
               Text(
                 message!,
                 style: AnchorTypography.bodyMedium.copyWith(

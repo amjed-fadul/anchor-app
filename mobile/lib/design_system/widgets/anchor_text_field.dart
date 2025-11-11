@@ -108,7 +108,7 @@ class _AnchorTextFieldState extends State<AnchorTextField> {
             fontWeight: FontWeight.w500,
           ),
         ),
-        AnchorSpacing.verticalXs, // 8px gap between label and field
+        AnchorSpacing.verticalSpaceXS, // 8px gap between label and field
 
         // The actual text field
         TextFormField(
@@ -154,14 +154,14 @@ class _AnchorTextFieldState extends State<AnchorTextField> {
 
             // Remove the default error border (we'll handle it ourselves)
             errorBorder: OutlineInputBorder(
-              borderRadius: AnchorSpacing.radiusMd,
+              borderRadius: AnchorSpacing.radiusMD,
               borderSide: const BorderSide(
                 color: AnchorColors.error,
                 width: 1.5,
               ),
             ),
             focusedErrorBorder: OutlineInputBorder(
-              borderRadius: AnchorSpacing.radiusMd,
+              borderRadius: AnchorSpacing.radiusMD,
               borderSide: const BorderSide(
                 color: AnchorColors.error,
                 width: 2.0,
@@ -170,7 +170,7 @@ class _AnchorTextFieldState extends State<AnchorTextField> {
 
             // Border styling for normal state
             enabledBorder: OutlineInputBorder(
-              borderRadius: AnchorSpacing.radiusMd,
+              borderRadius: AnchorSpacing.radiusMD,
               borderSide: BorderSide(
                 color: hasError ? AnchorColors.error : AnchorColors.gray300,
                 width: 1.0,
@@ -179,7 +179,7 @@ class _AnchorTextFieldState extends State<AnchorTextField> {
 
             // Border styling when focused (user is typing)
             focusedBorder: OutlineInputBorder(
-              borderRadius: AnchorSpacing.radiusMd,
+              borderRadius: AnchorSpacing.radiusMD,
               borderSide: BorderSide(
                 color: hasError ? AnchorColors.error : AnchorColors.anchorTeal,
                 width: 2.0,
@@ -188,7 +188,7 @@ class _AnchorTextFieldState extends State<AnchorTextField> {
 
             // Border styling when disabled
             disabledBorder: OutlineInputBorder(
-              borderRadius: AnchorSpacing.radiusMd,
+              borderRadius: AnchorSpacing.radiusMD,
               borderSide: const BorderSide(
                 color: AnchorColors.gray200,
                 width: 1.0,

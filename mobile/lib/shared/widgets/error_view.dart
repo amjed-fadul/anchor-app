@@ -45,7 +45,7 @@ class ErrorView extends StatelessWidget {
               size: 64,
               color: AnchorColors.error,
             ),
-            AnchorSpacing.verticalMd,
+            AnchorSpacing.verticalSpaceMD,
 
             // Error message
             Text(
@@ -58,7 +58,7 @@ class ErrorView extends StatelessWidget {
 
             // Retry button (if callback provided)
             if (onRetry != null) ...[
-              AnchorSpacing.verticalLg,
+              AnchorSpacing.verticalSpaceLG,
               AnchorButton(
                 label: 'Try Again',
                 onPressed: onRetry!,
@@ -96,10 +96,10 @@ class ErrorMessage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AnchorColors.error.withOpacity(0.1),
-        borderRadius: AnchorSpacing.radiusMd,
+        color: AnchorColors.error.withValues(alpha: 0.1),
+        borderRadius: AnchorSpacing.radiusMD,
         border: Border.all(
-          color: AnchorColors.error.withOpacity(0.3),
+          color: AnchorColors.error.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
