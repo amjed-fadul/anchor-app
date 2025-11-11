@@ -210,6 +210,149 @@ Changes are successful when:
 
 ---
 
+## 📱 Responsive Design Requirements (CRITICAL)
+
+### The Problem We're Solving
+The app MUST work on all popular device sizes - from small phones (5.4") to large tablets (10"+). Fixed pixel layouts from Figma don't adapt to different screens, causing buttons to be cut off and content to overflow.
+
+### Mandatory Responsive Design Rules
+
+**🚫 NEVER Use These:**
+- ❌ `Positioned` with hardcoded `top`/`left`/`right`/`bottom` pixel values
+- ❌ Fixed heights that don't account for screen size variations
+- ❌ Non-scrollable `Stack` layouts for primary content
+- ❌ Assuming a specific screen height or width
+
+**✅ ALWAYS Use These:**
+- ✅ `Column` with `Spacer`, `Expanded`, `Flexible` for vertical layouts
+- ✅ `Row` with `Spacer`, `Expanded`, `Flexible` for horizontal layouts
+- ✅ `MediaQuery.of(context).size` to get actual screen dimensions
+- ✅ `SafeArea` to avoid notches and system UI
+- ✅ `SingleChildScrollView` for content that might overflow
+- ✅ Percentage-based sizing (e.g., `width: MediaQuery.of(context).size.width * 0.8`)
+- ✅ `LayoutBuilder` for complex responsive logic
+
+### Popular Device Sizes to Support
+
+**Small Phones (5.4" - 6.1"):**
+- iPhone SE (5.4")
+- Samsung Galaxy S22 (6.1")
+- Google Pixel 5 (6.0")
+
+**Medium Phones (6.1" - 6.5"):**
+- iPhone 14 (6.1")
+- Samsung Galaxy S23 (6.1")
+- Google Pixel 7 (6.3")
+
+**Large Phones (6.5" - 6.9"):**
+- iPhone 14 Pro Max (6.7")
+- Samsung Galaxy S23 Ultra (6.8")
+- Google Pixel 7 Pro (6.7")
+
+**Tablets (7"+):**
+- iPad Mini (8.3")
+- iPad (10.9")
+- Samsung Galaxy Tab (10.5")
+
+### Responsive Layout Patterns
+
+**Pattern 1: Column with Spacer (Recommended)**
+```dart
+Column(
+  children: [
+    const Spacer(flex: 2),  // Top spacing
+    YourWidget(),
+    const Spacer(flex: 1),  // Middle spacing
+    AnotherWidget(),
+    const SizedBox(height: 24),  // Fixed bottom padding
+  ],
+)
+```
+
+**Pattern 2: MediaQuery for Conditional Sizing**
+```dart
+Container(
+  width: MediaQuery.of(context).size.width * 0.9,  // 90% of screen width
+  height: MediaQuery.of(context).size.height < 700
+    ? 200  // Small screens
+    : 300, // Large screens
+)
+```
+
+**Pattern 3: LayoutBuilder for Breakpoints**
+```dart
+LayoutBuilder(
+  builder: (context, constraints) {
+    if (constraints.maxWidth < 600) {
+      return MobileLayout();
+    } else {
+      return TabletLayout();
+    }
+  },
+)
+```
+
+### Testing Checklist
+
+Before committing any UI changes, test on:
+- [ ] Small phone emulator (Pixel 5 or similar)
+- [ ] Medium phone emulator (Pixel 7 or similar)
+- [ ] Large phone emulator (Pixel 7 Pro or similar)
+- [ ] Physical device (if available)
+- [ ] Tablet emulator (for major screens)
+
+**Quick Test Command:**
+```bash
+# List available emulators
+flutter emulators
+
+# Run on specific emulator
+flutter run -d <emulator-id>
+```
+
+### Common Responsive Issues to Avoid
+
+**Issue 1: Button Cut Off at Bottom**
+- ❌ Using `top: 746px` positioning
+- ✅ Use `Column` with `Spacer` or `const SizedBox(height: 40)` at bottom
+
+**Issue 2: Text Overflowing Container**
+- ❌ Fixed width without overflow handling
+- ✅ Use `Flexible` or `Expanded` with `overflow: TextOverflow.ellipsis`
+
+**Issue 3: Image Stretching Incorrectly**
+- ❌ Using `fit: BoxFit.fill`
+- ✅ Use `fit: BoxFit.cover` or `fit: BoxFit.contain`
+
+**Issue 4: Keyboard Covering Input Fields**
+- ❌ Not using `SingleChildScrollView`
+- ✅ Wrap form in `SingleChildScrollView` with `keyboardDismissBehavior`
+
+### Real-World Analogy
+
+Think of responsive design like **furniture in different sized rooms**:
+
+**Fixed Positioning (❌ Bad):**
+- Like saying "put the couch 10 feet from the left wall"
+- Works in one room, but in a smaller room, the couch hits the opposite wall!
+
+**Flexible Layout (✅ Good):**
+- Like saying "put the couch in the center with 20% space on each side"
+- Works in ANY room size because it adapts proportionally
+
+### When Adding New Screens
+
+For every new screen, ask:
+1. Does this layout work on a 5.4" phone?
+2. Does this layout work on a 10" tablet?
+3. Can users reach all buttons without scrolling?
+4. Does text stay readable at different sizes?
+5. Do images scale properly?
+
+If any answer is "no" or "maybe", redesign using flexible layouts.
+
+---
+
 ## 📚 Learning Resources
 
 When introducing new concepts, provide:
