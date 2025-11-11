@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/screens/splash_screen.dart';
 import '../../features/auth/screens/onboarding_screen.dart';
 import '../../features/auth/screens/signup_screen.dart';
+import '../../features/auth/screens/signup_email_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/forgot_password_screen.dart';
 import '../../features/home/screens/home_screen.dart';
@@ -73,12 +74,21 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
 
-      // Signup screen
+      // Signup screen (landing page with options)
       GoRoute(
         path: '/signup',
         name: 'signup',
         pageBuilder: (context, state) => const MaterialPage(
           child: SignupScreen(),
+        ),
+      ),
+
+      // Signup with email (form screen)
+      GoRoute(
+        path: '/signup/email',
+        name: 'signup-email',
+        pageBuilder: (context, state) => const MaterialPage(
+          child: SignupEmailScreen(),
         ),
       ),
 
