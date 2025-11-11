@@ -185,6 +185,35 @@ class AuthService {
     }
   }
 
+  /// Update user password after reset
+  ///
+  /// This is called after the user clicks the reset link in their email
+  /// and enters a new password in the app.
+  ///
+  /// Important: User must be authenticated (via deep link recovery session)
+  /// before calling this method.
+  ///
+  /// Example:
+  /// ```dart
+  /// try {
+  ///   await authService.updatePassword(newPassword: 'newpass123');
+  ///   // Password updated successfully!
+  /// } catch (e) {
+  ///   print('Update failed: $e');
+  /// }
+  /// ```
+  Future<void> updatePassword({required String newPassword}) async {
+    try {
+      await _supabase.auth.updateUser(
+        UserAttributes(password: newPassword),
+      );
+    } on AuthException {
+      rethrow;
+    } catch (e) {
+      throw AuthException('Failed to update password: $e');
+    }
+  }
+
   /// Get the currently logged in user
   ///
   /// Returns the User object if logged in, null otherwise.
