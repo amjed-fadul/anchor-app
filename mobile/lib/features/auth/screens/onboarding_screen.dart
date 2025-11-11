@@ -98,12 +98,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           SafeArea(
             child: Column(
               children: [
-                // Top spacing - flexible
-                const Spacer(flex: 2),
+                // Top spacing - flexible (reduced for small screens)
+                const Spacer(flex: 1),
 
-                // iOS-style ListWheelScrollView carousel - fixed height
+                // iOS-style ListWheelScrollView carousel - fixed height (reduced for small screens)
                 SizedBox(
-                  height: 300,
+                  height: 280,
                   child: ClipRect(
                     child: ListWheelScrollView.useDelegate(
                       controller: _scrollController,
@@ -150,8 +150,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                 ),
 
-                // Middle spacing - flexible (largest flex to push content apart)
-                const Spacer(flex: 3),
+                // Middle spacing - flexible (reduced to ensure button visibility on small screens)
+                const Spacer(flex: 2),
 
                 // App icon and tagline - left-aligned
                 Align(
