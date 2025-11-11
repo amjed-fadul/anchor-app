@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -15,14 +17,16 @@ class OnboardingScreen extends StatefulWidget {
   State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
+class _OnboardingScreenState extends State<OnboardingScreen> {
+  late PageController _pageController;
+  Timer? _autoScrollTimer;
 
-  // Position constants
-  static const double topPosition = 180.0;
-  static const double centerPosition = 262.0;
-  static const double bottomPosition = 354.0;
+  // The three words in carousel order
+  final List<Map<String, String>> _carouselItems = [
+    {'word': 'Anchor', 'icon': 'assets/images/app_stack_icon.svg'},
+    {'word': 'Instant', 'icon': 'assets/images/instant_icon.svg'},
+    {'word': 'Find', 'icon': 'assets/images/find_icon.svg'},
+  ];
 
   // Style constants
   static const double inactiveFontSize = 32.0;
@@ -34,87 +38,33 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   void initState() {
     super.initState();
 
-    // Set up animation controller for 6-second duration (2s per word)
-    // Loop continuously
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 6000),
-      vsync: this,
-    )..repeat();
+    // Initialize PageController with high initial page for infinite effect
+    _pageController = PageController(
+      initialPage: 999,
+      viewportFraction: 0.4, // Show partial views of adjacent items
+    );
+
+    // Start auto-scroll timer
+    _startAutoScroll();
   }
 
-  // Helper method to calculate position, size, color, and icon opacity for each word
-  Map<String, dynamic> _getWordStyle(double animationValue, int wordIndex) {
-    // wordIndex: 0=Anchor, 1=Instant, 2=Find
-    // Determine which "cycle" position this word is in (0=center, 1=bottom, 2=top)
-
-    // Calculate the offset for this word (each word starts at a different phase)
-    double phase = (animationValue + (wordIndex / 3.0)) % 1.0;
-
-    double position;
-    double fontSize;
-    Color color;
-    double iconOpacity;
-
-    // Smooth transitions using curves
-    if (phase < 0.33) {
-      // At center position
-      position = centerPosition;
-      fontSize = activeFontSize;
-      color = activeColor;
-      iconOpacity = 1.0;
-    } else if (phase < 0.5) {
-      // Transitioning from center to bottom
-      double t = (phase - 0.33) / 0.17;
-      t = Curves.easeInOutCubic.transform(t);
-      position = centerPosition + (bottomPosition - centerPosition) * t;
-      fontSize = activeFontSize + (inactiveFontSize - activeFontSize) * t;
-      color = Color.lerp(activeColor, inactiveColor, t)!;
-      iconOpacity = 1.0 - t;
-    } else if (phase < 0.66) {
-      // At bottom position
-      position = bottomPosition;
-      fontSize = inactiveFontSize;
-      color = inactiveColor;
-      iconOpacity = 0.0;
-    } else if (phase < 0.66 + 0.17) {
-      // Transitioning from bottom to top (with invisible wrap)
-      double t = (phase - 0.66) / 0.17;
-      t = Curves.easeInOutCubic.transform(t);
-      // Fade out at bottom, fade in at top
-      if (t < 0.5) {
-        // Fading out at bottom
-        position = bottomPosition;
-        fontSize = inactiveFontSize;
-        color = Color.lerp(inactiveColor, Colors.transparent, t * 2)!;
-        iconOpacity = 0.0;
-      } else {
-        // Fading in at top
-        position = topPosition;
-        fontSize = inactiveFontSize;
-        color = Color.lerp(Colors.transparent, inactiveColor, (t - 0.5) * 2)!;
-        iconOpacity = 0.0;
+  void _startAutoScroll() {
+    _autoScrollTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      if (_pageController.hasClients) {
+        final nextPage = _pageController.page! + 1;
+        _pageController.animateToPage(
+          nextPage.toInt(),
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOutCubic,
+        );
       }
-    } else {
-      // Transitioning from top to center
-      double t = (phase - (0.66 + 0.17)) / (1.0 - 0.66 - 0.17);
-      t = Curves.easeInOutCubic.transform(t);
-      position = topPosition + (centerPosition - topPosition) * t;
-      fontSize = inactiveFontSize + (activeFontSize - inactiveFontSize) * t;
-      color = Color.lerp(inactiveColor, activeColor, t)!;
-      iconOpacity = t;
-    }
-
-    return {
-      'position': position,
-      'fontSize': fontSize,
-      'color': color,
-      'iconOpacity': iconOpacity,
-    };
+    });
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _autoScrollTimer?.cancel();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -148,138 +98,90 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               ),
             ),
           ),
-          // Content
+          // Content with carousel
           SafeArea(
           child: SizedBox(
             width: double.infinity,
             child: Stack(
               children: [
-                // Animated carousel words
-                AnimatedBuilder(
-                  animation: _animationController,
-                  builder: (context, child) {
-                    final animValue = _animationController.value;
+                // Vertical PageView carousel
+                Positioned(
+                  left: 37,
+                  top: 180,
+                  bottom: 400,
+                  width: 320,
+                  child: PageView.builder(
+                    controller: _pageController,
+                    scrollDirection: Axis.vertical,
+                    itemBuilder: (context, index) {
+                      final itemIndex = index % _carouselItems.length;
+                      final item = _carouselItems[itemIndex];
 
-                    // Get styles for each word (0=Anchor, 1=Instant, 2=Find)
-                    final anchorStyle = _getWordStyle(animValue, 0);
-                    final instantStyle = _getWordStyle(animValue, 1);
-                    final findStyle = _getWordStyle(animValue, 2);
+                      return AnimatedBuilder(
+                        animation: _pageController,
+                        builder: (context, child) {
+                          double value = 0.0;
+                          if (_pageController.position.haveDimensions) {
+                            value = index.toDouble() - (_pageController.page ?? 0);
+                          }
 
-                    return Stack(
-                      children: [
-                        // Anchor word
-                        Positioned(
-                          left: 37,
-                          top: anchorStyle['position'],
-                          child: Row(
-                            children: [
-                              // Icon (only visible when at center)
-                              if (anchorStyle['iconOpacity'] > 0)
-                                Opacity(
-                                  opacity: anchorStyle['iconOpacity'],
-                                  child: SvgPicture.asset(
-                                    'assets/images/app_stack_icon.svg',
-                                    width: 32,
-                                    height: 32,
-                                  ),
-                                ),
-                              if (anchorStyle['iconOpacity'] > 0)
-                                const SizedBox(width: 12),
-                              // Text
-                              Text(
-                                'Anchor',
-                                style: TextStyle(
-                                  fontSize: anchorStyle['fontSize'],
-                                  fontWeight: anchorStyle['fontSize'] > 35
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                                  color: anchorStyle['color'],
-                                  letterSpacing: anchorStyle['fontSize'] > 35
-                                      ? -0.44
-                                      : -0.352,
-                                  height: 1.2,
+                          // Calculate scale and opacity based on distance from center
+                          final double absValue = value.abs();
+                          final double scale = ui.lerpDouble(1.0, 0.8, absValue.clamp(0.0, 1.0))!;
+                          final double opacity = ui.lerpDouble(1.0, 0.3, absValue.clamp(0.0, 1.0))!;
+                          final double fontSize = ui.lerpDouble(
+                            activeFontSize,
+                            inactiveFontSize,
+                            absValue.clamp(0.0, 1.0),
+                          )!;
+                          final Color textColor = Color.lerp(
+                            activeColor,
+                            inactiveColor,
+                            absValue.clamp(0.0, 1.0),
+                          )!;
+
+                          // Only show icon when item is centered
+                          final bool showIcon = absValue < 0.2;
+
+                          return Transform.scale(
+                            scale: scale,
+                            child: Opacity(
+                              opacity: opacity,
+                              child: Center(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    // Icon (only visible when centered)
+                                    if (showIcon) ...[
+                                      SvgPicture.asset(
+                                        item['icon']!,
+                                        width: 32,
+                                        height: 32,
+                                      ),
+                                      const SizedBox(width: 12),
+                                    ],
+                                    // Text
+                                    Text(
+                                      item['word']!,
+                                      style: TextStyle(
+                                        fontSize: fontSize,
+                                        fontWeight: fontSize > 35
+                                            ? FontWeight.w700
+                                            : FontWeight.w500,
+                                        color: textColor,
+                                        letterSpacing: fontSize > 35 ? -0.44 : -0.352,
+                                        height: 1.2,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-
-                        // Instant word
-                        Positioned(
-                          left: 37,
-                          top: instantStyle['position'],
-                          child: Row(
-                            children: [
-                              // Icon (only visible when at center)
-                              if (instantStyle['iconOpacity'] > 0)
-                                Opacity(
-                                  opacity: instantStyle['iconOpacity'],
-                                  child: SvgPicture.asset(
-                                    'assets/images/instant_icon.svg',
-                                    width: 32,
-                                    height: 32,
-                                  ),
-                                ),
-                              if (instantStyle['iconOpacity'] > 0)
-                                const SizedBox(width: 12),
-                              // Text
-                              Text(
-                                'Instant',
-                                style: TextStyle(
-                                  fontSize: instantStyle['fontSize'],
-                                  fontWeight: instantStyle['fontSize'] > 35
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                                  color: instantStyle['color'],
-                                  letterSpacing: instantStyle['fontSize'] > 35
-                                      ? -0.44
-                                      : -0.352,
-                                  height: 1.2,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // Find word
-                        Positioned(
-                          left: 37,
-                          top: findStyle['position'],
-                          child: Row(
-                            children: [
-                              // Icon (only visible when at center)
-                              if (findStyle['iconOpacity'] > 0)
-                                Opacity(
-                                  opacity: findStyle['iconOpacity'],
-                                  child: SvgPicture.asset(
-                                    'assets/images/find_icon.svg',
-                                    width: 32,
-                                    height: 32,
-                                  ),
-                                ),
-                              if (findStyle['iconOpacity'] > 0)
-                                const SizedBox(width: 12),
-                              // Text
-                              Text(
-                                'Find',
-                                style: TextStyle(
-                                  fontSize: findStyle['fontSize'],
-                                  fontWeight: findStyle['fontSize'] > 35
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                                  color: findStyle['color'],
-                                  letterSpacing: findStyle['fontSize'] > 35
-                                      ? -0.44
-                                      : -0.352,
-                                  height: 1.2,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
                 ),
 
                 // App icon display
