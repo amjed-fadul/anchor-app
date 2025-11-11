@@ -103,7 +103,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   top: 140,
                   right: 0,
                   height: 300,
-                  child: ListWheelScrollView.useDelegate(
+                  child: ClipRect(
+                    child: ListWheelScrollView.useDelegate(
                     controller: _scrollController,
                     itemExtent: 120.0, // Height of each item slot - increased for better spacing
                     diameterRatio: 1.5, // Controls curvature (smaller = more curved)
@@ -111,7 +112,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     offAxisFraction: 0.0, // Keep items centered
                     useMagnifier: false, // We'll handle scaling manually
                     physics: const FixedExtentScrollPhysics(),
-                    overAndUnderCenterOpacity: 0.15, // Heavily fade non-centered items for clean transitions
+                    overAndUnderCenterOpacity: 0.01, // Nearly invisible - ClipRect handles masking
                     childDelegate: ListWheelChildLoopingListDelegate(
                       children: List.generate(_carouselItems.length, (index) {
                         final item = _carouselItems[index];
@@ -144,6 +145,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     onSelectedItemChanged: (index) {
                       // Optional: track selected item
                     },
+                  ),
                   ),
                 ),
 
