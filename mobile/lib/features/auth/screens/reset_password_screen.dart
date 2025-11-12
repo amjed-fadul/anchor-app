@@ -114,16 +114,17 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       );
 
       print('🎉 RESET PASSWORD: Password updated successfully!');
+
+      // CRITICAL: Sign out recovery session IMMEDIATELY
+      // This must happen BEFORE showing success screen to prevent router
+      // from navigating to /home (which disposes this widget)
+      print('🔐 RESET PASSWORD: Signing out recovery session...');
+      await authService.signOut();
+      print('✅ RESET PASSWORD: Recovery session cleared, user is now unauthenticated');
+
       print('🔐 RESET PASSWORD: Auth state = ${ref.read(isAuthenticatedProvider)}');
 
-      // NOTE: We don't call signOut() here anymore
-      // The recovery session is temporary and will naturally expire
-      // Calling signOut() was causing the router to rebuild and redirect
-      // to splash/onboarding instead of allowing navigation to login
-      // The user can simply log in with their new password on the login screen
-
-      // If we reach here, password was updated successfully
-      // Show success state instead of navigating away
+      // Now show success state - widget will stay mounted because user is unauthenticated
       setState(() {
         _isLoading = false;
         _isSuccess = true;
