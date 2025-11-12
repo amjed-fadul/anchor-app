@@ -10,6 +10,7 @@
 
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:mobile/features/auth/services/auth_service.dart';
 
 /// Mock SupabaseClient
 ///
@@ -65,6 +66,20 @@ class MockSession extends Mock implements Session {}
 /// Supabase throws these when auth operations fail.
 /// We mock them to test error handling.
 class MockAuthException extends Mock implements AuthException {}
+
+/// Mock AuthService
+///
+/// This mocks our AuthService class for testing providers and widgets.
+/// Use this when you need to control what AuthService returns without
+/// hitting the real Supabase backend.
+///
+/// Example usage:
+/// ```dart
+/// final mockAuthService = MockAuthService();
+/// when(() => mockAuthService.authStateChanges)
+///     .thenAnswer((_) => Stream.value(authState));
+/// ```
+class MockAuthService extends Mock implements AuthService {}
 
 /// Helper Functions for Creating Common Test Data
 ///
@@ -122,10 +137,10 @@ Session createMockSession({
 /// final recoverySession = createMockRecoverySession();
 /// // Now test what happens during password reset
 /// ```
-Session createMockRecoverySession() {
+Session createMockRecoverySession({User? user}) {
   // A recovery session is just a regular session, but the context
   // in which it's used (password recovery flow) is what makes it special
-  return createMockSession();
+  return createMockSession(user: user);
 }
 
 /// Creates a mock successful UserResponse
