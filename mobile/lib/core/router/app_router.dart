@@ -150,7 +150,22 @@ final routerProvider = Provider<GoRouter>((ref) {
       // - They should be on /reset-password screen, not /login
       if (path == '/login') {
         // Check if user has a recovery session
-        final isRecovery = ref.read(isRecoverySessionProvider);
+        // CRITICAL: Check session DIRECTLY from auth service (synchronous)
+        // NOT from provider (which depends on stream that may not have emitted yet)
+        final authService = ref.read(authServiceProvider);
+        final session = authService.currentSession;
+        final user = authService.currentUser;
+
+        // Recovery sessions have recoverySentAt metadata set by Supabase
+        final isRecovery = user != null &&
+                          session != null &&
+                          user.recoverySentAt != null;
+
+        print('  - Checking recovery session:');
+        print('    - user exists: ${user != null}');
+        print('    - session exists: ${session != null}');
+        print('    - recoverySentAt: ${user?.recoverySentAt}');
+        print('    - isRecovery: $isRecovery');
 
         if (isRecovery) {
           // Recovery session detected: redirect to reset password screen
