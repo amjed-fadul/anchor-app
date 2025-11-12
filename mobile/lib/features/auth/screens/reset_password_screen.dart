@@ -111,6 +111,11 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         newPassword: _passwordController.text,
       );
 
+      // Sign out to clear the recovery session
+      // This prevents the router from detecting the old recovery session
+      // and redirecting back to reset password on next login
+      await authService.signOut();
+
       // If we reach here, password was updated successfully
       // Show success state instead of navigating away
       setState(() {
