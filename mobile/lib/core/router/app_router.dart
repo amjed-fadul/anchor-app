@@ -10,6 +10,7 @@ import '../../features/auth/screens/forgot_password_screen.dart';
 import '../../features/auth/screens/reset_password_screen.dart';
 import '../../features/home/screens/home_screen.dart';
 import '../../features/auth/providers/auth_provider.dart';
+import '../config/supabase_config.dart';
 
 /// App routing configuration
 ///
@@ -32,8 +33,37 @@ final routerProvider = Provider<GoRouter>((ref) {
   // Watch auth state to rebuild router when user logs in/out
   final isAuthenticated = ref.watch(isAuthenticatedProvider);
 
+  /// Determine initial route based on current auth state
+  ///
+  /// Checks for recovery sessions from password reset deep links.
+  /// When user clicks the reset link in email, Supabase creates a
+  /// temporary recovery session. We detect this and start at /reset-password.
+  String getInitialLocation() {
+    final session = supabase.auth.currentSession;
+
+    // Check if we have a recovery session from password reset deep link
+    if (session != null) {
+      // Recovery sessions have specific metadata or a recovery token
+      // Check user metadata for recovery indicators
+      final metadata = session.user.userMetadata;
+      if (metadata != null && metadata.isNotEmpty) {
+        // If session was created via deep link, navigate to reset password
+        return '/reset-password';
+      }
+    }
+
+    // Check if user is already authenticated (regular session)
+    final user = ref.read(currentUserProvider);
+    if (user != null) {
+      return '/home';
+    }
+
+    // Default: start at splash
+    return '/';
+  }
+
   return GoRouter(
-    initialLocation: '/',
+    initialLocation: getInitialLocation(),
     debugLogDiagnostics: true, // Helpful for development
 
     // Redirect logic based on authentication
