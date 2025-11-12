@@ -10,6 +10,7 @@ import '../../features/auth/screens/forgot_password_screen.dart';
 import '../../features/auth/screens/reset_password_screen.dart';
 import '../../features/home/screens/home_screen.dart';
 import '../../features/auth/providers/auth_provider.dart';
+import 'go_router_refresh_stream.dart';
 
 /// App routing configuration
 ///
@@ -26,11 +27,29 @@ import '../../features/auth/providers/auth_provider.dart';
 
 /// Provider for the GoRouter instance
 ///
-/// This creates the router with auth state integration.
-/// The router automatically rebuilds when auth state changes.
+/// This creates the router with auth state integration using refreshListenable.
+/// The router LISTENS to auth changes WITHOUT rebuilding the entire instance.
+///
+/// **Critical Fix:**
+/// Previously, we used `ref.watch(isAuthenticatedProvider)` which caused
+/// the router provider to completely rebuild when auth state changed.
+/// This caused navigation issues (e.g., redirecting to onboarding after
+/// password reset).
+///
+/// **Solution:**
+/// Use GoRouter's `refreshListenable` parameter to listen for auth changes
+/// and re-run redirect logic WITHOUT rebuilding the router instance.
 final routerProvider = Provider<GoRouter>((ref) {
-  // Watch auth state to rebuild router when user logs in/out
-  final isAuthenticated = ref.watch(isAuthenticatedProvider);
+  // Convert auth state stream to a listenable that GoRouter can monitor
+  // This allows GoRouter to refresh redirect logic without rebuilding
+  final authState = ref.watch(authStateProvider);
+  final refreshListenable = GoRouterRefreshStream(
+    authState.when(
+      data: (state) => Stream.value(state),
+      loading: () => Stream.value(null),
+      error: (_, __) => Stream.value(null),
+    ),
+  );
 
   /// Determine initial route based on current auth state
   ///
@@ -62,11 +81,18 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   return GoRouter(
     initialLocation: getInitialLocation(),
-    debugLogDiagnostics: true, // Helpful for development
+    debugLogDiagnostics: true,
+
+    // CRITICAL: refreshListenable allows GoRouter to re-run redirect
+    // when auth state changes WITHOUT rebuilding the router
+    refreshListenable: refreshListenable,
 
     // Redirect logic based on authentication
     redirect: (context, state) {
       final path = state.matchedLocation;
+
+      // Re-read auth state on each redirect (not watched, so no rebuild)
+      final isAuthenticated = ref.read(isAuthenticatedProvider);
 
       // Allow reset-password for authenticated users
       // (they're authenticated via recovery session from email link)
