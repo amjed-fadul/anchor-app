@@ -57,7 +57,9 @@ final routerProvider = Provider<GoRouter>((ref) {
   /// 2. Normal authenticated session → /home
   /// 3. Not authenticated → / (splash)
   String getInitialLocation() {
+    print('🔷 [ROUTER] getInitialLocation() called');
     final user = ref.read(currentUserProvider);
+    print('  - user: ${user?.email ?? 'null'}');
 
     // Check if user is authenticated
     if (user != null) {
@@ -69,18 +71,26 @@ final routerProvider = Provider<GoRouter>((ref) {
       // The stream provider may not have emitted yet when the router initializes,
       // causing the wrong redirect.
       final authState = ref.read(authStateProvider);
+      print('  - authState.hasValue: ${authState.hasValue}');
+      print('  - authState.value: ${authState.value}');
+      print('  - authState.value?.event: ${authState.value?.event}');
+
       final isRecovery = authState.value?.event == AuthChangeEvent.passwordRecovery;
+      print('  - isRecovery: $isRecovery');
 
       if (isRecovery == true) {
         // Recovery session: take user to reset password screen
+        print('  ✅ Returning /reset-password (recovery session)');
         return '/reset-password';
       }
 
       // Normal authenticated session: go to home
+      print('  ✅ Returning /home (normal session)');
       return '/home';
     }
 
     // Not authenticated: start at splash
+    print('  ✅ Returning / (splash - no user)');
     return '/';
   }
 
@@ -95,13 +105,16 @@ final routerProvider = Provider<GoRouter>((ref) {
     // Redirect logic based on authentication
     redirect: (context, state) {
       final path = state.matchedLocation;
+      print('🔷 [ROUTER] redirect() called for path: $path');
 
       // Re-read auth state on each redirect (not watched, so no rebuild)
       final isAuthenticated = ref.read(isAuthenticatedProvider);
+      print('  - isAuthenticated: $isAuthenticated');
 
       // Allow reset-password for authenticated users
       // (they're authenticated via recovery session from email link)
       if (path == '/reset-password') {
+        print('  ✅ Allowing /reset-password (no redirect)');
         return null; // Don't redirect
       }
 
@@ -110,22 +123,26 @@ final routerProvider = Provider<GoRouter>((ref) {
       // with their NEW password, providing better UX and confirmation
       // that the password change worked
       if (path == '/login') {
+        print('  ✅ Allowing /login (no redirect)');
         return null; // Don't redirect - allow access to login screen
       }
 
       // If user is authenticated and tries to access OTHER auth screens,
       // redirect to home
       if (isAuthenticated && _isAuthRoute(path)) {
+        print('  🔀 Redirecting to /home (authenticated user on auth screen)');
         return '/home';
       }
 
       // If user is not authenticated and tries to access protected routes,
       // redirect to onboarding
       if (!isAuthenticated && _isProtectedRoute(path)) {
+        print('  🔀 Redirecting to /onboarding (unauthenticated user on protected route)');
         return '/onboarding';
       }
 
       // No redirect needed
+      print('  ✅ No redirect needed');
       return null;
     },
 
