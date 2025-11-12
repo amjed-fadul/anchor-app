@@ -128,8 +128,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       final path = state.matchedLocation;
       print('🔷 [ROUTER] redirect() called for path: $path');
 
-      // Re-read auth state on each redirect (not watched, so no rebuild)
-      final isAuthenticated = ref.read(isAuthenticatedProvider);
+      // CRITICAL FIX: Read session directly (synchronous) instead of from provider (async stream)
+      // This prevents race condition where signIn() completes but stream hasn't emitted yet
+      final authService = ref.read(authServiceProvider);
+      final isAuthenticated = authService.currentSession != null;
       print('  - isAuthenticated: $isAuthenticated');
 
       // Allow reset-password for authenticated users
