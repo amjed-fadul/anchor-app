@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../design_system/design_system.dart';
 import '../providers/auth_provider.dart';
+import '../../../core/providers/onboarding_provider.dart';
 
 /// Splash screen shown on app launch
 ///
@@ -104,8 +105,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     _navigate();
   }
 
-  /// Navigate to appropriate screen based on auth state
-  void _navigate() {
+  /// Navigate to appropriate screen based on auth state and onboarding status
+  Future<void> _navigate() async {
     // Prevent duplicate navigation
     if (_hasNavigated || !mounted) {
       return;
@@ -137,9 +138,20 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         context.go('/home');
       }
     } else {
-      // Not authenticated: go to onboarding
-      print('  ✅ Navigating to /onboarding (not authenticated)');
-      context.go('/onboarding');
+      // Not authenticated: check if user has seen onboarding
+      final onboardingService = ref.read(onboardingServiceProvider);
+      final hasSeenOnboarding = await onboardingService.hasSeenOnboarding();
+      print('  - hasSeenOnboarding: $hasSeenOnboarding');
+
+      if (hasSeenOnboarding) {
+        // Returning user: go to login
+        print('  ✅ Navigating to /login (returning user)');
+        if (mounted) context.go('/login');
+      } else {
+        // First-time user: go to onboarding
+        print('  ✅ Navigating to /onboarding (first-time user)');
+        if (mounted) context.go('/onboarding');
+      }
     }
   }
 

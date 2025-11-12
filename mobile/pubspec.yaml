@@ -58,6 +58,9 @@ dependencies:
   # Deep Link Handling - Process password reset links
   app_links: ^6.3.4
 
+  # Local Storage - SharedPreferences for onboarding tracking
+  shared_preferences: ^2.3.4
+
   # Share functionality
   share_plus: ^10.1.2
 

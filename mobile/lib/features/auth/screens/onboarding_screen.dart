@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../design_system/design_system.dart';
+import '../../../core/providers/onboarding_provider.dart';
 
 /// Onboarding screen with animated text and gradient background
 ///
@@ -11,14 +13,14 @@ import '../../../design_system/design_system.dart';
 /// and a call-to-action button.
 ///
 /// RESPONSIVE: Uses Column with Spacer for flexible layout across all device sizes
-class OnboardingScreen extends StatefulWidget {
+class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   late FixedExtentScrollController _scrollController;
   Timer? _autoScrollTimer;
   int _currentItem = 1000; // Start high for infinite scrolling
@@ -212,9 +214,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 // "Get Started" button - always visible
                 Center(
                   child: GestureDetector(
-                    onTap: () {
+                    onTap: () async {
+                      // Mark onboarding as seen (so it won't show again)
+                      final onboardingService = ref.read(onboardingServiceProvider);
+                      await onboardingService.markOnboardingAsSeen();
+
                       // Navigate to signup screen
-                      context.go('/signup');
+                      if (mounted) {
+                        context.go('/signup');
+                      }
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(
