@@ -115,40 +115,49 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 
       print('🎉 RESET PASSWORD: Password updated successfully!');
 
-      // CRITICAL: Sign out recovery session IMMEDIATELY
-      // This must happen BEFORE showing success screen to prevent router
-      // from navigating to /home (which disposes this widget)
-      print('🔐 RESET PASSWORD: Signing out recovery session...');
-      await authService.signOut();
-      print('✅ RESET PASSWORD: Recovery session cleared, user is now unauthenticated');
+      // Check if widget is still mounted before proceeding
+      if (!mounted) {
+        print('❌ RESET PASSWORD: Widget disposed early, aborting');
+        return;
+      }
 
-      print('🔐 RESET PASSWORD: Auth state = ${ref.read(isAuthenticatedProvider)}');
-
-      // Now show success state - widget will stay mounted because user is unauthenticated
+      // Show success screen FIRST (while still authenticated with recovery session)
       setState(() {
         _isLoading = false;
         _isSuccess = true;
       });
 
-      print('✅ RESET PASSWORD: Success screen showing, navigating to /login in 2 seconds...');
+      print('✅ RESET PASSWORD: Success screen showing');
 
-      // Auto-navigate to login after 2 seconds
-      Future.delayed(const Duration(seconds: 2), () {
-        print('⏰ RESET PASSWORD: 2 seconds elapsed, navigating to /login now...');
-        if (mounted) {
-          context.go('/login');
-          print('✅ RESET PASSWORD: context.go(\'/login\') called');
-        } else {
-          print('❌ RESET PASSWORD: Widget not mounted, skipping navigation');
-        }
-      });
+      // Wait briefly to show success message
+      await Future.delayed(const Duration(milliseconds: 1500));
+
+      if (!mounted) {
+        print('❌ RESET PASSWORD: Widget disposed before navigation');
+        return;
+      }
+
+      // Navigate to login (still authenticated, router allows it per line 107-109)
+      print('🔐 RESET PASSWORD: Navigating to /login...');
+      context.go('/login');
+      print('✅ RESET PASSWORD: Navigation to /login complete');
+
+      // NOW sign out the recovery session in the background
+      // This happens after navigation so router rebuild won't affect us
+      print('🔐 RESET PASSWORD: Signing out recovery session in background...');
+      await authService.signOut();
+      print('✅ RESET PASSWORD: Recovery session cleared');
     } catch (e) {
       // Handle errors
       print('❌ RESET PASSWORD: Error - ${e.toString()}');
-      setState(() {
-        _isLoading = false;
-        _errorMessage = e.toString().replaceAll('Exception: ', '');
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = e.toString().replaceAll('Exception: ', '');
+        });
+      } else {
+        print('❌ RESET PASSWORD: Cannot show error, widget disposed');
+      }
     }
   }
 
