@@ -43,7 +43,11 @@ final authServiceProvider = Provider<AuthService>((ref) {
 /// ```
 final authStateProvider = StreamProvider<AuthState>((ref) {
   final authService = ref.watch(authServiceProvider);
-  return authService.authStateChanges;
+  return authService.authStateChanges.map((state) {
+    // DEBUG: Log auth state changes
+    print('🔐 AUTH STATE CHANGED: event=${state.event}, hasSession=${state.session != null}, hasUser=${state.session?.user != null}');
+    return state;
+  });
 });
 
 /// Provider for the current user

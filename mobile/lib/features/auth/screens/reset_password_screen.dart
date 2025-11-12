@@ -106,10 +106,15 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       // Get auth service from provider
       final authService = ref.read(authServiceProvider);
 
+      print('🔐 RESET PASSWORD: Starting password update...');
+
       // Update the password
       await authService.updatePassword(
         newPassword: _passwordController.text,
       );
+
+      print('🎉 RESET PASSWORD: Password updated successfully!');
+      print('🔐 RESET PASSWORD: Auth state = ${ref.read(isAuthenticatedProvider)}');
 
       // NOTE: We don't call signOut() here anymore
       // The recovery session is temporary and will naturally expire
@@ -124,14 +129,21 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         _isSuccess = true;
       });
 
+      print('✅ RESET PASSWORD: Success screen showing, navigating to /login in 2 seconds...');
+
       // Auto-navigate to login after 2 seconds
       Future.delayed(const Duration(seconds: 2), () {
+        print('⏰ RESET PASSWORD: 2 seconds elapsed, navigating to /login now...');
         if (mounted) {
           context.go('/login');
+          print('✅ RESET PASSWORD: context.go(\'/login\') called');
+        } else {
+          print('❌ RESET PASSWORD: Widget not mounted, skipping navigation');
         }
       });
     } catch (e) {
       // Handle errors
+      print('❌ RESET PASSWORD: Error - ${e.toString()}');
       setState(() {
         _isLoading = false;
         _errorMessage = e.toString().replaceAll('Exception: ', '');
