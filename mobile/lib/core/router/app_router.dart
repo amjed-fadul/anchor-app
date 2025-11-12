@@ -34,25 +34,8 @@ final routerProvider = Provider<GoRouter>((ref) {
   final isAuthenticated = ref.watch(isAuthenticatedProvider);
 
   /// Determine initial route based on current auth state
-  ///
-  /// Checks for recovery sessions from password reset deep links.
-  /// When user clicks the reset link in email, Supabase creates a
-  /// temporary recovery session. We detect this and start at /reset-password.
   String getInitialLocation() {
-    final session = supabase.auth.currentSession;
-
-    // Check if we have a recovery session from password reset deep link
-    if (session != null) {
-      // Recovery sessions have specific metadata or a recovery token
-      // Check user metadata for recovery indicators
-      final metadata = session.user.userMetadata;
-      if (metadata != null && metadata.isNotEmpty) {
-        // If session was created via deep link, navigate to reset password
-        return '/reset-password';
-      }
-    }
-
-    // Check if user is already authenticated (regular session)
+    // Check if user is already authenticated
     final user = ref.read(currentUserProvider);
     if (user != null) {
       return '/home';
