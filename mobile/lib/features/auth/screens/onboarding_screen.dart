@@ -215,13 +215,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 Center(
                   child: GestureDetector(
                     onTap: () async {
+                      // Capture router before async operation to avoid context issues
+                      final router = GoRouter.of(context);
+
                       // Mark onboarding as seen (so it won't show again)
                       final onboardingService = ref.read(onboardingServiceProvider);
                       await onboardingService.markOnboardingAsSeen();
 
-                      // Navigate to signup screen
+                      // Navigate to signup screen using captured router
                       if (mounted) {
-                        context.go('/signup');
+                        router.go('/signup');
                       }
                     },
                     child: Container(
