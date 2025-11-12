@@ -40,15 +40,13 @@ import 'go_router_refresh_stream.dart';
 /// Use GoRouter's `refreshListenable` parameter to listen for auth changes
 /// and re-run redirect logic WITHOUT rebuilding the router instance.
 final routerProvider = Provider<GoRouter>((ref) {
-  // Convert auth state stream to a listenable that GoRouter can monitor
-  // This allows GoRouter to refresh redirect logic without rebuilding
-  final authState = ref.watch(authStateProvider);
+  // CRITICAL FIX: Don't use ref.watch - it causes router to rebuild!
+  // Instead, read the auth service and pass its continuous stream directly
+  // to GoRouterRefreshStream. This allows redirect logic to refresh
+  // WITHOUT rebuilding the entire router (which disposes widgets).
+  final authService = ref.read(authServiceProvider);
   final refreshListenable = GoRouterRefreshStream(
-    authState.when(
-      data: (state) => Stream.value(state),
-      loading: () => Stream.value(null),
-      error: (_, __) => Stream.value(null),
-    ),
+    authService.authStateChanges,  // Real continuous stream from Supabase
   );
 
   /// Determine initial route based on current auth state
