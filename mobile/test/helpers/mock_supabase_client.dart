@@ -1,3 +1,5 @@
+library;
+
 /// Mock Supabase Client for Testing
 ///
 /// This file contains mock versions of Supabase classes that we use in tests.

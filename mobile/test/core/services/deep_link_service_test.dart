@@ -1,3 +1,5 @@
+library;
+
 // DeepLinkService Unit Tests
 //
 // These tests verify that our deep link handling works correctly.
@@ -24,7 +26,6 @@
 //
 // That's why we need comprehensive tests!
 
-import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:mobile/core/services/deep_link_service.dart';
@@ -74,24 +75,16 @@ void main() {
     /// Test Setup (runs before EACH test in this group)
     ///
     /// Each test gets fresh mocks so they don't interfere with each other.
-    late MockAppLinks mockAppLinks;
     late MockSupabaseClient mockSupabaseClient;
     late MockGoTrueClient mockAuth;
-    late DeepLinkService deepLinkService;
 
     setUp(() {
       // Create fresh mocks for each test
-      mockAppLinks = MockAppLinks();
       mockSupabaseClient = MockSupabaseClient();
       mockAuth = MockGoTrueClient();
 
       // Connect the mocks
       when(() => mockSupabaseClient.auth).thenReturn(mockAuth);
-
-      // Create DeepLinkService with our mocks
-      // Note: We can't directly inject AppLinks, so we'll need to test
-      // via integration or test the behavior indirectly
-      deepLinkService = DeepLinkService(mockSupabaseClient);
     });
 
     /// Test #1: Normal App Launch (No Initial Deep Link)

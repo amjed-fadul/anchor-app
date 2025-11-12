@@ -1,3 +1,5 @@
+library;
+
 /// AuthService Unit Tests
 ///
 /// These tests verify that our authentication service methods work correctly.

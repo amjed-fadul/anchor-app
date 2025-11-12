@@ -1,3 +1,5 @@
+library;
+
 /// Auth Provider Unit Tests
 ///
 /// These tests verify that our Riverpod authentication providers work correctly.

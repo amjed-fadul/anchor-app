@@ -1,3 +1,5 @@
+library;
+
 /// Validators Unit Tests
 ///
 /// These tests verify that our form validation functions work correctly.

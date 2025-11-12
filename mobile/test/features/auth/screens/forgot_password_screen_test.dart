@@ -1,3 +1,5 @@
+library;
+
 /// ForgotPasswordScreen Widget Tests
 ///
 /// These tests verify that the Forgot Password screen UI works correctly.

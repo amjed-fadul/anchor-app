@@ -1,3 +1,5 @@
+library;
+
 /// ResetPasswordScreen Widget Tests
 ///
 /// These tests verify that the Reset Password screen UI works correctly.

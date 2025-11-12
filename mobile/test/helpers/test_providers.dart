@@ -1,3 +1,5 @@
+library;
+
 /// Test Provider Helpers for Riverpod
 ///
 /// This file helps us test Riverpod providers and widgets that use providers.
