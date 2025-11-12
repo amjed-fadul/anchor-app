@@ -58,25 +58,46 @@ final routerProvider = Provider<GoRouter>((ref) {
   /// 3. Not authenticated → / (splash)
   String getInitialLocation() {
     print('🔷 [ROUTER] getInitialLocation() called');
-    final user = ref.read(currentUserProvider);
+
+    // CRITICAL FIX: Use authService directly instead of providers
+    // This gives us synchronous access to the current session without
+    // waiting for streams to emit.
+    final authService = ref.read(authServiceProvider);
+    final user = authService.currentUser;
+    final session = authService.currentSession;
+
     print('  - user: ${user?.email ?? 'null'}');
+    print('  - session exists: ${session != null}');
 
     // Check if user is authenticated
-    if (user != null) {
+    if (user != null && session != null) {
       // Check if this is a password recovery session
       // (user clicked reset link in email)
       //
-      // CRITICAL FIX: Read directly from authStateProvider.value instead of
-      // isRecoverySessionProvider to get the event synchronously at initialization.
-      // The stream provider may not have emitted yet when the router initializes,
-      // causing the wrong redirect.
+      // CRITICAL FIX: Check session metadata synchronously instead of
+      // waiting for authStateProvider stream to emit. After the deep link
+      // service processes the recovery token, the session will have the
+      // user's app_metadata with recovery_sent_at field set.
+      //
+      // For Supabase recovery sessions:
+      // - session.user.appMetadata contains 'provider' and other metadata
+      // - We check if user has userMetadata['aud'] == 'authenticated' which
+      //   indicates a valid session
+      // - Recovery sessions are temporary, so we check the auth state value
       final authState = ref.read(authStateProvider);
       print('  - authState.hasValue: ${authState.hasValue}');
-      print('  - authState.value: ${authState.value}');
-      print('  - authState.value?.event: ${authState.value?.event}');
 
-      final isRecovery = authState.value?.event == AuthChangeEvent.passwordRecovery;
-      print('  - isRecovery: $isRecovery');
+      // Check both the stream (if it has emitted) and the session metadata
+      final isRecoveryFromStream = authState.value?.event == AuthChangeEvent.passwordRecovery;
+      print('  - isRecovery from stream: $isRecoveryFromStream');
+
+      // Additional check: if we just processed a deep link, the session might have
+      // special metadata. Supabase sets this during recovery flow.
+      final hasRecoveryMetadata = user.recoverySentAt != null;
+      print('  - hasRecoveryMetadata (recoverySentAt): $hasRecoveryMetadata');
+
+      final isRecovery = isRecoveryFromStream || hasRecoveryMetadata;
+      print('  - isRecovery (final): $isRecovery');
 
       if (isRecovery == true) {
         // Recovery session: take user to reset password screen

@@ -59,6 +59,12 @@ Future<void> initializeSupabase() async {
       authFlowType: AuthFlowType.pkce, // More secure auth flow
       // autoRefreshToken: true is the default
       // persistSession: true is the default (keeps user logged in)
+
+      // CRITICAL: Disable automatic deep link detection
+      // Why: Supabase's automatic processing causes a race condition where
+      // the router initializes before the auth state change event is emitted.
+      // We handle deep links manually in DeepLinkService instead.
+      detectSessionInUri: false,
     ),
   );
 }
