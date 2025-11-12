@@ -129,12 +129,21 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         return;
       }
 
-      // Navigate to login (still authenticated, router allows it per line 107-109)
-      context.go('/login');
-
-      // NOW sign out the recovery session in the background
-      // This happens after navigation so router rebuild won't affect us
+      // CRITICAL FIX: Sign out the recovery session FIRST
+      // This prevents the router's refreshListenable from triggering
+      // unwanted navigation after we go to /login
       await authService.signOut();
+
+      // Wait for auth state to propagate through streams
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      if (!mounted) {
+        return;
+      }
+
+      // NOW navigate to login screen (after sign out is complete)
+      // Router allows /login for both authenticated and unauthenticated users
+      context.go('/login');
     } catch (e) {
       // Handle errors
       if (mounted) {
