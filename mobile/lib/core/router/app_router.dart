@@ -10,7 +10,6 @@ import '../../features/auth/screens/forgot_password_screen.dart';
 import '../../features/auth/screens/reset_password_screen.dart';
 import '../../features/home/screens/home_screen.dart';
 import '../../features/auth/providers/auth_provider.dart';
-import '../config/supabase_config.dart';
 
 /// App routing configuration
 ///
