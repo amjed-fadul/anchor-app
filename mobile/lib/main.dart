@@ -19,6 +19,11 @@ Future<void> main() async {
   // This MUST happen before the app runs, otherwise auth won't work
   await initializeSupabase();
 
+  // Give Supabase time to process any deep link recovery sessions
+  // When user clicks password reset link in email, the app opens with a deep link
+  // This delay ensures Supabase extracts the recovery token before router initializes
+  await Future.delayed(const Duration(milliseconds: 100));
+
   // Run the app
   // ProviderScope wraps the whole app to enable Riverpod state management
   runApp(
