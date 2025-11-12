@@ -62,9 +62,15 @@ final routerProvider = Provider<GoRouter>((ref) {
     if (user != null) {
       // Check if this is a password recovery session
       // (user clicked reset link in email)
-      final isRecovery = ref.read(isRecoverySessionProvider);
+      //
+      // CRITICAL FIX: Read directly from authStateProvider.value instead of
+      // isRecoverySessionProvider to get the event synchronously at initialization.
+      // The stream provider may not have emitted yet when the router initializes,
+      // causing the wrong redirect.
+      final authState = ref.read(authStateProvider);
+      final isRecovery = authState.value?.event == AuthChangeEvent.passwordRecovery;
 
-      if (isRecovery) {
+      if (isRecovery == true) {
         // Recovery session: take user to reset password screen
         return '/reset-password';
       }
