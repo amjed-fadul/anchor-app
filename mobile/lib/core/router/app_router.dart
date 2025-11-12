@@ -33,14 +33,30 @@ final routerProvider = Provider<GoRouter>((ref) {
   final isAuthenticated = ref.watch(isAuthenticatedProvider);
 
   /// Determine initial route based on current auth state
+  ///
+  /// Handles three scenarios:
+  /// 1. Recovery session (from password reset email) → /reset-password
+  /// 2. Normal authenticated session → /home
+  /// 3. Not authenticated → / (splash)
   String getInitialLocation() {
-    // Check if user is already authenticated
     final user = ref.read(currentUserProvider);
+
+    // Check if user is authenticated
     if (user != null) {
+      // Check if this is a password recovery session
+      // (user clicked reset link in email)
+      final isRecovery = ref.read(isRecoverySessionProvider);
+
+      if (isRecovery) {
+        // Recovery session: take user to reset password screen
+        return '/reset-password';
+      }
+
+      // Normal authenticated session: go to home
       return '/home';
     }
 
-    // Default: start at splash
+    // Not authenticated: start at splash
     return '/';
   }
 
