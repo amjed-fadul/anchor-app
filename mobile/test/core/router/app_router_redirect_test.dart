@@ -1,3 +1,5 @@
+library;
+
 /// Router Redirect Logic Tests
 ///
 /// These tests verify the redirect logic we fixed in the password reset flow.
@@ -21,21 +23,6 @@
 /// 4. ✅ Unauthenticated users are redirected from protected screens to /onboarding
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mocktail/mocktail.dart';
-import 'package:mobile/core/router/app_router.dart';
-import 'package:mobile/features/auth/providers/auth_provider.dart';
-
-/// Mock ProviderContainer for testing
-///
-/// 🎓 Learning: Mocking Riverpod
-///
-/// Normally, providers read from real services. In tests, we want
-/// to control exactly what they return so we can test specific scenarios.
-///
-/// This is like having a "test mode" switch that makes providers
-/// return whatever values we specify.
-class MockProviderContainer extends Mock implements ProviderContainer {}
 
 /// Helper function to test redirect logic
 ///
@@ -52,16 +39,7 @@ class MockProviderContainer extends Mock implements ProviderContainer {}
 String? testRedirect({
   required String path,
   required bool isAuthenticated,
-  ProviderContainer? container,
 }) {
-  // Create a test container with mock auth state
-  final testContainer = container ?? ProviderContainer(
-    overrides: [
-      // Override the auth provider to return our test value
-      isAuthenticatedProvider.overrideWith((ref) => isAuthenticated),
-    ],
-  );
-
   // This is a simplified version of the redirect logic from app_router.dart
   // We're testing the RULES, not the full router setup
 
