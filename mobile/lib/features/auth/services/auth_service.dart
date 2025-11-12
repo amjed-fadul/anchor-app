@@ -12,9 +12,24 @@ import '../../../core/config/supabase_config.dart';
 /// - Google Sign-In (OAuth)
 ///
 /// This is the single source of truth for all auth operations.
+///
+/// For testing, you can inject a mock SupabaseClient:
+/// ```dart
+/// final mockClient = MockSupabaseClient();
+/// final authService = AuthService(mockClient);
+/// ```
 class AuthService {
   /// Get the Supabase client
-  final SupabaseClient _supabase = supabase;
+  ///
+  /// Accepts an optional client parameter for dependency injection (testing).
+  /// If not provided, uses the global supabase singleton (production).
+  final SupabaseClient _supabase;
+
+  /// Create AuthService with optional Supabase client
+  ///
+  /// Parameters:
+  /// - client: Optional SupabaseClient for testing. Uses global singleton if not provided.
+  AuthService([SupabaseClient? client]) : _supabase = client ?? supabase;
 
   /// Sign up a new user with email and password
   ///
