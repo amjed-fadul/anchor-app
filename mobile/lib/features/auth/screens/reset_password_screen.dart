@@ -106,18 +106,13 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       // Get auth service from provider
       final authService = ref.read(authServiceProvider);
 
-      print('🔐 RESET PASSWORD: Starting password update...');
-
       // Update the password
       await authService.updatePassword(
         newPassword: _passwordController.text,
       );
 
-      print('🎉 RESET PASSWORD: Password updated successfully!');
-
       // Check if widget is still mounted before proceeding
       if (!mounted) {
-        print('❌ RESET PASSWORD: Widget disposed early, aborting');
         return;
       }
 
@@ -127,36 +122,26 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         _isSuccess = true;
       });
 
-      print('✅ RESET PASSWORD: Success screen showing');
-
       // Wait briefly to show success message
       await Future.delayed(const Duration(milliseconds: 1500));
 
       if (!mounted) {
-        print('❌ RESET PASSWORD: Widget disposed before navigation');
         return;
       }
 
       // Navigate to login (still authenticated, router allows it per line 107-109)
-      print('🔐 RESET PASSWORD: Navigating to /login...');
       context.go('/login');
-      print('✅ RESET PASSWORD: Navigation to /login complete');
 
       // NOW sign out the recovery session in the background
       // This happens after navigation so router rebuild won't affect us
-      print('🔐 RESET PASSWORD: Signing out recovery session in background...');
       await authService.signOut();
-      print('✅ RESET PASSWORD: Recovery session cleared');
     } catch (e) {
       // Handle errors
-      print('❌ RESET PASSWORD: Error - ${e.toString()}');
       if (mounted) {
         setState(() {
           _isLoading = false;
           _errorMessage = e.toString().replaceAll('Exception: ', '');
         });
-      } else {
-        print('❌ RESET PASSWORD: Cannot show error, widget disposed');
       }
     }
   }
