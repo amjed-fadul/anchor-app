@@ -106,12 +106,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sign In'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            context.go('/onboarding');
-          },
-        ),
+        // No back button - prevents confusing navigation to onboarding
+        // Users can navigate using "Sign up" link at bottom if needed
+        automaticallyImplyLeading: false,
       ),
       body: SafeArea(
         child: SingleChildScrollView(

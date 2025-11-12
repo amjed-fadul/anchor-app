@@ -126,6 +126,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     final isRecovery = ref.read(isRecoverySessionProvider);
     print('  - isRecovery: $isRecovery');
 
+    // Enhanced logging for debugging timing issues
+    final authState = ref.read(authStateProvider);
+    print('  - authState.hasValue: ${authState.hasValue}');
+    print('  - authState.isLoading: ${authState.isLoading}');
+    if (authState.hasValue && authState.value != null) {
+      print('  - authState.event: ${authState.value!.event}');
+      print('  - authState.session exists: ${authState.value!.session != null}');
+    }
+
     // Navigate to appropriate screen
     if (isAuthenticated) {
       if (isRecovery) {

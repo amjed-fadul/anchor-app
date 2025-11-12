@@ -139,13 +139,28 @@ final routerProvider = Provider<GoRouter>((ref) {
         return null; // Don't redirect
       }
 
-      // ALSO allow /login for authenticated users after password reset
-      // This enables users with recovery sessions to explicitly log in
-      // with their NEW password, providing better UX and confirmation
-      // that the password change worked
+      // Handle /login screen access
+      //
+      // Allow /login for:
+      // - Unauthenticated users (normal login flow)
+      // - Authenticated users WITHOUT recovery session (after password reset completion)
+      //
+      // But REDIRECT recovery sessions to /reset-password:
+      // - When user clicks password reset link, they get a recovery session
+      // - They should be on /reset-password screen, not /login
       if (path == '/login') {
+        // Check if user has a recovery session
+        final isRecovery = ref.read(isRecoverySessionProvider);
+
+        if (isRecovery) {
+          // Recovery session detected: redirect to reset password screen
+          print('  🔀 Redirecting to /reset-password (recovery session on /login)');
+          return '/reset-password';
+        }
+
+        // Normal case: allow login screen access
         print('  ✅ Allowing /login (no redirect)');
-        return null; // Don't redirect - allow access to login screen
+        return null;
       }
 
       // If user is authenticated and tries to access OTHER auth screens,
