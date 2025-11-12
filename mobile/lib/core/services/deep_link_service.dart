@@ -1,6 +1,7 @@
 import 'package:app_links/app_links.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/supabase_config.dart';
+import '../utils/app_logger.dart';
 
 /// Deep Link Handler Service
 ///
@@ -71,31 +72,31 @@ class DeepLinkService {
   /// }
   /// ```
   Future<void> initialize() async {
-    print('🔗 [DEEP_LINK] Initializing deep link service');
+    logger.d('🔗 [DEEP_LINK] Initializing deep link service');
 
     // Handle initial deep link (when app was closed and opened via link)
     // This is the most common scenario for password reset
     final initialUri = await _appLinks.getInitialLink();
     if (initialUri != null) {
-      print('🔗 [DEEP_LINK] Found initial deep link: $initialUri');
+      logger.d('🔗 [DEEP_LINK] Found initial deep link: $initialUri');
       await _handleDeepLink(initialUri);
     } else {
-      print('🔗 [DEEP_LINK] No initial deep link found (normal app launch)');
+      logger.d('🔗 [DEEP_LINK] No initial deep link found (normal app launch)');
     }
 
     // Listen for deep links while app is running
     // This handles the case where user gets the email while app is open
     _appLinks.uriLinkStream.listen(
       (Uri uri) {
-        print('🔗 [DEEP_LINK] Received deep link while app running: $uri');
+        logger.d('🔗 [DEEP_LINK] Received deep link while app running: $uri');
         _handleDeepLink(uri);
       },
       onError: (Object error) {
-        print('🔗 [DEEP_LINK] ❌ Error receiving deep link: $error');
+        logger.d('🔗 [DEEP_LINK] ❌ Error receiving deep link: $error');
       },
     );
 
-    print('🔗 [DEEP_LINK] Deep link service initialized ✅');
+    logger.d('🔗 [DEEP_LINK] Deep link service initialized ✅');
   }
 
   /// Process a deep link URI
@@ -121,23 +122,23 @@ class DeepLinkService {
   /// - OAuth callback: `io.supabase.flutterquickstart://login-callback/?access_token=...`
   /// - Magic link: `io.supabase.flutterquickstart://login-callback/?token=...`
   Future<void> _handleDeepLink(Uri uri) async {
-    print('🔗 [DEEP_LINK] Processing URI');
-    print('  - Full URI: ${uri.toString()}');
-    print('  - Scheme: ${uri.scheme}');
-    print('  - Host: ${uri.host}');
-    print('  - Path: ${uri.path}');
-    print('  - Has token: ${uri.queryParameters.containsKey('token')}');
-    print('  - Has access_token: ${uri.queryParameters.containsKey('access_token')}');
+    logger.d('🔗 [DEEP_LINK] Processing URI');
+    logger.d('  - Full URI: ${uri.toString()}');
+    logger.d('  - Scheme: ${uri.scheme}');
+    logger.d('  - Host: ${uri.host}');
+    logger.d('  - Path: ${uri.path}');
+    logger.d('  - Has token: ${uri.queryParameters.containsKey('token')}');
+    logger.d('  - Has access_token: ${uri.queryParameters.containsKey('access_token')}');
 
     // Only process URIs from our app scheme (security measure)
     if (uri.scheme != 'io.supabase.flutterquickstart') {
-      print('🔗 [DEEP_LINK] ❌ Invalid scheme "${uri.scheme}", ignoring');
-      print('  Expected: io.supabase.flutterquickstart');
+      logger.d('🔗 [DEEP_LINK] ❌ Invalid scheme "${uri.scheme}", ignoring');
+      logger.d('  Expected: io.supabase.flutterquickstart');
       return;
     }
 
     try {
-      print('🔗 [DEEP_LINK] Calling getSessionFromUrl()...');
+      logger.d('🔗 [DEEP_LINK] Calling getSessionFromUrl()...');
 
       // Use Supabase's getSessionFromUrl to extract and create session
       // This method:
@@ -147,20 +148,20 @@ class DeepLinkService {
       // 4. Stores the session locally for persistence
       final response = await _supabase.auth.getSessionFromUrl(uri);
 
-      print('🔗 [DEEP_LINK] ✅ Session created from deep link');
-      print('  - User email: ${response.session.user.email}');
-      print('  - User ID: ${response.session.user.id}');
-      print('  - Session expires: ${response.session.expiresAt}');
+      logger.d('🔗 [DEEP_LINK] ✅ Session created from deep link');
+      logger.d('  - User email: ${response.session.user.email}');
+      logger.d('  - User ID: ${response.session.user.id}');
+      logger.d('  - Session expires: ${response.session.expiresAt}');
 
       // Small delay to ensure auth state propagates through streams
       // This gives the authStateProvider time to receive the event
       await Future.delayed(const Duration(milliseconds: 100));
-      print('🔗 [DEEP_LINK] Auth state should now be available to router');
+      logger.d('🔗 [DEEP_LINK] Auth state should now be available to router');
 
     } catch (e) {
-      print('🔗 [DEEP_LINK] ❌ Error creating session from URL');
-      print('  Error type: ${e.runtimeType}');
-      print('  Error message: $e');
+      logger.d('🔗 [DEEP_LINK] ❌ Error creating session from URL');
+      logger.d('  Error type: ${e.runtimeType}');
+      logger.d('  Error message: $e');
 
       // Don't rethrow - we don't want to crash the app if deep link is invalid
       // Common errors:

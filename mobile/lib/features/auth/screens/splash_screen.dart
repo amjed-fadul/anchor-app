@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../design_system/design_system.dart';
 import '../providers/auth_provider.dart';
 import '../../../core/providers/onboarding_provider.dart';
+import '../../../core/utils/app_logger.dart';
 
 /// Splash screen shown on app launch
 ///
@@ -30,7 +31,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   void initState() {
     super.initState();
 
-    print('🔷 [SPLASH] Initializing splash screen');
+    logger.d('🔷 [SPLASH] Initializing splash screen');
 
     // CRITICAL FIX: Use event-driven navigation instead of fixed timer
     // This prevents race condition when deep links arrive while app is running
@@ -56,14 +57,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
     // Minimum display time for branding (1 second)
     _minimumDisplayTimer = Timer(const Duration(seconds: 1), () {
-      print('🔷 [SPLASH] Minimum display time elapsed (1s)');
+      logger.d('🔷 [SPLASH] Minimum display time elapsed (1s)');
       // Check if we should navigate now (if auth state already settled)
       _checkAndNavigate();
     });
 
     // Maximum timeout to prevent getting stuck (5 seconds)
     _maximumTimeoutTimer = Timer(const Duration(seconds: 5), () {
-      print('🔷 [SPLASH] ⚠️ Maximum timeout reached (5s), forcing navigation');
+      logger.d('🔷 [SPLASH] ⚠️ Maximum timeout reached (5s), forcing navigation');
       _navigate();
     });
 
@@ -72,9 +73,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       ref.listenManual(
         authStateProvider,
         (previous, next) {
-          print('🔷 [SPLASH] Auth state changed');
-          print('  - Previous: ${previous?.valueOrNull?.event}');
-          print('  - Next: ${next.valueOrNull?.event}');
+          logger.d('🔷 [SPLASH] Auth state changed');
+          logger.d('  - Previous: ${previous?.valueOrNull?.event}');
+          logger.d('  - Next: ${next.valueOrNull?.event}');
 
           // When auth state changes, check if we should navigate
           next.whenData((authState) {
@@ -87,7 +88,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       // (for normal app launches, not from deep link)
       final currentAuthState = ref.read(authStateProvider);
       if (currentAuthState.hasValue) {
-        print('🔷 [SPLASH] Auth state already available on init');
+        logger.d('🔷 [SPLASH] Auth state already available on init');
         _checkAndNavigate();
       }
     });
@@ -97,7 +98,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   void _checkAndNavigate() {
     // Only navigate if minimum display time has elapsed
     if (_minimumDisplayTimer?.isActive ?? true) {
-      print('🔷 [SPLASH] Waiting for minimum display time');
+      logger.d('🔷 [SPLASH] Waiting for minimum display time');
       return;
     }
 
@@ -118,47 +119,47 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     _minimumDisplayTimer?.cancel();
     _maximumTimeoutTimer?.cancel();
 
-    print('🔷 [SPLASH] Navigation decision time');
+    logger.d('🔷 [SPLASH] Navigation decision time');
 
     final isAuthenticated = ref.read(isAuthenticatedProvider);
-    print('  - isAuthenticated: $isAuthenticated');
+    logger.d('  - isAuthenticated: $isAuthenticated');
 
     final isRecovery = ref.read(isRecoverySessionProvider);
-    print('  - isRecovery: $isRecovery');
+    logger.d('  - isRecovery: $isRecovery');
 
     // Enhanced logging for debugging timing issues
     final authState = ref.read(authStateProvider);
-    print('  - authState.hasValue: ${authState.hasValue}');
-    print('  - authState.isLoading: ${authState.isLoading}');
+    logger.d('  - authState.hasValue: ${authState.hasValue}');
+    logger.d('  - authState.isLoading: ${authState.isLoading}');
     if (authState.hasValue && authState.value != null) {
-      print('  - authState.event: ${authState.value!.event}');
-      print('  - authState.session exists: ${authState.value!.session != null}');
+      logger.d('  - authState.event: ${authState.value!.event}');
+      logger.d('  - authState.session exists: ${authState.value!.session != null}');
     }
 
     // Navigate to appropriate screen
     if (isAuthenticated) {
       if (isRecovery) {
         // Recovery session: take user to reset password screen
-        print('  ✅ Navigating to /reset-password (recovery session)');
+        logger.d('  ✅ Navigating to /reset-password (recovery session)');
         context.go('/reset-password');
       } else {
         // Normal authenticated session: go to home
-        print('  ✅ Navigating to /home (normal session)');
+        logger.d('  ✅ Navigating to /home (normal session)');
         context.go('/home');
       }
     } else {
       // Not authenticated: check if user has seen onboarding
       final onboardingService = ref.read(onboardingServiceProvider);
       final hasSeenOnboarding = await onboardingService.hasSeenOnboarding();
-      print('  - hasSeenOnboarding: $hasSeenOnboarding');
+      logger.d('  - hasSeenOnboarding: $hasSeenOnboarding');
 
       if (hasSeenOnboarding) {
         // Returning user: go to login
-        print('  ✅ Navigating to /login (returning user)');
+        logger.d('  ✅ Navigating to /login (returning user)');
         if (mounted) context.go('/login');
       } else {
         // First-time user: go to onboarding
-        print('  ✅ Navigating to /onboarding (first-time user)');
+        logger.d('  ✅ Navigating to /onboarding (first-time user)');
         if (mounted) context.go('/onboarding');
       }
     }

@@ -67,6 +67,9 @@ dependencies:
   # SVG Support
   flutter_svg: ^2.0.14
 
+  # Logging - Better debugging with log levels
+  logger: ^2.5.0
+
   # Environment variables
   flutter_dotenv: ^5.2.1
 

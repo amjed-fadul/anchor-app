@@ -12,6 +12,7 @@ import '../../features/auth/screens/reset_password_screen.dart';
 import '../../features/home/screens/home_screen.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import 'go_router_refresh_stream.dart';
+import '../utils/app_logger.dart';
 
 /// App routing configuration
 ///
@@ -57,7 +58,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   /// 2. Normal authenticated session → /home
   /// 3. Not authenticated → / (splash)
   String getInitialLocation() {
-    print('🔷 [ROUTER] getInitialLocation() called');
+    logger.d('🔷 [ROUTER] getInitialLocation() called');
 
     // CRITICAL FIX: Use authService directly instead of providers
     // This gives us synchronous access to the current session without
@@ -66,8 +67,8 @@ final routerProvider = Provider<GoRouter>((ref) {
     final user = authService.currentUser;
     final session = authService.currentSession;
 
-    print('  - user: ${user?.email ?? 'null'}');
-    print('  - session exists: ${session != null}');
+    logger.d('  - user: ${user?.email ?? 'null'}');
+    logger.d('  - session exists: ${session != null}');
 
     // Check if user is authenticated
     if (user != null && session != null) {
@@ -85,33 +86,33 @@ final routerProvider = Provider<GoRouter>((ref) {
       //   indicates a valid session
       // - Recovery sessions are temporary, so we check the auth state value
       final authState = ref.read(authStateProvider);
-      print('  - authState.hasValue: ${authState.hasValue}');
+      logger.d('  - authState.hasValue: ${authState.hasValue}');
 
       // Check both the stream (if it has emitted) and the session metadata
       final isRecoveryFromStream = authState.value?.event == AuthChangeEvent.passwordRecovery;
-      print('  - isRecovery from stream: $isRecoveryFromStream');
+      logger.d('  - isRecovery from stream: $isRecoveryFromStream');
 
       // Additional check: if we just processed a deep link, the session might have
       // special metadata. Supabase sets this during recovery flow.
       final hasRecoveryMetadata = user.recoverySentAt != null;
-      print('  - hasRecoveryMetadata (recoverySentAt): $hasRecoveryMetadata');
+      logger.d('  - hasRecoveryMetadata (recoverySentAt): $hasRecoveryMetadata');
 
       final isRecovery = isRecoveryFromStream || hasRecoveryMetadata;
-      print('  - isRecovery (final): $isRecovery');
+      logger.d('  - isRecovery (final): $isRecovery');
 
       if (isRecovery == true) {
         // Recovery session: take user to reset password screen
-        print('  ✅ Returning /reset-password (recovery session)');
+        logger.d('  ✅ Returning /reset-password (recovery session)');
         return '/reset-password';
       }
 
       // Normal authenticated session: go to home
-      print('  ✅ Returning /home (normal session)');
+      logger.d('  ✅ Returning /home (normal session)');
       return '/home';
     }
 
     // Not authenticated: start at splash
-    print('  ✅ Returning / (splash - no user)');
+    logger.d('  ✅ Returning / (splash - no user)');
     return '/';
   }
 
@@ -126,18 +127,18 @@ final routerProvider = Provider<GoRouter>((ref) {
     // Redirect logic based on authentication
     redirect: (context, state) {
       final path = state.matchedLocation;
-      print('🔷 [ROUTER] redirect() called for path: $path');
+      logger.d('🔷 [ROUTER] redirect() called for path: $path');
 
       // CRITICAL FIX: Read session directly (synchronous) instead of from provider (async stream)
       // This prevents race condition where signIn() completes but stream hasn't emitted yet
       final authService = ref.read(authServiceProvider);
       final isAuthenticated = authService.currentSession != null;
-      print('  - isAuthenticated: $isAuthenticated');
+      logger.d('  - isAuthenticated: $isAuthenticated');
 
       // Allow reset-password for authenticated users
       // (they're authenticated via recovery session from email link)
       if (path == '/reset-password') {
-        print('  ✅ Allowing /reset-password (no redirect)');
+        logger.d('  ✅ Allowing /reset-password (no redirect)');
         return null; // Don't redirect
       }
 
@@ -163,39 +164,39 @@ final routerProvider = Provider<GoRouter>((ref) {
                           session != null &&
                           user.recoverySentAt != null;
 
-        print('  - Checking recovery session:');
-        print('    - user exists: ${user != null}');
-        print('    - session exists: ${session != null}');
-        print('    - recoverySentAt: ${user?.recoverySentAt}');
-        print('    - isRecovery: $isRecovery');
+        logger.d('  - Checking recovery session:');
+        logger.d('    - user exists: ${user != null}');
+        logger.d('    - session exists: ${session != null}');
+        logger.d('    - recoverySentAt: ${user?.recoverySentAt}');
+        logger.d('    - isRecovery: $isRecovery');
 
         if (isRecovery) {
           // Recovery session detected: redirect to reset password screen
-          print('  🔀 Redirecting to /reset-password (recovery session on /login)');
+          logger.d('  🔀 Redirecting to /reset-password (recovery session on /login)');
           return '/reset-password';
         }
 
         // Normal case: allow login screen access
-        print('  ✅ Allowing /login (no redirect)');
+        logger.d('  ✅ Allowing /login (no redirect)');
         return null;
       }
 
       // If user is authenticated and tries to access OTHER auth screens,
       // redirect to home
       if (isAuthenticated && _isAuthRoute(path)) {
-        print('  🔀 Redirecting to /home (authenticated user on auth screen)');
+        logger.d('  🔀 Redirecting to /home (authenticated user on auth screen)');
         return '/home';
       }
 
       // If user is not authenticated and tries to access protected routes,
       // redirect to onboarding
       if (!isAuthenticated && _isProtectedRoute(path)) {
-        print('  🔀 Redirecting to /onboarding (unauthenticated user on protected route)');
+        logger.d('  🔀 Redirecting to /onboarding (unauthenticated user on protected route)');
         return '/onboarding';
       }
 
       // No redirect needed
-      print('  ✅ No redirect needed');
+      logger.d('  ✅ No redirect needed');
       return null;
     },
 
