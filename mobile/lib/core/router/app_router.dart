@@ -100,7 +100,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         return null; // Don't redirect
       }
 
-      // If user is authenticated and tries to access auth screens,
+      // ALSO allow /login for authenticated users after password reset
+      // This enables users with recovery sessions to explicitly log in
+      // with their NEW password, providing better UX and confirmation
+      // that the password change worked
+      if (path == '/login') {
+        return null; // Don't redirect - allow access to login screen
+      }
+
+      // If user is authenticated and tries to access OTHER auth screens,
       // redirect to home
       if (isAuthenticated && _isAuthRoute(path)) {
         return '/home';
