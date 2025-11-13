@@ -176,13 +176,16 @@ final routerProvider = Provider<GoRouter>((ref) {
           return '/reset-password';
         }
 
-        // Normal case: allow login screen access
-        logger.d('  ✅ Allowing /login (no redirect)');
-        return null;
+        // No recovery session: fall through to general auth redirect check below
+        // This allows:
+        // - Authenticated (normal) users: redirected to /home by general auth redirect
+        // - Unauthenticated users: allowed to access /login
+        logger.d('  ℹ️  No recovery session on /login, checking general auth redirect...');
       }
 
-      // If user is authenticated and tries to access OTHER auth screens,
-      // redirect to home
+      // If user is authenticated and tries to access auth screens
+      // (login, signup, forgot-password, onboarding), redirect to home
+      // UNLESS they have a recovery session (handled above)
       if (isAuthenticated && _isAuthRoute(path)) {
         logger.d('  🔀 Redirecting to /home (authenticated user on auth screen)');
         return '/home';
