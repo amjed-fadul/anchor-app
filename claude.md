@@ -395,6 +395,176 @@ flutter test --watch
 - Refactoring? Tests ensure you don't break anything
 - Even "simple" functions need tests
 
+### 9. Analyze Impact Before Fixing Bugs (CRITICAL)
+
+**What is Impact Analysis?**
+Before fixing ANY bug, analyze ALL related features and workflows that might be affected by your fix. Think of it like **surgery** - you need to know what else is connected before cutting!
+
+**Why This is Critical:**
+- **Prevent breaking other features** - A "fix" that breaks something else isn't a fix
+- **Understand the full system** - Bugs often exist in complex systems with many interactions
+- **Avoid regression** - Don't create new bugs while fixing old ones
+- **Learn the architecture** - Understanding related features deepens your knowledge
+
+**Real-World Analogy:**
+Think of fixing bugs like **repairing plumbing**:
+- ❌ **Bad**: See a leak, patch it quickly → might break water pressure elsewhere
+- ✅ **Good**: See a leak, trace all connected pipes, understand the system, then fix carefully
+
+**The Impact Analysis Workflow - ALWAYS Follow These Steps:**
+
+1. **Identify the Bug**
+   - What's broken? (the symptom)
+   - Why is it broken? (the root cause)
+   - When did it break? (recent change? always been this way?)
+
+2. **Map Related Features**
+   - What other features use this code?
+   - What workflows involve this functionality?
+   - What edge cases exist?
+   - What assumptions does this code make?
+
+3. **Create a Test Matrix**
+   - List ALL scenarios that should work
+   - Include normal cases AND edge cases
+   - Document expected behavior for each
+   - This becomes your validation checklist
+
+4. **Design the Fix**
+   - Will this fix handle ALL scenarios?
+   - Does it break any existing functionality?
+   - Are there any edge cases it doesn't handle?
+   - Is there a better architectural solution?
+
+5. **Implement with Tests**
+   - Write tests for ALL scenarios (not just the bug)
+   - Implement the fix
+   - Run ALL tests (not just new ones!)
+   - Manual testing on real devices
+
+6. **Validate Everything**
+   - Check your test matrix - does everything still work?
+   - Test related features manually
+   - Look for unintended side effects
+   - Get a second opinion if unsure
+
+**Example: Router Redirect Bug**
+
+**BAD Approach (❌ Don't Do This):**
+```
+1. See bug: "Users stuck on login screen after authentication"
+2. Quick fix: "Redirect authenticated users from /login to /home"
+3. Commit and push
+4. **BREAKS**: Password reset flow now broken!
+```
+
+**GOOD Approach (✅ Do This):**
+```
+1. Identify Bug:
+   - Symptom: Users stuck on /login after successful authentication
+   - Root cause: Router allows authenticated users on /login
+   - When: After logout → login cycle
+
+2. Map Related Features:
+   - Normal login flow (unauthenticated → authenticated)
+   - Password reset flow (recovery session handling)
+   - Logout then login cycle
+   - Deep link navigation
+   - Session expiry scenarios
+
+3. Create Test Matrix:
+   ┌─────────────────────────┬─────────────┬──────────────────┐
+   │ Scenario                │ Current Bug │ After Fix        │
+   ├─────────────────────────┼─────────────┼──────────────────┤
+   │ Authenticated (normal)  │ Stuck       │ Redirect to home │
+   │ Authenticated (recovery)│ Works       │ Keep working     │
+   │ Unauthenticated         │ Works       │ Keep working     │
+   │ After password reset    │ Works       │ Keep working     │
+   └─────────────────────────┴─────────────┴──────────────────┘
+
+4. Design Fix:
+   - Add redirect for authenticated users WITHOUT recovery
+   - Keep existing redirect for recovery sessions
+   - Keep access for unauthenticated users
+   - Ensures ALL scenarios work
+
+5. Implement:
+   - Write tests for all 4 scenarios
+   - Implement router changes
+   - Run full test suite
+   - Manual test each scenario
+
+6. Validate:
+   - ✅ Normal login: redirects to home
+   - ✅ Recovery login: still goes to reset password
+   - ✅ Unauthenticated: can access login
+   - ✅ After reset: can test new password
+```
+
+**Common Related Features to Check:**
+
+When fixing bugs in:
+- **Authentication** → Check: login, signup, logout, password reset, session handling
+- **Navigation/Router** → Check: deep links, redirects, back button, auth guards
+- **Database** → Check: migrations, RLS policies, queries using that table
+- **UI Components** → Check: screens using that component, responsive design
+- **State Management** → Check: all providers/notifiers reading that state
+
+**Red Flags That You Need More Analysis:**
+
+🚨 **STOP and analyze more if:**
+- You're not sure what other code uses this
+- The fix feels hacky or like a workaround
+- You're changing code you don't fully understand
+- Multiple people have tried to fix this before
+- The bug only happens sometimes (race condition?)
+- You're about to change core/shared code
+- The feature has lots of edge cases
+
+**Questions to Ask Yourself:**
+
+Before committing your fix:
+- ✅ Did I test ALL related workflows?
+- ✅ Did I check for edge cases?
+- ✅ Did I run the full test suite?
+- ✅ Did I manually test on a device?
+- ✅ Did I update documentation/comments?
+- ✅ Would this fix make sense to someone reviewing it?
+- ✅ Am I confident this doesn't break anything?
+
+If you answer "no" or "not sure" to ANY of these → **DO MORE ANALYSIS!**
+
+**Real Example from This Project:**
+
+**Bug Report**: "Users stuck on login screen after authentication"
+
+**Quick Fix Temptation**: Just redirect all authenticated users from /login
+**Problem**: Would break password reset flow (users with recovery sessions)
+
+**Proper Analysis Revealed**:
+- Router has special /login handling for recovery sessions
+- Password reset users need to access /login after reset completion
+- Different session types need different behavior
+- Fix must handle BOTH normal and recovery sessions differently
+
+**Result**: Comprehensive fix that handles all scenarios without breaking existing functionality
+
+**Tips for Good Impact Analysis:**
+
+1. **Draw Diagrams**: Sketch out the system and highlight affected parts
+2. **Talk It Through**: Explain the fix to someone (or a rubber duck!)
+3. **Check Git History**: See why code was written that way originally
+4. **Read Tests**: Existing tests show expected behavior
+5. **Ask Questions**: Better to ask than to break something!
+
+**When in Doubt:**
+- Ask the user/team for clarification
+- Do more research
+- Create a proof-of-concept to test your approach
+- Write the tests before the fix (TDD helps here!)
+
+Remember: **Taking time to analyze is FASTER than fixing bugs your fix creates!**
+
 ---
 
 ## 🚦 Visual Risk Signals
