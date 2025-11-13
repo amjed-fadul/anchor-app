@@ -43,7 +43,7 @@ A living document that tracks ALL fixes, features, and changes to the codebase. 
 ```markdown
 ### Fixed
 
-#### Brief, Clear Title (YYYY-MM-DD)
+#### Brief, Clear Title (YYYY-MM-DD HH:MM)
 - **Problem**: What was broken? What was the user impact?
 - **Root Cause**: Why did it happen? What was the underlying issue?
 - **Solution**: How did we fix it? What approach did we use?
@@ -56,7 +56,7 @@ A living document that tracks ALL fixes, features, and changes to the codebase. 
 ```markdown
 ### Fixed
 
-#### Signup Flow - Success Message Instead of Navigation (2025-11-13)
+#### Signup Flow - Success Message Instead of Navigation (2025-11-13 14:37)
 - **Problem**: After signup, user was redirected to `/onboarding` instead of seeing confirmation instructions
 - **Root Cause**: Code tried to navigate to `/home` but user wasn't authenticated yet (email confirmation required)
 - **Solution**: Show "Check your email!" success message with clear instructions
@@ -90,31 +90,136 @@ Think of CHANGELOG.md like a **ship's log** or **flight recorder**:
 5. Push to GitHub
 ```
 
-### 3. Make Small, Incremental Changes
+### 3. Maintain TODO.md (MANDATORY)
+
+**What is TODO.md?**
+A living document that tracks active tasks, planned features, and project roadmap. Think of it as your **project dashboard** or **command center**.
+
+**Why is this critical?**
+- **Track current work** - See what's being worked on right now
+- **Plan ahead** - Organize upcoming features by priority
+- **Avoid forgetting tasks** - Centralized place for all work items
+- **Provide visibility** - Understand project status at a glance
+- **Stay organized** - Break large goals into manageable tasks
+
+**Difference Between TODO.md and CHANGELOG.md:**
+
+Think of them like a **calendar and history book**:
+
+- **TODO.md** (Calendar) = **Future-focused**
+  - What needs to be done
+  - What's currently being worked on
+  - What's planned for later
+  - Updated frequently as work progresses
+
+- **CHANGELOG.md** (History) = **Past-focused**
+  - What was done and when
+  - Why changes were made
+  - Historical record of decisions
+  - Updated when committing code
+
+**When to Update TODO.md:**
+
+🔴 **Update FREQUENTLY as work progresses!**
+
+- ✅ **Starting a task** → Move from "Planned" to "Active Tasks" with 🚧 emoji
+- ✅ **Completing a task** → Move to "Recently Completed" with ✅ emoji and timestamp
+- ✅ **Discovering a bug** → Add to "Known Issues" with 🐛 emoji
+- ✅ **Planning a feature** → Add to "Planned Features" with 📋 emoji and priority
+- ✅ **Brainstorming ideas** → Add to "Future Ideas" with 💡 emoji
+- ✅ **Daily/weekly** → Review and update priorities
+
+**Format Example:**
+
+```markdown
+## 🚧 Active Tasks
+
+- 🚧 Implementing home screen (started 2025-11-13 15:00)
+  - Building UI layout
+  - Integrating with Supabase
+  - Adding pull-to-refresh
+
+## 📋 Planned Features
+
+### High Priority
+- 📋 Add link functionality (save URLs)
+- 📋 Spaces feature (organize links)
+
+### Medium Priority
+- 📋 Search functionality
+- 📋 Link sharing
+
+## 🐛 Known Issues
+
+- 🐛 Slow loading on old devices (investigating)
+
+## ✅ Recently Completed (Last 7 Days)
+
+- ✅ Fixed signup redirect bug (2025-11-13 14:37)
+- ✅ Configured email deep link (2025-11-13 14:40)
+```
+
+**Real-World Analogy:**
+
+Think of TODO.md like a **construction site whiteboard**:
+- Shows what's being built today (Active Tasks)
+- Lists what's planned next (Planned Features)
+- Notes problems to fix (Known Issues)
+- Celebrates what's done (Recently Completed)
+
+**Workflow Integration:**
+
+```bash
+# Your daily workflow:
+1. Check TODO.md - What am I working on today?
+2. Move task to "Active Tasks" with 🚧 emoji
+3. Work on the task (code, test, commit)
+4. Update CHANGELOG.md when committing
+5. Move task to "Recently Completed" in TODO.md with ✅
+6. Check TODO.md - What's next?
+```
+
+**Weekly Cleanup:**
+
+Every week:
+1. Move completed items older than 7 days to CHANGELOG.md only
+2. Re-prioritize planned features (what's most important now?)
+3. Review "Future Ideas" - promote any to "Planned Features"
+4. Update "Last Updated" timestamp at top of TODO.md
+
+**Tips for Good TODO Entries:**
+
+1. **Be Specific**: "Add feature" ❌ → "Implement home screen with saved links display" ✅
+2. **Add Context**: Include start date/time when moving to Active
+3. **Use Emojis**: Makes scanning easier (🚧 active, ✅ done, 🐛 bug, 📋 planned, 💡 idea)
+4. **Set Priorities**: High/Medium/Low helps focus on what matters
+5. **Keep It Current**: A stale TODO.md is useless - update it often!
+
+### 4. Make Small, Incremental Changes
 - **Never** create large files or make sweeping changes
 - Break everything into tiny, digestible steps
 - One logical change per commit
 - Easier to understand, review, and learn from
 
-### 4. Push to GitHub Frequently
+### 5. Push to GitHub Frequently
 - Commit after each small change
 - Clear, descriptive commit messages
 - Keep commit history clean and educational
 
-### 5. Be in Learning Mode (CRITICAL)
+### 6. Be in Learning Mode (CRITICAL)
 - **Explain everything** as if teaching a beginner
 - Break down complex concepts into simple parts
 - Use analogies and real-world examples
 - Add detailed code comments explaining what AND why
 - Share reasoning process, not just solutions
 
-### 6. Educational Code Changes
+### 7. Educational Code Changes
 - Explain each step before implementing
 - Break code changes into individual modifications
 - Add inline comments for learning (can be removed later)
 - Show before/after comparisons when helpful
 
-### 7. Always Use Test-Driven Development (TDD) - MANDATORY
+### 8. Always Use Test-Driven Development (TDD) - MANDATORY
 
 **What is TDD?**
 Test-Driven Development means writing tests BEFORE writing the actual code. It's a three-step cycle called **Red-Green-Refactor**:
