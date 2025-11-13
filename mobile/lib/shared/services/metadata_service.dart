@@ -1,3 +1,5 @@
+library;
+
 /// Metadata Service
 ///
 /// Fetches metadata (title, description, thumbnail) from web pages.

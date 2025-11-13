@@ -1,3 +1,5 @@
+library;
+
 /// LinkCard Widget
 ///
 /// A card component that displays saved links with thumbnails, tags, titles, and notes.
@@ -23,7 +25,6 @@
 /// ```
 
 import 'package:flutter/material.dart';
-import '../models/link_model.dart';
 import '../services/link_service.dart';
 import '../../tags/widgets/tag_badge.dart';
 
@@ -151,7 +152,7 @@ class LinkCard extends StatelessWidget {
         // Without this, tags might be hard to read on busy images
         decoration: BoxDecoration(
           // Black with 30% opacity
-          color: Colors.black.withOpacity(0.3),
+          color: Colors.black.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(8),
         ),
         padding: const EdgeInsets.all(4),

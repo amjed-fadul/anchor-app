@@ -1,3 +1,5 @@
+library;
+
 /// Link Providers
 ///
 /// State management for links using Riverpod.

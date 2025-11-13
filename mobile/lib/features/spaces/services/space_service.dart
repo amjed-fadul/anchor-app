@@ -1,3 +1,5 @@
+library;
+
 /// Space Service
 ///
 /// Handles all database operations for Spaces (folders for organizing links).

@@ -1,3 +1,5 @@
+library;
+
 /// Link Model
 ///
 /// Represents a saved link/bookmark in the Anchor App.

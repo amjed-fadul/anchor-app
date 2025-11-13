@@ -1,3 +1,5 @@
+library;
+
 /// Tag Model
 ///
 /// Represents a tag/label for organizing links in the Anchor App.

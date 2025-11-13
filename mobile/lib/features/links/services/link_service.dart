@@ -1,3 +1,5 @@
+library;
+
 /// LinkService
 ///
 /// Service for fetching and managing links from Supabase.
@@ -45,6 +47,86 @@ class LinkService {
   /// Constructor
   /// Takes a Supabase client so we can query the database
   LinkService(this._supabase);
+
+  /// createLink - Create a new link in the database
+  ///
+  /// This method:
+  /// 1. Inserts the link into the links table
+  /// 2. If tagIds provided, creates associations in link_tags junction table
+  /// 3. Returns the created Link object
+  ///
+  /// Parameters:
+  /// - userId: ID of the user creating this link
+  /// - url: The original URL
+  /// - normalizedUrl: URL with tracking params removed (for duplicate detection)
+  /// - title: Page title (from metadata, nullable)
+  /// - description: Page description (from metadata, nullable)
+  /// - thumbnailUrl: Thumbnail image URL (from metadata, nullable)
+  /// - domain: Extracted domain (e.g., "example.com", nullable)
+  /// - note: User's personal note (nullable)
+  /// - spaceId: Which space to assign this link to (nullable = unassigned)
+  /// - tagIds: List of tag IDs to associate with this link (optional)
+  ///
+  /// Returns:
+  /// The created Link object
+  ///
+  /// Throws:
+  /// Exception if database insert fails (e.g., duplicate URL)
+  Future<Link> createLink({
+    required String userId,
+    required String url,
+    required String normalizedUrl,
+    String? title,
+    String? description,
+    String? thumbnailUrl,
+    String? domain,
+    String? note,
+    String? spaceId,
+    List<String>? tagIds,
+  }) async {
+    try {
+      // Step 1: Insert the link
+      final linkData = {
+        'user_id': userId,
+        'url': url,
+        'normalized_url': normalizedUrl,
+        'title': title,
+        'description': description,
+        'thumbnail_url': thumbnailUrl,
+        'domain': domain,
+        'note': note,
+        'space_id': spaceId,
+      };
+
+      // Insert and get the created link back
+      final response = await _supabase
+          .from('links')
+          .insert(linkData)
+          .select()
+          .single();
+
+      final createdLink = Link.fromJson(response);
+
+      // Step 2: Create tag associations if tags were provided
+      if (tagIds != null && tagIds.isNotEmpty) {
+        // Prepare link_tags junction table data
+        final linkTagsData = tagIds.map((tagId) {
+          return {
+            'link_id': createdLink.id,
+            'tag_id': tagId,
+          };
+        }).toList();
+
+        // Insert all tag associations at once
+        await _supabase.from('link_tags').insert(linkTagsData);
+      }
+
+      return createdLink;
+    } catch (e) {
+      // Re-throw with context
+      throw Exception('Failed to create link: $e');
+    }
+  }
 
   /// getLinksWithTags - Fetch all links for a user with their tags
   ///

@@ -1,3 +1,5 @@
+library;
+
 /// Link Metadata Model
 ///
 /// Data class that holds metadata extracted from a URL.

@@ -1,3 +1,5 @@
+library;
+
 /// TagBadge Widget
 ///
 /// A small colored pill component that displays tag names.

@@ -1,3 +1,5 @@
+library;
+
 /// SearchBar Widget
 ///
 /// A visual search input component for the home screen.

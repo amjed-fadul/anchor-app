@@ -1,3 +1,5 @@
+library;
+
 /// Space Providers
 ///
 /// State management for spaces using Riverpod.

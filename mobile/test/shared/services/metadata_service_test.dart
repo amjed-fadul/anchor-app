@@ -20,7 +20,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobile/shared/services/metadata_service.dart';
-import 'package:mobile/shared/models/link_metadata.dart';
 
 /// Mock HTTP Client for testing
 /// This lets us simulate different server responses without

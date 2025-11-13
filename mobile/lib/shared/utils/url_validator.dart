@@ -1,3 +1,5 @@
+library;
+
 /// URL Validator Utility
 ///
 /// Validates and normalizes URLs for the Add Link feature.

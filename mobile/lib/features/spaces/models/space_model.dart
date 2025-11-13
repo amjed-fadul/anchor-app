@@ -1,3 +1,5 @@
+library;
+
 /// Space Model
 ///
 /// Represents a "Space" - a folder/collection for organizing links.
