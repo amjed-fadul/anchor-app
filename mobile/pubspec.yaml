@@ -70,6 +70,9 @@ dependencies:
   # SVG Support
   flutter_svg: ^2.0.14
 
+  # Image Loading - Cached network images with loading placeholders
+  cached_network_image: ^3.3.1
+
   # Logging - Better debugging with log levels
   logger: ^2.5.0
 

@@ -24,6 +24,7 @@ library;
 /// ```
 
 import 'dart:async';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:html/dom.dart' as dom;
 import 'package:http/http.dart' as http;
@@ -66,8 +67,11 @@ class MetadataService {
     try {
       // Extract domain for fallback
       final domain = _extractDomain(url);
+      print('📡 [METADATA] Fetching metadata for: $url');
+      print('📡 [METADATA] Domain extracted: $domain');
 
       // Make HTTP request with timeout
+      print('📡 [METADATA] Making HTTP request...');
       final response = await client
           .get(
             Uri.parse(url),
@@ -78,13 +82,17 @@ class MetadataService {
           )
           .timeout(timeout);
 
+      print('📡 [METADATA] Response status: ${response.statusCode}');
+
       // Check if request was successful
       if (response.statusCode != 200) {
         // HTTP error (404, 500, etc.) - return fallback
+        print('⚠️ [METADATA] HTTP error ${response.statusCode}, using fallback');
         return _fallbackMetadata(domain);
       }
 
       // Parse HTML
+      print('📡 [METADATA] Parsing HTML...');
       final document = html_parser.parse(response.body);
 
       // Extract metadata from parsed HTML
@@ -92,18 +100,22 @@ class MetadataService {
       final description = _extractDescription(document);
       final thumbnailUrl = _extractThumbnail(document, url);
 
+      print('✅ [METADATA] Extracted - Title: $title, Thumbnail: ${thumbnailUrl != null ? 'Yes' : 'No'}');
+
       return LinkMetadata(
         title: title,
         domain: domain,
         description: description,
         thumbnailUrl: thumbnailUrl,
       );
-    } on TimeoutException catch (_) {
+    } on TimeoutException catch (e) {
       // Request timed out - return fallback
+      print('⏱️ [METADATA] Request timed out after ${timeout.inSeconds}s');
       final domain = _extractDomain(url);
       return _fallbackMetadata(domain);
     } catch (e) {
       // Any other error (network, parsing, etc.) - return fallback
+      print('❌ [METADATA] Error fetching metadata: $e');
       final domain = _extractDomain(url);
       return _fallbackMetadata(domain);
     }
@@ -270,6 +282,14 @@ class MetadataService {
     client.close();
   }
 }
+
+/// Provider for MetadataService instance
+///
+/// This is a singleton - only one MetadataService exists for the whole app.
+/// Every screen that needs to fetch metadata uses this same service.
+final metadataServiceProvider = Provider<MetadataService>((ref) {
+  return MetadataService();
+});
 
 /// 🎓 Learning Summary: Web Scraping & Metadata Extraction
 ///

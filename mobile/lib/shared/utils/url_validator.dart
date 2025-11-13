@@ -169,6 +169,73 @@ class UrlValidator {
     // If invalid even after normalization, return null
     return null;
   }
+
+  /// Validates a URL and returns an error message if invalid
+  ///
+  /// This is useful for form validation where you need to show
+  /// specific error messages to users.
+  ///
+  /// Returns:
+  /// - null if URL is valid
+  /// - Error message string if invalid
+  ///
+  /// Example:
+  /// ```dart
+  /// final error = UrlValidator.validate('example.com');
+  /// if (error != null) {
+  ///   print('Error: $error');
+  /// }
+  /// ```
+  static String? validate(String url) {
+    if (url.trim().isEmpty) {
+      return 'Please enter a URL';
+    }
+
+    if (!isValid(url)) {
+      return 'Please enter a valid URL';
+    }
+
+    return null; // No error
+  }
+
+  /// Extracts the domain from a URL
+  ///
+  /// Examples:
+  /// ```dart
+  /// UrlValidator.extractDomain('https://www.example.com/path')
+  /// // Returns: 'example.com'
+  ///
+  /// UrlValidator.extractDomain('http://subdomain.example.co.uk')
+  /// // Returns: 'subdomain.example.co.uk'
+  /// ```
+  static String extractDomain(String url) {
+    try {
+      // Normalize URL first
+      final normalized = normalize(url);
+
+      // Parse as URI
+      final uri = Uri.parse(normalized);
+
+      // Return host without 'www.' prefix
+      String domain = uri.host;
+      if (domain.startsWith('www.')) {
+        domain = domain.substring(4);
+      }
+
+      return domain;
+    } catch (e) {
+      // If parsing fails, try to extract manually
+      final cleaned = url.replaceAll(RegExp(r'https?://'), '');
+      final parts = cleaned.split('/');
+      final domain = parts.isNotEmpty ? parts[0] : url;
+
+      if (domain.startsWith('www.')) {
+        return domain.substring(4);
+      }
+
+      return domain;
+    }
+  }
 }
 
 /// 🎓 Learning Summary: URL Validation

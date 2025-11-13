@@ -1,3 +1,5 @@
+library;
+
 /// LinkCard Widget Tests (TDD - RED)
 ///
 /// Testing a card component that displays saved links with thumbnails, tags, titles, and notes.
@@ -48,6 +50,7 @@ void main() {
         userId: 'test-user-id',
         spaceId: 'test-space-id',
         url: url,
+        normalizedUrl: url, // Same as url for test purposes
         title: title,
         note: note,
         openedAt: null,
