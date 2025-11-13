@@ -4,13 +4,15 @@ All notable changes, bug fixes, and improvements to the Anchor App mobile applic
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+**Date/Time Format:** YYYY-MM-DD HH:MM (24-hour format)
+
 ---
 
 ## [Unreleased]
 
 ### Fixed
 
-#### Signup Flow - Success Message Instead of Navigation (2025-11-13)
+#### Signup Flow - Success Message Instead of Navigation (2025-11-13 14:37)
 - **Problem**: After successful signup, user was redirected to `/onboarding` instead of seeing confirmation instructions
 - **Root Cause**: Code tried to navigate to `/home` but user wasn't authenticated yet (email confirmation required)
 - **Solution**:
@@ -23,7 +25,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - `lib/features/auth/screens/login_screen.dart`
 - **Result**: ✅ No unwanted redirect to onboarding, clear UX for email confirmation
 
-#### Email Confirmation Deep Link (2025-11-13)
+#### Email Confirmation Deep Link (2025-11-13 14:40)
 - **Problem**: Signup confirmation emails contained `localhost:3000` link that opened in browser
 - **Root Cause**: Supabase Site URL was set to localhost (development default)
 - **Solution**:
@@ -33,7 +35,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Configuration**: Supabase Dashboard → Authentication → URL Configuration
 - **Result**: ✅ Email link opens app and auto-logs in user
 
-#### Critical Auth Race Conditions (2025-11-13 - Earlier)
+#### Critical Auth Race Conditions (2025-11-13 13:50)
 - **Problem**: Multiple race conditions in authentication flows
 - **Solutions**:
   1. **Password Reset Flow**: Fixed redirect timing in splash screen
@@ -46,7 +48,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-#### Comprehensive Test Coverage (2025-11-13)
+#### Comprehensive Test Coverage (2025-11-13 13:30)
 - **DeepLinkService Tests**: 10 tests (9 passing, 1 skipped for native platform)
   - Password reset link processing
   - OAuth callbacks
@@ -63,7 +65,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - `test/features/auth/screens/splash_screen_test.dart`
 - **Result**: ✅ 22 new tests for critical authentication components
 
-#### Centralized Logging Framework (2025-11-13)
+#### Centralized Logging Framework (2025-11-13 13:45)
 - **Replaced**: 70 `print()` statements with proper logger
 - **Added**: `lib/core/utils/app_logger.dart`
   - Configured log levels (trace, debug, info, warning, error)
@@ -77,7 +79,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
-#### Login Screen Navigation (2025-11-13)
+#### Login Screen Navigation (2025-11-13 14:37)
 - **Before**: Manually navigated to `/home` after login
 - **After**: Let router's `refreshListenable` handle navigation automatically
 - **Benefit**: Cleaner code, consistent with auth state management
@@ -85,7 +87,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Improved
 
-#### Code Quality Metrics (2025-11-13)
+#### Code Quality Metrics (2025-11-13 13:48)
 - **Before**: 79 analyzer warnings
 - **After**: 0 analyzer warnings ✅
 - **Fixes Applied**:
