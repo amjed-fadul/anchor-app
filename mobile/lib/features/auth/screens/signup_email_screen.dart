@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../design_system/design_system.dart';
 import '../../../shared/utils/validators.dart';
 import '../providers/auth_provider.dart';
@@ -93,7 +94,25 @@ class _SignupEmailScreenState extends ConsumerState<SignupEmailScreen> {
         password: _passwordController.text,
       );
 
-      // If we reach here, signup was successful
+      // CRITICAL FIX: Wait for auth state to update before navigating
+      // Without this, the router's redirect() sees isAuthenticated: false
+      // and redirects the user to /onboarding instead of /home!
+      //
+      // This is the same race condition we fixed in the password reset flow.
+      // Supabase's signUp() returns immediately, but the auth state stream
+      // takes a moment to emit the SIGNED_IN event. We must wait for it.
+      await authService.authStateChanges
+          .firstWhere(
+            (state) => state.event == AuthChangeEvent.signedIn,
+          )
+          .timeout(
+            const Duration(seconds: 5),
+            onTimeout: () {
+              throw Exception('Signup timeout: Auth state did not update');
+            },
+          );
+
+      // If we reach here, signup was successful AND auth state has updated
       // User is automatically logged in by Supabase
       // Navigate to home screen
       if (mounted) {
