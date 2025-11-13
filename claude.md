@@ -16,31 +16,105 @@
 - Use Context7 for all code documentation
 - Keep documentation up-to-date as code evolves
 
-### 2. Make Small, Incremental Changes
+### 2. Maintain CHANGELOG.md (MANDATORY)
+
+**What is CHANGELOG.md?**
+A living document that tracks ALL fixes, features, and changes to the codebase. Think of it as a **history book** for your project.
+
+**Why is this critical?**
+- **Track what was fixed and when** - Never forget why a change was made
+- **Help future you** - Remember decisions made 6 months ago
+- **Onboard new developers** - Understand project evolution quickly
+- **Document important decisions** - Reasoning behind architectural choices
+- **Debugging aid** - See when issues were introduced or fixed
+
+**When to Update CHANGELOG.md:**
+
+🔴 **ALWAYS update BEFORE committing code!**
+
+- ✅ **After fixing a bug** → Add to `### Fixed` section
+- ✅ **After adding a feature** → Add to `### Added` section
+- ✅ **After major refactor** → Add to `### Changed` section
+- ✅ **After improving code quality** → Add to `### Improved` section
+- ✅ **Before every commit** → Update changelog FIRST, then commit
+
+**Format Example:**
+
+```markdown
+### Fixed
+
+#### Brief, Clear Title (YYYY-MM-DD)
+- **Problem**: What was broken? What was the user impact?
+- **Root Cause**: Why did it happen? What was the underlying issue?
+- **Solution**: How did we fix it? What approach did we use?
+- **Files Changed**: List the files modified
+- **Result**: ✅ What's the expected behavior now?
+```
+
+**Real Example:**
+
+```markdown
+### Fixed
+
+#### Signup Flow - Success Message Instead of Navigation (2025-11-13)
+- **Problem**: After signup, user was redirected to `/onboarding` instead of seeing confirmation instructions
+- **Root Cause**: Code tried to navigate to `/home` but user wasn't authenticated yet (email confirmation required)
+- **Solution**: Show "Check your email!" success message with clear instructions
+- **Files Changed**: `lib/features/auth/screens/signup_email_screen.dart`, `lib/features/auth/screens/login_screen.dart`
+- **Result**: ✅ No unwanted redirect, clear UX for email confirmation
+```
+
+**Tips for Good Changelog Entries:**
+
+1. **Be Specific**: "Fixed signup redirect" ❌ → "Fixed signup redirect to onboarding after email sent" ✅
+2. **Include Context**: Don't just say what changed, explain **why**
+3. **Add Impact**: How does this affect users? Developers?
+4. **Link Files**: Always list which files were changed
+5. **Use Checkmarks**: ✅ for successful fixes, makes scanning easier
+
+**Real-World Analogy:**
+
+Think of CHANGELOG.md like a **ship's log** or **flight recorder**:
+- When something goes wrong, you can trace back to see what happened
+- When you want to understand a decision, the context is preserved
+- When a new person joins, they can read the story of the project
+
+**Workflow Integration:**
+
+```bash
+# Your workflow should ALWAYS be:
+1. Fix the bug / add the feature
+2. Update CHANGELOG.md with detailed entry
+3. Run tests to verify fix
+4. Commit code + changelog together
+5. Push to GitHub
+```
+
+### 3. Make Small, Incremental Changes
 - **Never** create large files or make sweeping changes
 - Break everything into tiny, digestible steps
 - One logical change per commit
 - Easier to understand, review, and learn from
 
-### 3. Push to GitHub Frequently
+### 4. Push to GitHub Frequently
 - Commit after each small change
 - Clear, descriptive commit messages
 - Keep commit history clean and educational
 
-### 4. Be in Learning Mode (CRITICAL)
+### 5. Be in Learning Mode (CRITICAL)
 - **Explain everything** as if teaching a beginner
 - Break down complex concepts into simple parts
 - Use analogies and real-world examples
 - Add detailed code comments explaining what AND why
 - Share reasoning process, not just solutions
 
-### 5. Educational Code Changes
+### 6. Educational Code Changes
 - Explain each step before implementing
 - Break code changes into individual modifications
 - Add inline comments for learning (can be removed later)
 - Show before/after comparisons when helpful
 
-### 6. Always Use Test-Driven Development (TDD) - MANDATORY
+### 7. Always Use Test-Driven Development (TDD) - MANDATORY
 
 **What is TDD?**
 Test-Driven Development means writing tests BEFORE writing the actual code. It's a three-step cycle called **Red-Green-Refactor**:
