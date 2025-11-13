@@ -10,6 +10,7 @@ import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/forgot_password_screen.dart';
 import '../../features/auth/screens/reset_password_screen.dart';
 import '../../features/home/screens/home_screen.dart';
+import '../../features/settings/screens/settings_screen.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import 'go_router_refresh_stream.dart';
 import '../utils/app_logger.dart';
@@ -275,6 +276,15 @@ final routerProvider = Provider<GoRouter>((ref) {
           child: HomeScreen(),
         ),
       ),
+
+      // Settings screen (requires authentication)
+      GoRoute(
+        path: '/settings',
+        name: 'settings',
+        pageBuilder: (context, state) => const MaterialPage(
+          child: SettingsScreen(),
+        ),
+      ),
     ],
   );
 });
@@ -290,5 +300,5 @@ bool _isAuthRoute(String path) {
 
 /// Check if a route requires authentication
 bool _isProtectedRoute(String path) {
-  return path.startsWith('/home');
+  return path.startsWith('/home') || path.startsWith('/settings');
 }

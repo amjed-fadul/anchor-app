@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../design_system/design_system.dart';
 import '../../../shared/widgets/search_bar_widget.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../links/providers/link_provider.dart';
 import '../../links/widgets/link_card.dart';
+import '../../links/screens/add_link_flow_screen.dart';
 
 /// Home Screen
 ///
@@ -32,7 +34,7 @@ class HomeScreen extends ConsumerWidget {
         child: Column(
           children: [
             // Header: Avatar + Greeting + SearchBar
-            _buildHeader(user?.email),
+            _buildHeader(context, user?.email),
 
             // Main content: Links grid or states
             Expanded(
@@ -56,14 +58,19 @@ class HomeScreen extends ConsumerWidget {
         ),
       ),
 
-      // Logout button (temporary - will be replaced with settings)
+      // Add Link FAB
       floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final authService = ref.read(authServiceProvider);
-          await authService.signOut();
+        onPressed: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            useSafeArea: true,
+            builder: (context) => const AddLinkFlowScreen(),
+          );
         },
         backgroundColor: AnchorColors.anchorTeal,
-        child: const Icon(Icons.logout, color: Colors.white),
+        child: const Icon(Icons.add, color: Colors.white, size: 28),
       ),
     );
   }
@@ -76,7 +83,7 @@ class HomeScreen extends ConsumerWidget {
   /// │                                     │
   /// │ [🔍 Search bookmarks, links...]     │ ← SearchBar
   /// └─────────────────────────────────────┘
-  Widget _buildHeader(String? email) {
+  Widget _buildHeader(BuildContext context, String? email) {
     // Extract first name from email (before @)
     final firstName = email?.split('@').first ?? 'User';
     // Capitalize first letter
@@ -90,16 +97,22 @@ class HomeScreen extends ConsumerWidget {
           // Avatar + Greeting row
           Row(
             children: [
-              // Avatar circle with initial
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: AnchorColors.anchorTeal,
-                child: Text(
-                  displayName[0].toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+              // Avatar circle with initial (tappable to open settings)
+              GestureDetector(
+                onTap: () {
+                  // Navigate to settings screen
+                  context.go('/settings');
+                },
+                child: CircleAvatar(
+                  radius: 24,
+                  backgroundColor: AnchorColors.anchorTeal,
+                  child: Text(
+                    displayName[0].toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
