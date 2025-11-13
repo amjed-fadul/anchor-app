@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../design_system/design_system.dart';
 import '../../../shared/utils/validators.dart';
 import '../providers/auth_provider.dart';
@@ -87,29 +86,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         password: _passwordController.text,
       );
 
-      // CRITICAL FIX: Wait for auth state to update before navigating
-      // Without this, the router's redirect() sees isAuthenticated: false
-      // and redirects the user to /onboarding instead of /home!
-      //
-      // This is the same race condition we fixed in signup and password reset.
-      // Supabase's signIn() returns immediately, but the auth state stream
-      // takes a moment to emit the SIGNED_IN event. We must wait for it.
-      await authService.authStateChanges
-          .firstWhere(
-            (state) => state.event == AuthChangeEvent.signedIn,
-          )
-          .timeout(
-            const Duration(seconds: 5),
-            onTimeout: () {
-              throw Exception('Login timeout: Auth state did not update');
-            },
-          );
+      // SUCCESS: User is logged in
+      // Let the router's refreshListenable handle navigation automatically
+      // The auth state change will trigger router redirect to /home
+      // No manual navigation needed!
 
-      // If we reach here, login was successful AND auth state has updated
-      // User is automatically logged in
-      // Navigate to home screen
+      // Just clear loading state - router will handle the rest
       if (mounted) {
-        context.go('/home');
+        setState(() {
+          _isLoading = false;
+        });
       }
     } catch (e) {
       // Handle login errors

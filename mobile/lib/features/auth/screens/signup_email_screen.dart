@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../design_system/design_system.dart';
 import '../../../shared/utils/validators.dart';
 import '../providers/auth_provider.dart';
@@ -33,6 +32,9 @@ class _SignupEmailScreenState extends ConsumerState<SignupEmailScreen> {
 
   // Loading state
   bool _isLoading = false;
+
+  // Success state (after signup completes)
+  bool _isSuccess = false;
 
   // Error message
   String? _errorMessage;
@@ -94,29 +96,14 @@ class _SignupEmailScreenState extends ConsumerState<SignupEmailScreen> {
         password: _passwordController.text,
       );
 
-      // CRITICAL FIX: Wait for auth state to update before navigating
-      // Without this, the router's redirect() sees isAuthenticated: false
-      // and redirects the user to /onboarding instead of /home!
-      //
-      // This is the same race condition we fixed in the password reset flow.
-      // Supabase's signUp() returns immediately, but the auth state stream
-      // takes a moment to emit the SIGNED_IN event. We must wait for it.
-      await authService.authStateChanges
-          .firstWhere(
-            (state) => state.event == AuthChangeEvent.signedIn,
-          )
-          .timeout(
-            const Duration(seconds: 5),
-            onTimeout: () {
-              throw Exception('Signup timeout: Auth state did not update');
-            },
-          );
-
-      // If we reach here, signup was successful AND auth state has updated
-      // User is automatically logged in by Supabase
-      // Navigate to home screen
+      // SUCCESS: Supabase has sent confirmation email
+      // Show success message instead of navigating
+      // User needs to click email confirmation link before they can log in
       if (mounted) {
-        context.go('/home');
+        setState(() {
+          _isLoading = false;
+          _isSuccess = true;
+        });
       }
     } catch (e) {
       // Handle signup errors
@@ -147,24 +134,121 @@ class _SignupEmailScreenState extends ConsumerState<SignupEmailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Page heading
-                Text(
-                  'Create your account',
-                  style: AnchorTypography.headlineMedium.copyWith(
-                    color: AnchorColors.anchorSlate,
+                // Show success message if signup completed
+                if (_isSuccess) ...[
+                  // Success icon
+                  Center(
+                    child: Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: AnchorColors.anchorTeal.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.email_outlined,
+                        size: 40,
+                        color: AnchorColors.anchorTeal,
+                      ),
+                    ),
                   ),
-                ),
 
-                const SizedBox(height: 8),
+                  const SizedBox(height: 24),
 
-                Text(
-                  'Enter your details below to get started',
-                  style: AnchorTypography.bodyMedium.copyWith(
-                    color: AnchorColors.gray600,
+                  // Success heading
+                  Text(
+                    'Check your email!',
+                    style: AnchorTypography.headlineMedium.copyWith(
+                      color: AnchorColors.anchorSlate,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                ),
 
-                const SizedBox(height: 32),
+                  const SizedBox(height: 12),
+
+                  // Success message
+                  Text(
+                    'We sent a confirmation link to',
+                    style: AnchorTypography.bodyMedium.copyWith(
+                      color: AnchorColors.gray600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: 4),
+
+                  // User's email
+                  Text(
+                    _emailController.text,
+                    style: AnchorTypography.bodyMedium.copyWith(
+                      color: AnchorColors.anchorSlate,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Instructions
+                  Text(
+                    'Click the link in the email to confirm your account, then come back here to sign in.',
+                    style: AnchorTypography.bodyMedium.copyWith(
+                      color: AnchorColors.gray600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Go to Sign In button
+                  AnchorButton(
+                    label: 'Go to Sign In',
+                    onPressed: () => context.go('/login'),
+                    fullWidth: true,
+                    size: AnchorButtonSize.large,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Didn't receive email link
+                  Center(
+                    child: TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _isSuccess = false;
+                          _isLoading = false;
+                        });
+                      },
+                      child: Text(
+                        'Try again',
+                        style: AnchorTypography.bodyMedium.copyWith(
+                          color: AnchorColors.anchorTeal,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ]
+                // Show signup form if not yet successful
+                else ...[
+                  // Page heading
+                  Text(
+                    'Create your account',
+                    style: AnchorTypography.headlineMedium.copyWith(
+                      color: AnchorColors.anchorSlate,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  Text(
+                    'Enter your details below to get started',
+                    style: AnchorTypography.bodyMedium.copyWith(
+                      color: AnchorColors.gray600,
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
 
                 // Email field
                 AnchorTextField(
@@ -270,14 +354,15 @@ class _SignupEmailScreenState extends ConsumerState<SignupEmailScreen> {
 
                 const SizedBox(height: 16),
 
-                // Terms and privacy text
-                Text(
-                  'By signing up, you agree to our Terms of Service and Privacy Policy',
-                  style: AnchorTypography.bodySmall.copyWith(
-                    color: AnchorColors.gray600,
+                  // Terms and privacy text
+                  Text(
+                    'By signing up, you agree to our Terms of Service and Privacy Policy',
+                    style: AnchorTypography.bodySmall.copyWith(
+                      color: AnchorColors.gray600,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
-                ),
+                ], // End of else block (signup form)
               ],
             ),
           ),
