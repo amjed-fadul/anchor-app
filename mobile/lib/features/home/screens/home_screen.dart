@@ -48,7 +48,7 @@ class HomeScreen extends ConsumerWidget {
                   if (links.isEmpty) {
                     return _buildEmptyState();
                   }
-                  return _buildLinksGrid(links);
+                  return _buildLinksGrid(links, ref);
                 },
               ),
             ),
@@ -123,26 +123,42 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  /// Build links grid (2-column layout)
+  /// Build links grid (2-column layout) with pull-to-refresh
+  ///
+  /// RefreshIndicator:
+  /// - Enables pull-down gesture to refresh
+  /// - Shows loading indicator during refresh
+  /// - Calls provider's refresh() method
   ///
   /// GridView.builder:
   /// - crossAxisCount: 2 = 2 columns
   /// - childAspectRatio: width/height ratio of each card
   /// - spacing: gaps between cards
-  Widget _buildLinksGrid(links) {
-    return GridView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2, // 2 columns
-        childAspectRatio: 0.75, // Width/height ratio (card height > width)
-        crossAxisSpacing: 12, // Horizontal gap between cards
-        mainAxisSpacing: 12, // Vertical gap between cards
-      ),
-      itemCount: links.length,
-      itemBuilder: (context, index) {
-        final linkWithTags = links[index];
-        return LinkCard(linkWithTags: linkWithTags);
+  Widget _buildLinksGrid(links, WidgetRef ref) {
+    return RefreshIndicator(
+      // Color of the refresh indicator
+      color: AnchorColors.anchorTeal,
+
+      // Called when user pulls down to refresh
+      onRefresh: () async {
+        // Call the provider's refresh method
+        await ref.read(linksWithTagsProvider.notifier).refresh();
       },
+
+      child: GridView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2, // 2 columns
+          childAspectRatio: 0.75, // Width/height ratio (card height > width)
+          crossAxisSpacing: 12, // Horizontal gap between cards
+          mainAxisSpacing: 12, // Vertical gap between cards
+        ),
+        itemCount: links.length,
+        itemBuilder: (context, index) {
+          final linkWithTags = links[index];
+          return LinkCard(linkWithTags: linkWithTags);
+        },
+      ),
     );
   }
 
