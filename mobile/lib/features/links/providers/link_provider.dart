@@ -73,10 +73,14 @@ class LinksNotifier extends AsyncNotifier<List<LinkWithTags>> {
   ///
   /// This is where we fetch the initial data.
   /// Riverpod automatically handles loading/error states.
+  ///
+  /// IMPORTANT: We use ref.watch() for currentUserProvider so that
+  /// this provider automatically rebuilds when the user logs in/out.
   @override
   Future<List<LinkWithTags>> build() async {
-    // Get the current user from auth
-    final user = ref.read(currentUserProvider);
+    // CRITICAL: Watch the current user (not read)
+    // This makes the provider rebuild when auth state changes
+    final user = ref.watch(currentUserProvider);
     final userId = user?.id;
 
     // If no user is logged in, return empty list
