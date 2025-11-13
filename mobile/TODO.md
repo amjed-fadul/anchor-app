@@ -1,6 +1,6 @@
 # TODO & Project Roadmap
 
-**Last Updated:** 2025-11-13 21:00
+**Last Updated:** 2025-11-14 01:15
 
 This file tracks active tasks, planned features, known issues, and future ideas for the Anchor App.
 
@@ -15,32 +15,24 @@ This file tracks active tasks, planned features, known issues, and future ideas 
 
 ## 🚧 Active Tasks
 
-*Currently working on: Add Link Feature (started 2025-11-13 20:00)*
+*No active tasks - Sprint 2 completed! 🎉*
 
-### Add Link Flow - Phase 1: Backend Complete ✅
-- ✅ LinkService.createLink() implemented with tag associations
-- ✅ LinkService.getLinksWithTags() implemented
-- ⚠️ LinkService tests written (mocking strategy needs refinement)
-
-### Add Link Flow - Phase 2: UI (Next)
-- 📋 Design Add Link bottom sheet (matching Figma)
-- 📋 Build Add Link form (URL input, space selector, tags, notes)
-- 📋 Integrate form with LinkService.createLink()
-- 📋 Add metadata fetching (title, description, thumbnail)
-- 📋 Add success/error states
-- 📋 Wire up FAB to open Add Link sheet
+**Ready to start Sprint 3:**
+- Link editing functionality
+- Enhanced search capabilities
+- Spaces UI implementation
 
 ---
 
 ## 📋 Planned Features
 
 ### High Priority
-- 🚧 **Add link functionality** - Backend done, UI in progress
+- ✅ **Add link functionality** - Complete! (2025-11-14)
+- ✅ **Settings screen** - Complete with logout! (2025-11-14)
 - 📋 **Link detail view** - View/edit saved links
 - 📋 **Link deletion** - Remove unwanted links
 - 📋 **Tag management** - Create, edit, delete tags
 - 📋 **Space management** - Create, edit custom spaces
-- 📋 **Settings screen** - Account management, preferences
 
 ### Medium Priority
 - 📋 **Search functionality** - Full-text search for links
@@ -70,6 +62,45 @@ This file tracks active tasks, planned features, known issues, and future ideas 
 ---
 
 ## ✅ Recently Completed (Last 7 Days)
+
+### 2025-11-14 Night: Major Feature Completions 🎉
+
+**Sprint 2 COMPLETE: Add Link Feature (00:00-01:00)**
+- ✅ Complete Add Link flow (4 screens: URL Input → Metadata → Success → Add Details)
+- ✅ URL input with real-time validation
+- ✅ Automatic metadata extraction (title, description, thumbnail, domain)
+- ✅ Optional details screen with 3 tabs (Tag / Note / Space)
+- ✅ Tag autocomplete with comma/newline separation
+- ✅ Space assignment picker
+- ✅ Personal notes text area
+- ✅ Modal bottom sheet with DraggableScrollableSheet
+- ✅ Graceful degradation for metadata timeouts
+- ✅ All tests passing (68+ tests)
+
+**Settings & Logout Feature (00:45)**
+- ✅ Created Settings screen accessible via avatar tap
+- ✅ Email display (read-only)
+- ✅ Sign out button with confirmation dialog
+- ✅ Proper error handling for logout failures
+- ✅ Integrated into router as protected route
+
+**Link Service Enhancements (00:30)**
+- ✅ Added `updateLink()` method for editing links
+- ✅ Handles note, space, and tag updates
+- ✅ Tag association updates via junction table
+- ✅ Comprehensive error handling
+- ✅ Used by AddDetailsScreen for persisting optional details
+
+**Design System Updates (00:35)**
+- ✅ Updated tag color palette to match Figma (14 colors)
+- ✅ Exact HEX values from design specifications
+- ✅ Replaced 7 generic colors with design-approved palette
+
+**Critical Bug Fix: Link Provider Auth (00:20)**
+- ✅ Fixed links not loading after login/logout
+- ✅ Changed `ref.read()` to `ref.watch()` for reactive rebuilding
+- ✅ Links now load immediately on login
+- ✅ Links clear immediately on logout
 
 ### 2025-11-13 Evening: Crash Recovery & Code Quality
 
@@ -261,29 +292,54 @@ This file tracks active tasks, planned features, known issues, and future ideas 
 
 ---
 
-## 🎯 Current Sprint: Add Link Feature
+## 🎯 Previous Sprint: Add Link Feature ✅ COMPLETE
 
-**Sprint 2: Add Link Functionality (2025-11-13 to 2025-11-15)**
+**Sprint 2: Add Link Functionality (2025-11-13 to 2025-11-14)**
 
-**Goal:** Allow users to save new links from within the app
+**Goal:** Allow users to save new links from within the app ✅
 
 **Deliverables:**
 - ✅ Backend: LinkService.createLink() - **COMPLETE**
-- 📋 UI: Add Link bottom sheet
-- 📋 UI: Form with URL, space, tags, notes
-- 📋 Integration: Wire FAB to open sheet
-- 📋 Integration: Save link and refresh home
-- 📋 Polish: Success/error states
+- ✅ Backend: LinkService.updateLink() - **COMPLETE**
+- ✅ UI: Add Link bottom sheet - **COMPLETE**
+- ✅ UI: Form with URL, space, tags, notes - **COMPLETE**
+- ✅ Integration: Wire FAB to open sheet - **COMPLETE**
+- ✅ Integration: Save link and refresh home - **COMPLETE**
+- ✅ Polish: Success/error states - **COMPLETE**
 
 **Success Criteria:**
-- User can tap FAB to add link
-- User can enter URL and see metadata
-- User can select space and add tags
-- User can add personal note
-- Link appears on home screen after save
-- Clear success feedback shown
+- ✅ User can tap FAB to add link
+- ✅ User can enter URL and see metadata
+- ✅ User can select space and add tags
+- ✅ User can add personal note
+- ✅ Link appears on home screen after save
+- ✅ Clear success feedback shown
 
-**Estimated Completion:** 2025-11-15 (2 days remaining)
+**Completed:** 2025-11-14 01:00 ✅ (1 day ahead of schedule!)
+
+---
+
+## 🎯 Next Sprint: Enhanced Link Management
+
+**Sprint 3: Link Editing & Organization (2025-11-15 to 2025-11-17)**
+
+**Goal:** Allow users to edit existing links and improve organization
+
+**Planned Deliverables:**
+- 📋 Link detail view (tap to view full link details)
+- 📋 Edit link functionality (modify tags, notes, space)
+- 📋 Delete link functionality
+- 📋 Long-press menu on LinkCard
+- 📋 Tap to open link in browser
+
+**Success Criteria:**
+- User can tap link card to view details
+- User can edit link metadata after creation
+- User can delete unwanted links
+- User can open links in browser
+- Changes reflect immediately in UI
+
+**Estimated Completion:** 2025-11-17
 
 ---
 

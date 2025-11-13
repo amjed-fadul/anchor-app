@@ -67,6 +67,19 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+#### Foreign Key Violation on Link Creation (2025-11-13 21:45)
+- **Problem**: Saving links failed with `PostgrestException: insert or update on table "links" violates foreign key constraint "links_user_id_fkey"`. User exists in `auth.users` but not in public `users` table.
+- **Root Cause**: No database trigger to automatically create public `users` records when Supabase Auth creates `auth.users` records on signup. The 001 migration comment claimed "Supabase Auth automatically creates user records" but this was incorrect - no trigger existed.
+- **Solution**:
+  - Created migration `004_create_user_trigger.sql`
+  - Added `handle_new_user()` trigger function that listens to `auth.users` INSERT events
+  - Automatically creates matching record in public `users` table with same UUID and email
+  - Backfills existing auth users missing from public users (fixes current user immediately)
+  - Idempotent design with `ON CONFLICT DO NOTHING` for safety
+- **Files Added**:
+  - `supabase/migrations/004_create_user_trigger.sql`
+- **Result**: ✅ All signups now automatically create public users records, maintaining referential integrity for foreign keys
+
 #### Claude Crash Recovery - Code Quality Cleanup (2025-11-13 20:00-21:00)
 - **Problem**: Claude crashed mid-development, 52 analyzer errors blocking progress
 - **Root Cause**:
