@@ -1,0 +1,431 @@
+library;
+
+/// LinkService Tests (TDD - RED)
+///
+/// Testing the service that fetches links with tags from Supabase.
+///
+/// What is a Service?
+/// A service is a class that handles all database operations for a specific feature.
+/// Think of it like a librarian who knows exactly how to find books (data) in the library (database).
+///
+/// What we're testing:
+/// 1. getLinksWithTags() - Fetch all user's links with their associated tags
+/// 2. Error handling - What happens when database is unavailable
+/// 3. Empty state - What happens when user has no links
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:mobile/features/links/services/link_service.dart';
+
+/// Mock Supabase Client
+/// We use a "mock" instead of the real database for testing.
+/// This is faster, more reliable, and doesn't require internet connection.
+class MockSupabaseClient extends Mock implements SupabaseClient {}
+
+/// Mock Supabase Query Builder
+/// This is what from() returns - supports both SELECT and INSERT
+class MockSupabaseQueryBuilder extends Mock implements SupabaseQueryBuilder {}
+
+/// Mock Postgrest Filter Builder (for SELECT queries)
+/// This handles query chaining: select() -> eq() -> order()
+class MockPostgrestFilterBuilder extends Mock
+    implements PostgrestFilterBuilder<List<Map<String, dynamic>>> {}
+
+/// Mock Postgrest Builder (for INSERT queries)
+/// This handles: insert() -> select() -> single()
+/// PostgrestBuilder requires 3 type params but we simplify with dynamic
+class MockPostgrestBuilder extends Mock
+    implements PostgrestBuilder {}
+
+/// Mock Postgrest Transform Builder (for post-insert operations)
+/// This handles select() and single() after insert
+class MockPostgrestTransformBuilder extends Mock
+    implements PostgrestTransformBuilder<List<Map<String, dynamic>>> {}
+
+void main() {
+  group('LinkService', () {
+    late MockSupabaseClient mockSupabase;
+    late LinkService linkService;
+
+    setUp(() {
+      // Create fresh mocks before each test
+      mockSupabase = MockSupabaseClient();
+      linkService = LinkService(mockSupabase);
+    });
+
+    /// Test #1: Successfully fetch links with tags
+    ///
+    /// Why this matters:
+    /// This is the main functionality - fetching user's saved links
+    /// along with all their associated tags.
+    test('getLinksWithTags() returns links with tags', () async {
+      // ARRANGE: Mock database response
+      // This simulates what Supabase returns when querying links with tags
+      final mockResponse = [
+        {
+          'id': 'link-1',
+          'user_id': 'user-123',
+          'space_id': 'space-456',
+          'url': 'https://apple.com',
+          'title': 'Apple',
+          'note': 'Check later',
+          'opened_at': null,
+          'created_at': '2025-11-13T10:00:00Z',
+          'updated_at': '2025-11-13T10:00:00Z',
+          'link_tags': [
+            {
+              'tags': {
+                'id': 'tag-1',
+                'user_id': 'user-123',
+                'name': 'Design',
+                'color': '#f42cff',
+                'created_at': '2025-11-13T09:00:00Z',
+              }
+            },
+            {
+              'tags': {
+                'id': 'tag-2',
+                'user_id': 'user-123',
+                'name': 'Apple',
+                'color': '#682cff',
+                'created_at': '2025-11-13T09:00:00Z',
+              }
+            },
+          ],
+        },
+      ];
+
+      // Mock the Supabase query chain
+      final mockQueryBuilder = MockSupabaseQueryBuilder();
+      final mockFilterBuilder = MockPostgrestFilterBuilder();
+
+      when(() => mockSupabase.from('links')).thenReturn(mockQueryBuilder);
+      when(() => mockQueryBuilder.select(any())).thenReturn(mockFilterBuilder);
+      when(() => mockFilterBuilder.eq(any(), any())).thenReturn(mockFilterBuilder);
+      when(() => mockFilterBuilder.order(any(), ascending: any(named: 'ascending')))
+          .thenAnswer((_) => Future.value(mockResponse as List<Map<String, dynamic>>));
+
+      // ACT: Call the service method
+      final result = await linkService.getLinksWithTags('user-123');
+
+      // ASSERT: Verify we got the correct data
+      expect(result.length, 1);
+
+      // Check link data
+      final linkWithTags = result[0];
+      expect(linkWithTags.link.id, 'link-1');
+      expect(linkWithTags.link.url, 'https://apple.com');
+      expect(linkWithTags.link.title, 'Apple');
+
+      // Check tags
+      expect(linkWithTags.tags.length, 2);
+      expect(linkWithTags.tags[0].name, 'Design');
+      expect(linkWithTags.tags[0].color, '#f42cff');
+      expect(linkWithTags.tags[1].name, 'Apple');
+      expect(linkWithTags.tags[1].color, '#682cff');
+    });
+
+    /// Test #2: Handle links with no tags
+    ///
+    /// Why this matters:
+    /// Not all links have tags. We need to handle this gracefully.
+    test('getLinksWithTags() handles links without tags', () async {
+      // ARRANGE: Link with empty link_tags array
+      final mockResponse = [
+        {
+          'id': 'link-1',
+          'user_id': 'user-123',
+          'space_id': 'space-456',
+          'url': 'https://example.com',
+          'title': 'Example',
+          'note': null,
+          'opened_at': null,
+          'created_at': '2025-11-13T10:00:00Z',
+          'updated_at': '2025-11-13T10:00:00Z',
+          'link_tags': [], // No tags
+        },
+      ];
+
+      final mockQueryBuilder = MockSupabaseQueryBuilder();
+      final mockFilterBuilder = MockPostgrestFilterBuilder();
+
+      when(() => mockSupabase.from('links')).thenReturn(mockQueryBuilder);
+      when(() => mockQueryBuilder.select(any())).thenReturn(mockFilterBuilder);
+      when(() => mockFilterBuilder.eq(any(), any())).thenReturn(mockFilterBuilder);
+      when(() => mockFilterBuilder.order(any(), ascending: any(named: 'ascending')))
+          .thenAnswer((_) => Future.value(mockResponse as List<Map<String, dynamic>>));
+
+      // ACT
+      final result = await linkService.getLinksWithTags('user-123');
+
+      // ASSERT: Should return link with empty tags array
+      expect(result.length, 1);
+      expect(result[0].link.id, 'link-1');
+      expect(result[0].tags.length, 0); // No tags
+    });
+
+    /// Test #3: Empty state - no links found
+    ///
+    /// Why this matters:
+    /// New users won't have any links yet. We need to handle this.
+    test('getLinksWithTags() returns empty list when no links found',
+        () async {
+      // ARRANGE: Empty response from database
+      final mockQueryBuilder = MockSupabaseQueryBuilder();
+      final mockFilterBuilder = MockPostgrestFilterBuilder();
+
+      when(() => mockSupabase.from('links')).thenReturn(mockQueryBuilder);
+      when(() => mockQueryBuilder.select(any())).thenReturn(mockFilterBuilder);
+      when(() => mockFilterBuilder.eq(any(), any())).thenReturn(mockFilterBuilder);
+      when(() => mockFilterBuilder.order(any(), ascending: any(named: 'ascending')))
+          .thenAnswer((_) async => []);
+
+      // ACT
+      final result = await linkService.getLinksWithTags('user-123');
+
+      // ASSERT: Should return empty list (not null, not error)
+      expect(result, []);
+      expect(result.length, 0);
+    });
+
+    /// Test #4: Error handling - database error
+    ///
+    /// Why this matters:
+    /// Network issues, database downtime, or bugs can cause errors.
+    /// We need to handle these gracefully instead of crashing the app.
+    test('getLinksWithTags() throws exception on database error', () async {
+      // ARRANGE: Mock database throwing an error
+      final mockQueryBuilder = MockSupabaseQueryBuilder();
+      final mockFilterBuilder = MockPostgrestFilterBuilder();
+
+      when(() => mockSupabase.from('links')).thenReturn(mockQueryBuilder);
+      when(() => mockQueryBuilder.select(any())).thenReturn(mockFilterBuilder);
+      when(() => mockFilterBuilder.eq(any(), any())).thenReturn(mockFilterBuilder);
+      when(() => mockFilterBuilder.order(any(), ascending: any(named: 'ascending')))
+          .thenThrow(Exception('Database connection failed'));
+
+      // ACT & ASSERT: Should throw exception
+      expect(
+        () => linkService.getLinksWithTags('user-123'),
+        throwsException,
+      );
+    });
+
+    /// Test #5: Create link successfully
+    ///
+    /// Why this matters:
+    /// This is the core of the Add Link feature - saving a new link to the database
+    test('createLink() creates a link successfully', () async {
+      // ARRANGE: Mock successful link creation
+      final mockResponse = {
+        'id': 'new-link-id',
+        'user_id': 'user-123',
+        'space_id': 'space-456',
+        'url': 'https://example.com/article',
+        'normalized_url': 'https://example.com/article',
+        'title': 'Example Article',
+        'description': 'A great article',
+        'thumbnail_url': 'https://example.com/thumb.jpg',
+        'domain': 'example.com',
+        'note': 'Check this later',
+        'opened_at': null,
+        'created_at': '2025-11-13T10:00:00Z',
+        'updated_at': '2025-11-13T10:00:00Z',
+      };
+
+      final mockQueryBuilder = MockSupabaseQueryBuilder();
+      final mockFilterBuilder = MockPostgrestFilterBuilder();
+      final mockTransformBuilder = MockPostgrestTransformBuilder();
+
+      when(() => mockSupabase.from('links')).thenReturn(mockQueryBuilder);
+      when(() => mockQueryBuilder.insert(any())).thenReturn(mockFilterBuilder);
+      when(() => mockFilterBuilder.select()).thenReturn(mockTransformBuilder);
+      when(() => mockTransformBuilder.single()).thenAnswer((_) => Future.value(mockResponse as Map<String, dynamic>));
+
+      // ACT: Create a link
+      final result = await linkService.createLink(
+        userId: 'user-123',
+        url: 'https://example.com/article',
+        normalizedUrl: 'https://example.com/article',
+        spaceId: 'space-456',
+        title: 'Example Article',
+        description: 'A great article',
+        thumbnailUrl: 'https://example.com/thumb.jpg',
+        domain: 'example.com',
+        note: 'Check this later',
+      );
+
+      // ASSERT: Verify link was created
+      expect(result.id, 'new-link-id');
+      expect(result.userId, 'user-123');
+      expect(result.url, 'https://example.com/article');
+      expect(result.title, 'Example Article');
+      expect(result.note, 'Check this later');
+
+      // Verify insert was called with correct data
+      verify(() => mockQueryBuilder.insert(any())).called(1);
+    });
+
+    /// Test #6: Create link with tags
+    ///
+    /// Why this matters:
+    /// Links can have multiple tags. We need to create the link AND the tag associations.
+    test('createLink() creates link with tags', () async {
+      // ARRANGE: Mock link creation response
+      final mockLinkResponse = {
+        'id': 'new-link-id',
+        'user_id': 'user-123',
+        'space_id': 'space-456',
+        'url': 'https://example.com',
+        'normalized_url': 'https://example.com',
+        'title': 'Example',
+        'description': null,
+        'thumbnail_url': null,
+        'domain': 'example.com',
+        'note': null,
+        'opened_at': null,
+        'created_at': '2025-11-13T10:00:00Z',
+        'updated_at': '2025-11-13T10:00:00Z',
+      };
+
+      final mockLinksQueryBuilder = MockSupabaseQueryBuilder();
+      final mockLinksFilterBuilder = MockPostgrestFilterBuilder();
+      final mockLinksTransformBuilder = MockPostgrestTransformBuilder();
+      final mockLinkTagsQueryBuilder = MockSupabaseQueryBuilder();
+      final mockLinkTagsFilterBuilder = MockPostgrestFilterBuilder();
+
+      // Mock link creation
+      when(() => mockSupabase.from('links')).thenReturn(mockLinksQueryBuilder);
+      when(() => mockLinksQueryBuilder.insert(any())).thenReturn(mockLinksFilterBuilder);
+      when(() => mockLinksFilterBuilder.select()).thenReturn(mockLinksTransformBuilder);
+      when(() => mockLinksTransformBuilder.single())
+          .thenAnswer((_) => Future.value(mockLinkResponse as Map<String, dynamic>));
+
+      // Mock tag associations creation
+      when(() => mockSupabase.from('link_tags'))
+          .thenReturn(mockLinkTagsQueryBuilder);
+      when(() => mockLinkTagsQueryBuilder.insert(any()))
+          .thenReturn(mockLinkTagsFilterBuilder);
+
+      // ACT: Create link with tags
+      final result = await linkService.createLink(
+        userId: 'user-123',
+        url: 'https://example.com',
+        normalizedUrl: 'https://example.com',
+        spaceId: 'space-456',
+        title: 'Example',
+        domain: 'example.com',
+        tagIds: ['tag-1', 'tag-2'], // Two tags
+      );
+
+      // ASSERT: Verify link was created
+      expect(result.id, 'new-link-id');
+
+      // Verify tag associations were created
+      verify(() => mockLinkTagsQueryBuilder.insert(any())).called(1);
+    });
+
+    /// Test #7: Create link without space (unassigned)
+    ///
+    /// Why this matters:
+    /// Links can be saved without being assigned to a space
+    test('createLink() creates unassigned link when spaceId is null', () async {
+      // ARRANGE: Mock response with null space_id
+      final mockResponse = {
+        'id': 'new-link-id',
+        'user_id': 'user-123',
+        'space_id': null, // Unassigned
+        'url': 'https://example.com',
+        'normalized_url': 'https://example.com',
+        'title': 'Example',
+        'description': null,
+        'thumbnail_url': null,
+        'domain': 'example.com',
+        'note': null,
+        'opened_at': null,
+        'created_at': '2025-11-13T10:00:00Z',
+        'updated_at': '2025-11-13T10:00:00Z',
+      };
+
+      final mockQueryBuilder = MockSupabaseQueryBuilder();
+      final mockFilterBuilder = MockPostgrestFilterBuilder();
+      final mockTransformBuilder = MockPostgrestTransformBuilder();
+
+      when(() => mockSupabase.from('links')).thenReturn(mockQueryBuilder);
+      when(() => mockQueryBuilder.insert(any())).thenReturn(mockFilterBuilder);
+      when(() => mockFilterBuilder.select()).thenReturn(mockTransformBuilder);
+      when(() => mockTransformBuilder.single()).thenAnswer((_) => Future.value(mockResponse as Map<String, dynamic>));
+
+      // ACT: Create link without spaceId
+      final result = await linkService.createLink(
+        userId: 'user-123',
+        url: 'https://example.com',
+        normalizedUrl: 'https://example.com',
+        title: 'Example',
+        domain: 'example.com',
+        // spaceId: null (not provided)
+      );
+
+      // ASSERT: Link should be created without space assignment
+      expect(result.id, 'new-link-id');
+      expect(result.spaceId, null);
+    });
+
+    /// Test #8: Create link handles database error
+    ///
+    /// Why this matters:
+    /// If database insert fails, we need to throw an exception
+    test('createLink() throws exception on database error', () async {
+      // ARRANGE: Mock database throwing error
+      final mockQueryBuilder = MockSupabaseQueryBuilder();
+      final mockFilterBuilder = MockPostgrestFilterBuilder();
+      final mockTransformBuilder = MockPostgrestTransformBuilder();
+
+      when(() => mockSupabase.from('links')).thenReturn(mockQueryBuilder);
+      when(() => mockQueryBuilder.insert(any())).thenReturn(mockFilterBuilder);
+      when(() => mockFilterBuilder.select()).thenReturn(mockTransformBuilder);
+      when(() => mockTransformBuilder.single())
+          .thenThrow(Exception('Unique constraint violation'));
+
+      // ACT & ASSERT: Should throw exception
+      expect(
+        () => linkService.createLink(
+          userId: 'user-123',
+          url: 'https://example.com',
+          normalizedUrl: 'https://example.com',
+          title: 'Example',
+          domain: 'example.com',
+        ),
+        throwsException,
+      );
+    });
+  });
+}
+
+/// 🎓 Learning Summary: Why We Mock
+///
+/// **What is Mocking?**
+/// Creating fake versions of dependencies for testing.
+/// Think of it like rehearsing a play with stand-ins before the real actors arrive.
+///
+/// **Why Mock Supabase?**
+/// 1. **Speed**: Real database queries are slow (100-500ms), mocks are instant (<1ms)
+/// 2. **Reliability**: Tests don't fail due to network issues or database downtime
+/// 3. **Isolation**: Tests only test OUR code, not Supabase's code
+/// 4. **Control**: We can simulate any scenario (errors, empty results, etc.)
+///
+/// **What We're Testing:**
+/// - ✅ Does getLinksWithTags() correctly process Supabase responses?
+/// - ✅ Does it handle empty results?
+/// - ✅ Does it handle links without tags?
+/// - ✅ Does it throw errors when database fails?
+///
+/// **What We're NOT Testing:**
+/// - ❌ Does Supabase work? (That's Supabase's job to test)
+/// - ❌ Is our database schema correct? (That's tested with integration tests)
+///
+/// **Next:**
+/// Run `flutter test test/features/links/services/link_service_test.dart`
+/// Watch it FAIL (🔴 RED) because LinkService doesn't exist yet.
+/// Then implement the service to make tests pass (🟢 GREEN).

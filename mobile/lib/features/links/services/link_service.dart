@@ -21,6 +21,7 @@ library;
 /// - Testing: Easier to test database logic separately from UI
 /// - Maintainability: All database queries in one place
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/link_model.dart';
 import '../../tags/models/tag_model.dart';
@@ -128,6 +129,71 @@ class LinkService {
     }
   }
 
+  /// updateLink - Update an existing link with new details
+  ///
+  /// This method:
+  /// 1. Updates the link record (note, space_id)
+  /// 2. Removes old tag associations
+  /// 3. Creates new tag associations
+  /// 4. Returns the updated Link object
+  ///
+  /// Parameters:
+  /// - linkId: ID of the link to update
+  /// - note: User's personal note (nullable)
+  /// - spaceId: Which space to assign this link to (nullable)
+  /// - tagIds: List of tag IDs to associate with this link (nullable)
+  ///
+  /// Returns:
+  /// The updated Link object
+  ///
+  /// Throws:
+  /// Exception if database update fails
+  Future<Link> updateLink({
+    required String linkId,
+    String? note,
+    String? spaceId,
+    List<String>? tagIds,
+  }) async {
+    try {
+      // Step 1: Update the link record
+      final updateData = {
+        'note': note,
+        'space_id': spaceId,
+      };
+
+      final response = await _supabase
+          .from('links')
+          .update(updateData)
+          .eq('id', linkId)
+          .select()
+          .single();
+
+      final updatedLink = Link.fromJson(response);
+
+      // Step 2: Handle tag associations if provided
+      if (tagIds != null) {
+        // Remove all existing tag associations for this link
+        await _supabase.from('link_tags').delete().eq('link_id', linkId);
+
+        // Create new tag associations
+        if (tagIds.isNotEmpty) {
+          final linkTagsData = tagIds.map((tagId) {
+            return {
+              'link_id': linkId,
+              'tag_id': tagId,
+            };
+          }).toList();
+
+          await _supabase.from('link_tags').insert(linkTagsData);
+        }
+      }
+
+      return updatedLink;
+    } catch (e) {
+      throw Exception('Failed to update link: $e');
+    }
+  }
+
   /// getLinksWithTags - Fetch all links for a user with their tags
   ///
   /// Why this query structure?
@@ -200,6 +266,15 @@ class LinkService {
     }
   }
 }
+
+/// Provider for LinkService instance
+///
+/// This is a singleton - only one LinkService exists for the whole app.
+/// Every screen that needs to interact with links uses this same service.
+final linkServiceProvider = Provider<LinkService>((ref) {
+  final supabase = Supabase.instance.client;
+  return LinkService(supabase);
+});
 
 /// 🎓 Learning Summary: Database Queries
 ///

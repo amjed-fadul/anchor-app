@@ -29,15 +29,28 @@ class Link {
   /// ID of the user who saved this link
   final String userId;
 
-  /// ID of the space (folder/category) this link belongs to
-  final String spaceId;
+  /// ID of the space (folder/category) this link belongs to (nullable)
+  /// Null means the link is not assigned to any space
+  final String? spaceId;
 
-  /// The actual URL being saved
+  /// The actual URL being saved (original URL with tracking params)
   final String url;
+
+  /// Normalized URL (tracking params removed, for duplicate detection)
+  final String normalizedUrl;
 
   /// Title of the link (can be null if not fetched yet)
   /// Usually comes from the <title> tag of the webpage
   final String? title;
+
+  /// Description from metadata (og:description or meta description)
+  final String? description;
+
+  /// Thumbnail image URL from metadata (og:image)
+  final String? thumbnailUrl;
+
+  /// Extracted domain (e.g., "example.com")
+  final String? domain;
 
   /// User's personal note about this link (nullable)
   /// Example: "Check this out later", "Great tutorial", etc.
@@ -56,13 +69,17 @@ class Link {
   /// Constructor
   ///
   /// We use `required` for non-nullable fields to ensure they're always provided.
-  /// Nullable fields (title, note, openedAt) are optional.
+  /// Nullable fields (spaceId, title, description, thumbnailUrl, domain, note, openedAt) are optional.
   Link({
     required this.id,
     required this.userId,
-    required this.spaceId,
+    this.spaceId,
     required this.url,
+    required this.normalizedUrl,
     this.title,
+    this.description,
+    this.thumbnailUrl,
+    this.domain,
     this.note,
     this.openedAt,
     required this.createdAt,
@@ -86,9 +103,13 @@ class Link {
     return Link(
       id: json['id'] as String,
       userId: json['user_id'] as String,
-      spaceId: json['space_id'] as String,
+      spaceId: json['space_id'] as String?,
       url: json['url'] as String,
+      normalizedUrl: json['normalized_url'] as String,
       title: json['title'] as String?,
+      description: json['description'] as String?,
+      thumbnailUrl: json['thumbnail_url'] as String?,
+      domain: json['domain'] as String?,
       note: json['note'] as String?,
       openedAt: json['opened_at'] != null
           ? DateTime.parse(json['opened_at'] as String)
@@ -114,7 +135,11 @@ class Link {
       'user_id': userId,
       'space_id': spaceId,
       'url': url,
+      'normalized_url': normalizedUrl,
       'title': title,
+      'description': description,
+      'thumbnail_url': thumbnailUrl,
+      'domain': domain,
       'note': note,
       'opened_at': openedAt?.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
@@ -149,9 +174,13 @@ class Link {
   Link copyWith({
     String? id,
     String? userId,
-    String? spaceId,
+    Object? spaceId = _undefined,
     String? url,
+    String? normalizedUrl,
     Object? title = _undefined,
+    Object? description = _undefined,
+    Object? thumbnailUrl = _undefined,
+    Object? domain = _undefined,
     Object? note = _undefined,
     Object? openedAt = _undefined,
     DateTime? createdAt,
@@ -160,9 +189,13 @@ class Link {
     return Link(
       id: id ?? this.id,
       userId: userId ?? this.userId,
-      spaceId: spaceId ?? this.spaceId,
+      spaceId: spaceId == _undefined ? this.spaceId : spaceId as String?,
       url: url ?? this.url,
+      normalizedUrl: normalizedUrl ?? this.normalizedUrl,
       title: title == _undefined ? this.title : title as String?,
+      description: description == _undefined ? this.description : description as String?,
+      thumbnailUrl: thumbnailUrl == _undefined ? this.thumbnailUrl : thumbnailUrl as String?,
+      domain: domain == _undefined ? this.domain : domain as String?,
       note: note == _undefined ? this.note : note as String?,
       openedAt: openedAt == _undefined ? this.openedAt : openedAt as DateTime?,
       createdAt: createdAt ?? this.createdAt,
@@ -234,7 +267,7 @@ class Link {
   /// This is super helpful when debugging!
   @override
   String toString() {
-    return 'Link(id: $id, url: $url, title: $title, note: $note)';
+    return 'Link(id: $id, url: $url, title: $title, domain: $domain, spaceId: $spaceId)';
   }
 }
 
