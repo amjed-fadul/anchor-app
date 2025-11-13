@@ -52,6 +52,9 @@ dependencies:
   # HTTP Client
   http: ^1.2.2
 
+  # HTML Parser - For metadata extraction
+  html: ^0.15.4
+
   # URL Launcher - Open links
   url_launcher: ^6.3.1
 
