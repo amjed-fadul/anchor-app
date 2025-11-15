@@ -90,7 +90,7 @@ class HomeScreen extends ConsumerWidget {
     final displayName = firstName[0].toUpperCase() + firstName.substring(1);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.fromLTRB(8, 16, 8, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -110,7 +110,7 @@ class HomeScreen extends ConsumerWidget {
                     displayName[0].toUpperCase(),
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 20,
+                  fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -121,7 +121,7 @@ class HomeScreen extends ConsumerWidget {
               Text(
                 'Hello $displayName',
                 style: const TextStyle(
-                  fontSize: 24,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
                 ),
@@ -159,12 +159,12 @@ class HomeScreen extends ConsumerWidget {
       },
 
       child: GridView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2, // 2 columns
           childAspectRatio: 0.75, // Width/height ratio (card height > width)
-          crossAxisSpacing: 12, // Horizontal gap between cards
-          mainAxisSpacing: 12, // Vertical gap between cards
+          crossAxisSpacing: 8, // Horizontal gap between cards
+          mainAxisSpacing: 8, // Vertical gap between cards
         ),
         itemCount: links.length,
         itemBuilder: (context, index) {

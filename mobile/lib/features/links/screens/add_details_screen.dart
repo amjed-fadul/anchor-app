@@ -18,6 +18,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:mobile/design_system/design_system.dart';
 import 'package:mobile/features/links/providers/add_link_provider.dart';
 import 'package:mobile/features/spaces/providers/space_provider.dart';
@@ -48,6 +49,11 @@ class _AddDetailsScreenState extends ConsumerState<AddDetailsScreen>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
 
+    // Listen to tab changes to update icon colors
+    _tabController.addListener(() {
+      setState(() {}); // Rebuild to update icon colors
+    });
+
     // Note: We don't initialize _noteController here because
     // ref.read() in initState can cause issues. Instead, we'll
     // initialize it in the first build when the note field is rendered.
@@ -59,6 +65,26 @@ class _AddDetailsScreenState extends ConsumerState<AddDetailsScreen>
     _noteController.dispose();
     _tagController.dispose();
     super.dispose();
+  }
+
+  /// Build SVG icon with dynamic color based on tab selection
+  ///
+  /// Returns an SVG icon that changes color:
+  /// - Teal (AnchorColors.anchorTeal) when tab is selected
+  /// - Light gray (Colors.grey[600]) when tab is not selected
+  Widget _buildTabIcon(String assetPath, int tabIndex) {
+    final isSelected = _tabController.index == tabIndex;
+    final color = isSelected ? AnchorColors.anchorTeal : Colors.grey[600];
+
+    return SvgPicture.asset(
+      assetPath,
+      width: 24,
+      height: 24,
+      colorFilter: ColorFilter.mode(
+        color!,
+        BlendMode.srcIn, // This tints the SVG with the specified color
+      ),
+    );
   }
 
   /// Parse tag input and create/get tags
@@ -152,17 +178,17 @@ class _AddDetailsScreenState extends ConsumerState<AddDetailsScreen>
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
-              tabs: const [
+              tabs: [
                 Tab(
-                  icon: Icon(Icons.label_outline, size: 20),
+                  icon: _buildTabIcon('assets/images/tags.svg', 0),
                   text: 'Tag',
                 ),
                 Tab(
-                  icon: Icon(Icons.edit_note_outlined, size: 20),
+                  icon: _buildTabIcon('assets/images/note.svg', 1),
                   text: 'Note',
                 ),
                 Tab(
-                  icon: Icon(Icons.folder_outlined, size: 20),
+                  icon: _buildTabIcon('assets/images/Spaces icon.svg', 2),
                   text: 'Space',
                 ),
               ],

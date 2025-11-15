@@ -2,6 +2,7 @@ library;
 
 /// TagService - Handle tag operations in Supabase
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/tag_model.dart';
@@ -68,15 +69,26 @@ class TagService {
 
   /// Get all tags for a user
   Future<List<Tag>> getUserTags(String userId) async {
+    debugPrint('🔵 [TagService] getUserTags START - userId: $userId');
     try {
+      debugPrint('🔵 [TagService] Executing Supabase query: tags table, user_id = $userId');
+      // Query tags table (matches SpaceService.getSpaces pattern)
       final response = await _supabase
           .from('tags')
           .select()
           .eq('user_id', userId)
           .order('created_at', ascending: false);
 
-      return (response as List).map((json) => Tag.fromJson(json)).toList();
-    } catch (e) {
+      debugPrint('🟢 [TagService] Supabase query returned successfully');
+      debugPrint('🔵 [TagService] Response type: ${response.runtimeType}, length: ${(response as List).length}');
+
+      final tags = response.map((json) => Tag.fromJson(json)).toList();
+      debugPrint('🟢 [TagService] Mapped to ${tags.length} Tag objects');
+      return tags;
+    } catch (e, stackTrace) {
+      // Log error and rethrow (matches SpaceService pattern)
+      debugPrint('🔴 [TagService] ERROR: $e');
+      debugPrint('🔴 [TagService] Stack trace: $stackTrace');
       throw Exception('Failed to fetch tags: $e');
     }
   }

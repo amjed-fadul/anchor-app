@@ -9,7 +9,7 @@ import '../../features/auth/screens/signup_email_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/forgot_password_screen.dart';
 import '../../features/auth/screens/reset_password_screen.dart';
-import '../../features/home/screens/home_screen.dart';
+import '../../shared/widgets/main_scaffold.dart';
 import '../../features/settings/screens/settings_screen.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import 'go_router_refresh_stream.dart';
@@ -269,11 +269,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       // Home screen (requires authentication)
+      // Now uses MainScaffold which provides bottom navigation with Home and Spaces tabs
       GoRoute(
         path: '/home',
         name: 'home',
         pageBuilder: (context, state) => const MaterialPage(
-          child: HomeScreen(),
+          child: MainScaffold(),
         ),
       ),
 

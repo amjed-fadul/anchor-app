@@ -45,8 +45,8 @@ class SearchBarWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      // Padding to add spacing from screen edges
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      // Padding - only top spacing (horizontal spacing provided by parent container)
+      padding: const EdgeInsets.only(top: 12),
 
       child: TextField(
         // onChanged callback (will be used when search is functional)

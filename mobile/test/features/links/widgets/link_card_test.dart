@@ -369,6 +369,61 @@ void main() {
       // This ensures all cards have same dimensions in grid
       expect(find.byType(LinkCard), findsOneWidget);
     });
+
+    /// Test #13: Shows bottom sheet on long press
+    ///
+    /// Why this matters:
+    /// Long press reveals action menu for link management
+    testWidgets('shows bottom sheet on long press', (WidgetTester tester) async {
+      // ARRANGE
+      final link = createLink();
+      final linkWithTags = LinkWithTags(link: link, tags: []);
+
+      // ACT
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: LinkCard(linkWithTags: linkWithTags),
+          ),
+        ),
+      );
+
+      // Perform long press on the card
+      await tester.longPress(find.byType(Card));
+      await tester.pumpAndSettle();
+
+      // ASSERT: Bottom sheet should be displayed
+      expect(find.text('Copy to clipboard'), findsOneWidget);
+      expect(find.text('Add Tag'), findsOneWidget);
+      expect(find.text('Delete Link'), findsOneWidget);
+    });
+
+    /// Test #14: Does not show bottom sheet on regular tap
+    ///
+    /// Why this matters:
+    /// Only long press should trigger action menu, not regular tap
+    testWidgets('does not show bottom sheet on tap', (WidgetTester tester) async {
+      // ARRANGE
+      final link = createLink();
+      final linkWithTags = LinkWithTags(link: link, tags: []);
+
+      // ACT
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: LinkCard(linkWithTags: linkWithTags),
+          ),
+        ),
+      );
+
+      // Perform regular tap on the card
+      await tester.tap(find.byType(Card));
+      await tester.pumpAndSettle();
+
+      // ASSERT: Bottom sheet should NOT be displayed
+      expect(find.text('Copy to clipboard'), findsNothing);
+      expect(find.text('Delete Link'), findsNothing);
+    });
   });
 }
 

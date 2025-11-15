@@ -565,6 +565,96 @@ If you answer "no" or "not sure" to ANY of these → **DO MORE ANALYSIS!**
 
 Remember: **Taking time to analyze is FASTER than fixing bugs your fix creates!**
 
+### 10. Always Add Debug Logging Before Fixing Bugs (CRITICAL)
+
+**What is Debug Logging First?**
+Before attempting to fix ANY bug, ALWAYS add comprehensive debug logging (`debugPrint()`) to trace the execution flow and identify the exact location where the issue occurs.
+
+**Why This is Critical:**
+- **Saves massive time** by finding the real root cause immediately instead of guessing
+- **Prevents wasted effort** on multiple failed fix attempts based on assumptions
+- **Creates a clear execution trail** showing exactly what's happening
+- **Helps understand the system** better through visibility into the flow
+- **Enables faster future debugging** when logs are left in place
+
+**Real-World Analogy:**
+Think of debugging like **diagnosing a car problem**:
+- ❌ **Bad**: Hear a noise, start replacing parts randomly → waste time and money
+- ✅ **Good**: Use diagnostics to pinpoint the exact issue, then fix it precisely
+
+**The Workflow - ALWAYS Follow These Steps:**
+
+1. **Bug Reported** → ❌ DON'T try to fix immediately!
+2. **Add Debug Logging** throughout the suspected code flow:
+   - Start of functions: `debugPrint('🔵 [ClassName] methodName START')`
+   - Before async operations: `debugPrint('🔵 [ClassName] Awaiting someOperation...')`
+   - After success: `debugPrint('🟢 [ClassName] Operation succeeded: $result')`
+   - Before errors: `debugPrint('🔴 [ClassName] ERROR: $error')`
+   - Key variable states: `debugPrint('🔵 [ClassName] variableName = $value')`
+3. **Run the app** and reproduce the bug
+4. **Analyze logs** to find the EXACT location where execution stops or fails
+5. **THEN fix the bug** with confidence knowing the real issue
+6. **Keep the logs** - they help with future debugging and understanding
+
+**Example from Real Bug Fix:**
+
+**Bug**: Loading spinner spins infinitely when opening tag picker
+
+**❌ Wrong Approach** (Guessing):
+- "Maybe it's a timeout issue" → Add random timeouts → Doesn't work
+- "Maybe it's the provider" → Refactor provider → Doesn't work
+- "Maybe it's Supabase" → Change query → Doesn't work
+- **Result**: 3 failed attempts, hours wasted, still broken
+
+**✅ Right Approach** (Debug Logging First):
+```dart
+// Added logs:
+debugPrint('🔵 [LinkCard] _showTagPicker START');
+debugPrint('🔵 [LinkCard] Awaiting tagsProvider.future...');
+debugPrint('🟢 [LinkCard] Tags loaded! Count: ${tags.length}');
+debugPrint('🔵 [LinkCard] context.mounted = ${context.mounted}');
+debugPrint('🔵 [LinkCard] Closing loading dialog');
+```
+
+**Logs revealed**:
+```
+🟢 [LinkCard] Tags loaded! Count: 36  ← Tags load fine!
+🔵 [LinkCard] context.mounted = false  ← AH-HA! Context is unmounted!
+(No "Closing loading dialog" log)     ← Dialog never closes!
+```
+
+**Result**: Found exact issue in 2 minutes, fixed in 1 line of code!
+
+**Best Practices:**
+
+1. **Use Emojis** for easy visual scanning:
+   - 🔵 = Normal flow/info
+   - 🟢 = Success
+   - 🔴 = Error
+   - ⚠️ = Warning
+
+2. **Include Context** in every log:
+   - `[ClassName]` prefix shows where log is from
+   - Include method name
+   - Show variable values
+
+3. **Log Key Decision Points**:
+   - Before if statements: `debugPrint('🔵 Checking: condition = $value')`
+   - In branches: `debugPrint('🔵 Taking path A')`
+   - After async operations
+
+4. **Don't Remove Logs After Fixing**:
+   - Leave them in for future debugging
+   - `debugPrint()` is production-safe (only shows in debug mode)
+   - They serve as inline documentation
+
+**When in Doubt**:
+- Add MORE logs, not fewer
+- Better to have too much information than too little
+- Logs cost nothing but save hours
+
+**Remember:** "Measure twice, cut once" → **Log first, fix second!**
+
 ---
 
 ## 🚦 Visual Risk Signals

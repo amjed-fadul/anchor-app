@@ -12,6 +12,30 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+#### Bottom Navigation and Spaces Screen MVP (2025-11-15 10:30)
+- **What**: Implemented bottom navigation bar with Home and Spaces tabs, and created the Spaces screen
+- **Features**:
+  - MainScaffold widget with BottomNavigationBar
+  - Two tabs: Home (index 0) and Spaces (index 1)
+  - IndexedStack for state preservation when switching tabs
+  - SVG icons with dynamic coloring (teal when active, gray when inactive)
+  - SpacesScreen with header (title, plus button, menu button)
+  - SpaceCard widget for displaying individual spaces
+  - Colored square icons (40x40, rounded 8px) with hex color parsing
+  - Auto-creation of two default spaces on first launch:
+    - "Unread" (purple #7c3aed)
+    - "Reference" (red #ef4444)
+  - AsyncValue.when() pattern for loading/error/data states
+  - Plus and menu buttons visible but disabled (onPressed: null) for future implementation
+- **Files Added**:
+  - `lib/shared/widgets/main_scaffold.dart` - Bottom navigation wrapper
+  - `lib/features/spaces/widgets/space_card.dart` - Individual space card component
+  - `lib/features/spaces/screens/spaces_screen.dart` - Main spaces screen
+- **Files Modified**:
+  - `lib/core/router/app_router.dart` - Updated /home route to use MainScaffold instead of HomeScreen
+- **Design Pattern**: Uses Riverpod's StateProvider for tab index management, preserves state with IndexedStack
+- **Result**: ✅ Users can now navigate between Home and Spaces tabs, and see their spaces (or auto-created defaults)
+
 #### Link Card Long-Press Actions - Copy to Clipboard (2025-11-15 09:00)
 - **What**: Added copy link URL to clipboard action
 - **Features**:
