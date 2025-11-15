@@ -10,6 +10,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+#### Create Space Feature - Complete 2-Step Flow (2025-11-15 18:00)
+- **What**: Full Create Space flow accessible from Spaces screen + button
+- **Why**: Users need ability to create custom spaces beyond default "Unread" and "Reference" spaces
+- **Solution**:
+  - Created 2-step modal bottom sheet flow matching Figma design exactly:
+    - Step 1: Name Input - Auto-focused text field that opens keyboard immediately, validates input (1-50 chars, trims whitespace), disabled "Next" button when empty
+    - Step 2: Color Picker - Grid of 14 design-approved colors, large 84x84 preview when selected, dynamic button text ("Next" → "Save and finish")
+  - PageView with disabled swipe for controlled navigation between steps
+  - Color palette from Figma: 14 specific hex codes (#7cfec4, #c3c3d1, #ff8da7, #000002, #15afcf, #1ac47f, #ffdcd4, #7e30d1, #fff273, #c5a3af, #97cdd3, #c2b8d9, #1773fa, #ed404d)
+  - Implemented `createSpace()` method in SpacesNotifier provider:
+    - Validates user authentication
+    - Validates space name (1-50 characters, non-empty after trim)
+    - Creates space via SpaceService
+    - Automatically refreshes spaces list to show new space
+    - Error handling with user-friendly messages
+  - Success SnackBar confirmation: "Space '[name]' created!"
+  - Loading state with CircularProgressIndicator during creation
+  - Graceful error handling with error SnackBar if creation fails
+  - Responsive layout using Spacer widgets instead of fixed heights
+- **Files Changed**:
+  - `mobile/lib/features/spaces/widgets/create_space_bottom_sheet.dart` - Created 2-step bottom sheet widget (500+ lines)
+  - `mobile/lib/features/spaces/providers/space_provider.dart` - Added createSpace() method with validation
+  - `mobile/lib/features/spaces/screens/spaces_screen.dart` - Enabled + button, added _showCreateSpaceSheet() method
+  - `mobile/test/features/spaces/widgets/create_space_bottom_sheet_test.dart` - Created 11 comprehensive widget tests (TDD)
+- **Testing**: ✅ All 11 widget tests passing (TDD approach - tests written first, then implementation)
+- **Result**: ✅ Users can now create custom spaces with personalized names and colors, spaces appear immediately in list
+
 #### Add Link Feature - Complete Implementation (2025-11-14 01:00)
 - **What**: Full Add Link flow from URL input to saved link with metadata
 - **Why**: Users needed ability to save links from within the app (core feature #1)

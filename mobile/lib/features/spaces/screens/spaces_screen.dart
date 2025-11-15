@@ -21,6 +21,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/space_provider.dart';
 import '../widgets/space_card.dart';
+import '../widgets/create_space_bottom_sheet.dart';
 
 class SpacesScreen extends ConsumerStatefulWidget {
   const SpacesScreen({super.key});
@@ -39,6 +40,20 @@ class _SpacesScreenState extends ConsumerState<SpacesScreen> {
   ///   (See: supabase/migrations/005_backfill_default_spaces.sql)
   ///
   /// This screen simply displays whatever spaces exist in the database.
+
+  /// Show Create Space bottom sheet
+  ///
+  /// Opens a modal bottom sheet with the 2-step space creation flow:
+  /// 1. Enter space name
+  /// 2. Pick a color
+  void _showCreateSpaceSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, // Allow custom height
+      backgroundColor: Colors.transparent, // For rounded corners
+      builder: (context) => const CreateSpaceBottomSheet(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -181,12 +196,12 @@ class _SpacesScreenState extends ConsumerState<SpacesScreen> {
 
           const Spacer(),
 
-          // Plus button (for creating new space - disabled for now)
+          // Plus button (for creating new space)
           IconButton(
             icon: const Icon(Icons.add),
             color: const Color(0xff075a52), // Teal
             iconSize: 28,
-            onPressed: null, // Disabled for now
+            onPressed: _showCreateSpaceSheet,
             tooltip: 'Create new space',
           ),
 

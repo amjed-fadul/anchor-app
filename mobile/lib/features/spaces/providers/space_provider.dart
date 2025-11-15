@@ -136,6 +136,70 @@ class SpacesNotifier extends AutoDisposeAsyncNotifier<List<Space>> {
     // Wait for the new data to load
     await future;
   }
+
+  /// createSpace - Create a new space
+  ///
+  /// Creates a new custom space with the given name and color.
+  /// After creation, automatically refreshes the spaces list to show the new space.
+  ///
+  /// Parameters:
+  /// - name: Name for the new space (1-50 characters)
+  /// - color: Hex color code (e.g., '#7cfec4')
+  ///
+  /// Usage:
+  /// ```dart
+  /// await ref.read(spacesProvider.notifier).createSpace('Work', '#3B82F6');
+  /// ```
+  ///
+  /// Throws Exception if:
+  /// - User not logged in
+  /// - Name is invalid (empty, too long)
+  /// - Database error occurs
+  Future<void> createSpace(String name, String color) async {
+    debugPrint('🔵 [SpacesNotifier] createSpace() called');
+    debugPrint('🔵 [SpacesNotifier] Name: $name, Color: $color');
+
+    // Get current user
+    final user = ref.read(currentUserProvider);
+    final userId = user?.id;
+
+    if (userId == null) {
+      debugPrint('🔴 [SpacesNotifier] Cannot create space: No user logged in');
+      throw Exception('User not logged in');
+    }
+
+    // Validate name
+    final trimmedName = name.trim();
+    if (trimmedName.isEmpty) {
+      debugPrint('🔴 [SpacesNotifier] Cannot create space: Name is empty');
+      throw Exception('Space name cannot be empty');
+    }
+
+    if (trimmedName.length > 50) {
+      debugPrint('🔴 [SpacesNotifier] Cannot create space: Name too long');
+      throw Exception('Space name cannot exceed 50 characters');
+    }
+
+    try {
+      // Create space via service
+      final spaceService = ref.read(spaceServiceProvider);
+      final newSpace = await spaceService.createSpace(
+        userId: userId,
+        name: trimmedName,
+        color: color,
+      );
+
+      debugPrint('✅ [SpacesNotifier] Space created: ${newSpace.name} (${newSpace.color})');
+
+      // Refresh the spaces list to include the new space
+      await refresh();
+
+      debugPrint('✅ [SpacesNotifier] Spaces list refreshed');
+    } catch (e) {
+      debugPrint('🔴 [SpacesNotifier] Error creating space: $e');
+      rethrow; // Re-throw to let UI handle the error
+    }
+  }
 }
 
 /// 🎓 Learning Summary: Riverpod AsyncNotifier Pattern
