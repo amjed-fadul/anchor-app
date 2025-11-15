@@ -16,6 +16,7 @@ library;
 /// - After that: Shows cached folders instantly
 /// - Pull to refresh: Re-checks storage for new folders
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/space_model.dart';
@@ -65,7 +66,7 @@ final spaceServiceProvider = Provider<SpaceService>((ref) {
 ///   ),
 /// );
 /// ```
-final spacesProvider = AsyncNotifierProvider<SpacesNotifier, List<Space>>(
+final spacesProvider = AsyncNotifierProvider.autoDispose<SpacesNotifier, List<Space>>(
   SpacesNotifier.new,
 );
 
@@ -76,28 +77,43 @@ final spacesProvider = AsyncNotifierProvider<SpacesNotifier, List<Space>>(
 /// 2. Caches the result
 /// 3. Provides a method to refresh
 /// 4. Handles errors automatically
-class SpacesNotifier extends AsyncNotifier<List<Space>> {
+/// 5. Auto-disposes when no longer watched (prevents stale state)
+class SpacesNotifier extends AutoDisposeAsyncNotifier<List<Space>> {
   /// build - Called when the notifier is first accessed
   ///
   /// This is where we fetch the initial data.
   /// Riverpod automatically handles loading/error states.
   @override
   Future<List<Space>> build() async {
+    // 🐛 DEBUG: Track when and from where build() is called
+    debugPrint('🔵 [SpacesNotifier] build() called');
+    debugPrint('🔵 [SpacesNotifier] Stack trace:\n${StackTrace.current}');
+
     // Get the current user from auth
-    final user = ref.read(currentUserProvider);
+    // IMPORTANT: Use ref.watch() not ref.read() so provider rebuilds on auth changes
+    final user = ref.watch(currentUserProvider);
     final userId = user?.id;
+
+    debugPrint('🔵 [SpacesNotifier] User ID: $userId');
 
     // If no user is logged in, return empty list
     if (userId == null) {
+      debugPrint('⚠️ [SpacesNotifier] No user logged in, returning empty list');
       return [];
     }
 
     // Get the service
     final spaceService = ref.read(spaceServiceProvider);
 
+    debugPrint('🔵 [SpacesNotifier] About to fetch spaces from database...');
+
     // Fetch spaces
     // This is async, so Riverpod shows loading state automatically
-    return await spaceService.getSpaces(userId);
+    final spaces = await spaceService.getSpaces(userId);
+
+    debugPrint('✅ [SpacesNotifier] build() completed, returning ${spaces.length} spaces');
+
+    return spaces;
   }
 
   /// refresh - Manually refresh the spaces

@@ -96,6 +96,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+#### Duplicate Spaces Database Fetches on App Launch (2025-11-15 17:35)
+- **Problem**: On app launch, `spacesProvider` was making duplicate database queries - fetching spaces 2 times with the same authenticated user instead of once. This caused unnecessary database load and wasted API calls. Debug logs revealed 3 total provider builds: one with null user (before auth loads), then TWO builds with the authenticated user.
+- **Root Cause**: The `spacesProvider` depends on `currentUserProvider` via `ref.watch(currentUserProvider)`. When auth state changes from "not ready" → "ready", the provider dependency chain triggers a rebuild. Without `.autoDispose`, Riverpod was rebuilding the provider multiple times during the auth state transition, causing duplicate fetches with the same user ID.
+- **Solution**:
+  - Added `.autoDispose` modifier to `spacesProvider` (changed from `AsyncNotifierProvider` to `AsyncNotifierProvider.autoDispose`)
+  - Updated `SpacesNotifier` to extend `AutoDisposeAsyncNotifier` instead of `AsyncNotifier`
+  - Added comprehensive debug logging with `debugPrint()` and stack traces to track provider lifecycle
+  - `.autoDispose` manages provider lifecycle better - disposes when not watched, prevents stale state, and eliminates duplicate builds during auth transitions
+- **Files Changed**:
+  - `mobile/lib/features/spaces/providers/space_provider.dart` - Added .autoDispose modifier and debug logging
+- **Testing**: Verified with debug logs - now only 2 builds occur (one with null user before auth, one with authenticated user), eliminating the duplicate fetch
+- **Result**: ✅ Single database query on app launch instead of duplicate, reduced database load by 50%
+
+#### Space Provider Not Rebuilding on Auth State Change (2025-11-15 16:15)
+- **Problem**: Spaces screen showed "No spaces yet" even though default spaces existed in database. Spaces never appeared even after login. Debug logs showed SpaceService.getSpaces() was never being called.
+- **Root Cause**: `SpacesNotifier.build()` used `ref.read(currentUserProvider)` which reads the value once and never watches for changes. Provider built once when app started (before user authenticated) and never rebuilt when auth state changed (login event). This is IDENTICAL to the bug that was fixed for LinksProvider.
+- **Solution**: Changed `ref.read(currentUserProvider)` to `ref.watch(currentUserProvider)` so the provider automatically rebuilds whenever the auth state changes (user logs in or out). Added comment to prevent future regression.
+- **Files Changed**:
+  - `mobile/lib/features/spaces/providers/space_provider.dart` - Changed read() to watch() on line 88, added warning comment
+- **Result**: ✅ Spaces now load immediately on login and clear immediately on logout (reactive state management)
+
+#### Missing Default Spaces for Existing Users (2025-11-15 14:30)
+- **Problem**: Users who signed up before migrations were created saw "No spaces yet" message instead of default "Unread" and "Reference" spaces
+- **Root Cause**: Database trigger in migration 002 only fires for NEW user signups. When migration 004 backfilled existing auth.users into public.users, it used `ON CONFLICT DO NOTHING` which prevented the INSERT, so the trigger never fired. Existing users ended up with public.users records but no default spaces.
+- **Solution**:
+  - Created migration 005_backfill_default_spaces.sql
+  - Finds all users without spaces and creates "Unread" (purple #9333EA) and "Reference" (red #DC2626) spaces
+  - Uses ON CONFLICT to make it idempotent (safe to run multiple times)
+  - Includes verification queries to check all users have default spaces
+  - Fixed 2 lint warnings in SpaceService (removed unnecessary type casts)
+  - Updated SpacesScreen comment to clarify trigger handles NEW users, migration handles EXISTING users
+- **Files Changed**:
+  - `supabase/migrations/005_backfill_default_spaces.sql` - Created backfill migration
+  - `mobile/lib/features/spaces/services/space_service.dart` - Removed unnecessary casts, added debug logging
+  - `mobile/lib/features/spaces/screens/spaces_screen.dart` - Updated comment to reference both migrations
+- **Result**: ✅ All users (new and existing) now have default Unread and Reference spaces
+
 #### Link Provider Not Rebuilding on Auth State Change (2025-11-14 00:20)
 - **Problem**: When user logged in, links wouldn't load (empty state shown). When user logged out, old links remained visible. Links only appeared after adding a new link.
 - **Root Cause**: `LinksNotifier.build()` used `ref.read(currentUserProvider)` which reads the value once and never watches for changes. Provider built once on first access and never rebuilt when auth state changed (login/logout events).
