@@ -194,6 +194,31 @@ class LinkService {
     }
   }
 
+  /// deleteLink - Delete a link and its tag associations
+  ///
+  /// This method:
+  /// 1. Deletes all tag associations for this link (link_tags table)
+  /// 2. Deletes the link record from the links table
+  ///
+  /// Parameters:
+  /// - linkId: ID of the link to delete
+  ///
+  /// Throws:
+  /// Exception if database delete fails
+  Future<void> deleteLink(String linkId) async {
+    try {
+      // Step 1: Delete all tag associations for this link
+      // (This is automatic due to CASCADE DELETE in database schema,
+      // but we do it explicitly for clarity and to work with all databases)
+      await _supabase.from('link_tags').delete().eq('link_id', linkId);
+
+      // Step 2: Delete the link
+      await _supabase.from('links').delete().eq('id', linkId);
+    } catch (e) {
+      throw Exception('Failed to delete link: $e');
+    }
+  }
+
   /// getLinksWithTags - Fetch all links for a user with their tags
   ///
   /// Why this query structure?

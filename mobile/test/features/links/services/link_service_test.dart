@@ -400,6 +400,68 @@ void main() {
         throwsException,
       );
     });
+
+    /// Test Group: deleteLink() tests
+    ///
+    /// Testing the deletion of links and their associated tag relationships
+    group('deleteLink()', () {
+      /// Test #1: Successfully deletes link and its tag associations
+      ///
+      /// Why this matters:
+      /// When a user deletes a link, both the link record AND its tag associations
+      /// should be removed from the database
+      test('successfully deletes link and tag associations', () async {
+        // ARRANGE: Mock database delete operations
+        final mockLinkTagsBuilder = MockSupabaseQueryBuilder();
+        final mockLinksBuilder = MockSupabaseQueryBuilder();
+        final mockLinkTagsFilter = MockPostgrestFilterBuilder();
+        final mockLinksFilter = MockPostgrestFilterBuilder();
+
+        // Mock link_tags deletion
+        when(() => mockSupabase.from('link_tags')).thenReturn(mockLinkTagsBuilder);
+        when(() => mockLinkTagsBuilder.delete()).thenReturn(mockLinkTagsFilter);
+        when(() => mockLinkTagsFilter.eq('link_id', 'link-123')).thenAnswer((_) async => []);
+
+        // Mock links deletion
+        when(() => mockSupabase.from('links')).thenReturn(mockLinksBuilder);
+        when(() => mockLinksBuilder.delete()).thenReturn(mockLinksFilter);
+        when(() => mockLinksFilter.eq('id', 'link-123')).thenAnswer((_) async => []);
+
+        // ACT: Delete the link
+        await linkService.deleteLink('link-123');
+
+        // ASSERT: Verify both deletes were called in correct order
+        verify(() => mockSupabase.from('link_tags')).called(1);
+        verify(() => mockLinkTagsBuilder.delete()).called(1);
+        verify(() => mockLinkTagsFilter.eq('link_id', 'link-123')).called(1);
+
+        verify(() => mockSupabase.from('links')).called(1);
+        verify(() => mockLinksBuilder.delete()).called(1);
+        verify(() => mockLinksFilter.eq('id', 'link-123')).called(1);
+      });
+
+      /// Test #2: Handles database errors when deleting
+      ///
+      /// Why this matters:
+      /// If deletion fails (e.g., network error, permission denied),
+      /// we should throw a clear exception
+      test('throws exception when delete fails', () async {
+        // ARRANGE: Mock database throwing error
+        final mockLinkTagsBuilder = MockSupabaseQueryBuilder();
+        final mockLinkTagsFilter = MockPostgrestFilterBuilder();
+
+        when(() => mockSupabase.from('link_tags')).thenReturn(mockLinkTagsBuilder);
+        when(() => mockLinkTagsBuilder.delete()).thenReturn(mockLinkTagsFilter);
+        when(() => mockLinkTagsFilter.eq('link_id', 'link-123'))
+            .thenThrow(Exception('Network error'));
+
+        // ACT & ASSERT: Should throw exception
+        expect(
+          () => linkService.deleteLink('link-123'),
+          throwsException,
+        );
+      });
+    });
   });
 }
 

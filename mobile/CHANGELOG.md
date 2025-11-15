@@ -12,6 +12,22 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+#### Link Card Long-Press Actions - Delete Functionality (2025-11-15 08:00)
+- **What**: Added delete link functionality with confirmation dialog
+- **Features**:
+  - Long press on link card shows action sheet with delete option
+  - Confirmation dialog prevents accidental deletions ("Are you sure?" with Cancel/Delete buttons)
+  - Deletes link from database via `LinkService.deleteLink()`
+  - Automatically removes tag associations from `link_tags` junction table
+  - Refreshes link list after successful deletion
+  - Success/error feedback via SnackBar
+  - Haptic feedback on long press for tactile confirmation
+- **Files Modified**:
+  - `lib/features/links/services/link_service.dart` - Added `deleteLink()` method
+  - `lib/features/links/widgets/link_card.dart` - Added confirmation dialog and delete flow
+  - `test/features/links/services/link_service_test.dart` - Added deleteLink tests (2 new tests)
+- **Result**: ✅ Users can now delete saved links with confirmation
+
 #### Home Screen MVP - Complete Implementation (2025-11-13 12:00-20:00)
 - **What**: Built complete home screen for displaying saved links
 - **Features**:
@@ -66,6 +82,18 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Result**: ✅ Complete infrastructure for Add Link feature
 
 ### Fixed
+
+#### Delete Link Context.mounted Issue (2025-11-15 08:30)
+- **Problem**: Delete confirmation dialog appeared but link wasn't deleted - `context.mounted` was `false` after async dialog operation
+- **Root Cause**: Used modal bottom sheet's context (from `builder` parameter) which became unmounted after `Navigator.pop()`. When dialog returned after async operation, that context was no longer valid, causing `context.mounted` check to fail.
+- **Solution**:
+  - Capture parent context before showing modal bottom sheet (`final parentContext = context`)
+  - Rename builder parameter to `sheetContext` to avoid shadowing
+  - Use `sheetContext` for popping the sheet
+  - Use `parentContext` for dialog and all subsequent operations (remains valid after sheet closes)
+- **Files Changed**:
+  - `lib/features/links/widgets/link_card.dart` (lines 72, 79, 87, 90, 94, 100, 106, 128-172)
+- **Result**: ✅ Delete now works correctly - link removed from database and UI refreshes
 
 #### Foreign Key Violation on Link Creation (2025-11-13 21:45)
 - **Problem**: Saving links failed with `PostgrestException: insert or update on table "links" violates foreign key constraint "links_user_id_fkey"`. User exists in `auth.users` but not in public `users` table.
