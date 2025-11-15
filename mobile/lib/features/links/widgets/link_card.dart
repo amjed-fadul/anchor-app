@@ -78,9 +78,23 @@ class LinkCard extends ConsumerWidget {
       isScrollControlled: true,
       builder: (sheetContext) => LinkActionSheet(
         linkWithTags: linkWithTags,
-        onCopyToClipboard: () {
-          // TODO: Implement copy to clipboard
+        onCopyToClipboard: () async {
+          // Close action sheet first
           Navigator.pop(sheetContext);
+
+          // Copy URL to clipboard
+          await Clipboard.setData(ClipboardData(text: linkWithTags.link.url));
+
+          // Show success feedback
+          if (parentContext.mounted) {
+            ScaffoldMessenger.of(parentContext).showSnackBar(
+              const SnackBar(
+                content: Text('Link copied to clipboard'),
+                backgroundColor: Color(0xff075a52), // Anchor teal
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
         },
         onAddTag: () {
           // Close action sheet first

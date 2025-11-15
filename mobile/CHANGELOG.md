@@ -12,6 +12,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+#### Link Card Long-Press Actions - Copy to Clipboard (2025-11-15 09:00)
+- **What**: Added copy link URL to clipboard action
+- **Features**:
+  - Copy button in link card action sheet
+  - Copies original URL to system clipboard using `Clipboard.setData()`
+  - Success feedback via SnackBar confirmation
+  - Uses parent context pattern (same fix as delete action)
+- **Files Modified**:
+  - `lib/features/links/widgets/link_card.dart` - Implemented copy to clipboard in `onCopyToClipboard` callback
+- **Result**: ✅ Users can easily copy saved link URLs with one tap
+
 #### Link Card Long-Press Actions - Delete Functionality (2025-11-15 08:00)
 - **What**: Added delete link functionality with confirmation dialog
 - **Features**:
