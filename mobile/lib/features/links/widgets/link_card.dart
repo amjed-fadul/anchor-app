@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/link_service.dart' show LinkWithTags;
 import '../providers/link_provider.dart';
 import '../providers/links_by_space_provider.dart';
@@ -58,6 +59,7 @@ class LinkCard extends ConsumerWidget {
     }
 
     return GestureDetector(
+      onTap: () => _openLink(context),
       onLongPress: () => _showActionSheet(context, ref),
       child: Card(
         elevation: 1.0,
@@ -93,6 +95,53 @@ class LinkCard extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  /// Open link in external browser
+  ///
+  /// Opens the saved link URL in the user's default browser.
+  /// Shows error snackbar if the URL cannot be opened.
+  ///
+  /// Uses url_launcher package with mode: LaunchMode.externalApplication
+  /// to ensure link opens in browser, not in-app webview.
+  Future<void> _openLink(BuildContext context) async {
+    try {
+      final url = Uri.parse(linkWithTags.link.url);
+
+      // Try to launch URL in external browser
+      final canLaunch = await canLaunchUrl(url);
+
+      if (canLaunch) {
+        await launchUrl(
+          url,
+          mode: LaunchMode.externalApplication, // Open in browser, not in-app
+        );
+      } else {
+        // URL cannot be opened (invalid scheme, etc.)
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Cannot open URL: ${linkWithTags.link.url}'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Error parsing or launching URL
+      debugPrint('🔴 [LinkCard] Error opening link: $e');
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error opening link: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 
   /// Show action sheet on long press

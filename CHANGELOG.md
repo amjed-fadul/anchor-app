@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+#### Tap to Open Links in Browser (2025-11-16 13:00) ⭐ CRITICAL UX
+- **Feature**: Users can now tap link cards to open URLs in their default browser
+- **Implementation**:
+  - Added `onTap` gesture to LinkCard widget
+  - Uses `url_launcher` package with `LaunchMode.externalApplication`
+  - Opens in external browser (not in-app webview)
+  - Comprehensive error handling with user-friendly messages
+  - Graceful fallback if URL cannot be opened
+- **Files Changed**: `mobile/lib/features/links/widgets/link_card.dart`
+- **Result**: ✅ **CRITICAL**: Users can now use the fundamental feature of opening saved links!
+- **UX Pattern**: Tap to open, long-press for actions (familiar mobile pattern)
+
 #### Space Indicator on Link Cards (2025-11-16 12:00)
 - **Feature**: Visual indicator showing which space a link belongs to
 - **Implementation**: 4px colored stripe at top edge of link card thumbnail
