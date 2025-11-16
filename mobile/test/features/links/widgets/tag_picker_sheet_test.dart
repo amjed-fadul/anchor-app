@@ -132,11 +132,10 @@ void main() {
         ),
       );
 
-      // Should find checkboxes or check icons for selected tags
-      // (We'll look for Checkbox widgets set to true)
-      final checkboxes = tester.widgetList<Checkbox>(find.byType(Checkbox));
-      final checkedCount = checkboxes.where((cb) => cb.value == true).length;
-      expect(checkedCount, 2); // 2 tags should be checked
+      // Should find check icons for selected tags
+      // (Implementation uses Icon(Icons.check), not Checkbox)
+      final checkIcons = tester.widgetList<Icon>(find.byIcon(Icons.check));
+      expect(checkIcons.length, 2); // 2 tags should have check icons
     });
 
     /// Test #4: Tapping tag toggles selection
@@ -165,18 +164,14 @@ void main() {
       );
 
       // Initially, no tags should be checked
-      var checkboxes = tester.widgetList<Checkbox>(find.byType(Checkbox));
-      var checkedCount = checkboxes.where((cb) => cb.value == true).length;
-      expect(checkedCount, 0);
+      expect(find.byIcon(Icons.check), findsNothing);
 
       // Tap the first tag (Design)
       await tester.tap(find.text('Design'));
       await tester.pumpAndSettle();
 
-      // Now one tag should be checked
-      checkboxes = tester.widgetList<Checkbox>(find.byType(Checkbox));
-      checkedCount = checkboxes.where((cb) => cb.value == true).length;
-      expect(checkedCount, 1);
+      // Now one tag should have a check icon
+      expect(find.byIcon(Icons.check), findsOneWidget);
     });
 
     /// Test #5: Search field filters tags by name
@@ -217,7 +212,7 @@ void main() {
     ///
     /// Why this matters:
     /// Users should be able to create new tags on the fly
-    testWidgets('has create new tag input field', (tester) async {
+    testWidgets('shows create tag suggestion when searching for non-existent tag', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
@@ -232,14 +227,16 @@ void main() {
         ),
       );
 
-      // Should find at least one TextField (could be 2: search + create)
-      expect(find.byType(TextField), findsWidgets);
+      // Enter text in search field for a tag that doesn't exist
+      await tester.enterText(find.byType(TextField), 'NewTag');
+      await tester.pumpAndSettle();
 
-      // Look for hint text related to creating tags
+      // Should show create suggestion with add icon
+      // (Implementation uses Icons.add_circle_outline for create suggestion)
       expect(
-        find.text('Create new tag'),
+        find.byIcon(Icons.add_circle_outline),
         findsOneWidget,
-        reason: 'Should have "Create new tag" label or hint',
+        reason: 'Should show create tag suggestion with add icon for non-existent tag',
       );
     });
 

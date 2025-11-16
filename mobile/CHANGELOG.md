@@ -118,6 +118,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+#### Tag Picker Sheet Widget Test Failures (2025-11-16 17:45)
+- **Problem**: 3 Tag Picker Sheet tests failing due to incorrect test expectations
+- **Root Cause**: Tests expected `Checkbox` widgets and static "Create new tag" text, but implementation uses different UI patterns
+- **Solution**:
+  - Test #3 & #4: Changed from looking for `Checkbox.value == true` to `Icon(Icons.check)`
+  - Test #6: Updated to trigger create suggestion by entering search text, then look for `Icons.add_circle_outline` instead of text (RichText with TextSpan doesn't work with `find.textContaining()`)
+  - Renamed test #6 from "has create new tag input field" to "shows create tag suggestion when searching for non-existent tag" to match actual behavior
+- **Files Changed**:
+  - `test/features/links/widgets/tag_picker_sheet_test.dart` - Fixed test assertions to match implementation
+- **Result**: ✅ All 12 Tag Picker Sheet tests now passing (26/44 total test failures fixed = 59.1% complete)
+
 #### Link Card Widget Test Failures (2025-11-16 17:15)
 - **Problem**: All 15 Link Card Widget tests failing with "Bad state: No ProviderScope found" error
 - **Root Cause**: LinkCard is a ConsumerWidget that uses `ref.watch(spacesProvider)` at line 39, but tests wrapped the widget in MaterialApp without ProviderScope, causing Riverpod to throw an error
