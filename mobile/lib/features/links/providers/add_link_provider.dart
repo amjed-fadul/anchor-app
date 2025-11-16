@@ -9,6 +9,7 @@ library;
 /// - Optional details (tags, note, space)
 /// - UI state transitions
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile/features/links/models/link_model.dart';
 import 'package:mobile/features/links/services/link_service.dart';
