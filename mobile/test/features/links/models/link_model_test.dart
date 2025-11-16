@@ -26,7 +26,11 @@ void main() {
       'user_id': '987e6543-e21b-12d3-a456-426614174999',
       'space_id': '456e7890-e12b-34d5-a678-426614175111',
       'url': 'https://www.apple.com/newsroom/2023/06/apple-vision-pro/',
+      'normalized_url': 'https://www.apple.com/newsroom/2023/06/apple-vision-pro/',
       'title': 'Apple Vision Pro - Apple Newsroom',
+      'description': 'Apple introduces Vision Pro, a revolutionary spatial computer',
+      'thumbnail_url': 'https://www.apple.com/newsroom/images/vision-pro.jpg',
+      'domain': 'www.apple.com',
       'note': 'Check this out later',
       'opened_at': '2025-11-13T10:30:00Z',
       'created_at': '2025-11-13T09:00:00Z',
@@ -66,7 +70,11 @@ void main() {
         'user_id': '987e6543-e21b-12d3-a456-426614174999',
         'space_id': '456e7890-e12b-34d5-a678-426614175111',
         'url': 'https://example.com',
+        'normalized_url': 'https://example.com', // Required field
         'title': null, // No title
+        'description': null, // No description
+        'thumbnail_url': null, // No thumbnail
+        'domain': null, // No domain
         'note': null, // No note
         'opened_at': null, // Never opened
         'created_at': '2025-11-13T09:00:00Z',
@@ -103,7 +111,11 @@ void main() {
       expect(json['user_id'], '987e6543-e21b-12d3-a456-426614174999');
       expect(json['space_id'], '456e7890-e12b-34d5-a678-426614175111');
       expect(json['url'], 'https://www.apple.com/newsroom/2023/06/apple-vision-pro/');
+      expect(json['normalized_url'], 'https://www.apple.com/newsroom/2023/06/apple-vision-pro/');
       expect(json['title'], 'Apple Vision Pro - Apple Newsroom');
+      expect(json['description'], 'Apple introduces Vision Pro, a revolutionary spatial computer');
+      expect(json['thumbnail_url'], 'https://www.apple.com/newsroom/images/vision-pro.jpg');
+      expect(json['domain'], 'www.apple.com');
       expect(json['note'], 'Check this out later');
       expect(json['opened_at'], '2025-11-13T10:30:00.000Z');
       expect(json['created_at'], '2025-11-13T09:00:00.000Z');
