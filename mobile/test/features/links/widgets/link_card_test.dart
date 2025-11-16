@@ -31,11 +31,26 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile/features/links/widgets/link_card.dart';
 import 'package:mobile/features/links/models/link_model.dart';
 import 'package:mobile/features/tags/models/tag_model.dart';
 import 'package:mobile/features/tags/widgets/tag_badge.dart';
 import 'package:mobile/features/links/services/link_service.dart';
+import 'package:mobile/features/spaces/providers/space_provider.dart';
+
+/// Helper function to create a test widget with ProviderScope
+/// This is needed because LinkCard uses Riverpod providers
+Widget createTestWidget(Widget child, {List<Override> overrides = const []}) {
+  return ProviderScope(
+    overrides: overrides,
+    child: MaterialApp(
+      home: Scaffold(
+        body: child,
+      ),
+    ),
+  );
+}
 
 void main() {
   group('LinkCard Widget', () {
@@ -84,11 +99,7 @@ void main() {
 
       // ACT
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: LinkCard(linkWithTags: linkWithTags),
-          ),
-        ),
+        createTestWidget(LinkCard(linkWithTags: linkWithTags)),
       );
 
       // ASSERT
@@ -106,11 +117,7 @@ void main() {
 
       // ACT
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: LinkCard(linkWithTags: linkWithTags),
-          ),
-        ),
+        createTestWidget(LinkCard(linkWithTags: linkWithTags)),
       );
 
       // ASSERT
@@ -132,11 +139,7 @@ void main() {
 
       // ACT
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: LinkCard(linkWithTags: linkWithTags),
-          ),
-        ),
+        createTestWidget(LinkCard(linkWithTags: linkWithTags)),
       );
 
       // ASSERT: Should find TagBadge widgets
@@ -156,11 +159,7 @@ void main() {
 
       // ACT
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: LinkCard(linkWithTags: linkWithTags),
-          ),
-        ),
+        createTestWidget(LinkCard(linkWithTags: linkWithTags)),
       );
 
       // ASSERT: Should still render without crashing
@@ -180,11 +179,7 @@ void main() {
 
       // ACT
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: LinkCard(linkWithTags: linkWithTags),
-          ),
-        ),
+        createTestWidget(LinkCard(linkWithTags: linkWithTags)),
       );
 
       // ASSERT: Should render without TagBadges
@@ -203,11 +198,7 @@ void main() {
 
       // ACT
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: LinkCard(linkWithTags: linkWithTags),
-          ),
-        ),
+        createTestWidget(LinkCard(linkWithTags: linkWithTags)),
       );
 
       // ASSERT: Should use Card widget with shape
@@ -231,11 +222,7 @@ void main() {
 
       // ACT
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: LinkCard(linkWithTags: linkWithTags),
-          ),
-        ),
+        createTestWidget(LinkCard(linkWithTags: linkWithTags)),
       );
 
       // ASSERT: Card should have elevation
@@ -254,11 +241,7 @@ void main() {
 
       // ACT
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: LinkCard(linkWithTags: linkWithTags),
-          ),
-        ),
+        createTestWidget(LinkCard(linkWithTags: linkWithTags)),
       );
 
       // ASSERT: Should find a Container with placeholder color
@@ -266,84 +249,72 @@ void main() {
       expect(find.byType(Container), findsWidgets);
     });
 
-    /// Test #9: Title has proper styling (bold, black)
+    /// Test #9: Title has proper styling (semibold, dark)
     ///
     /// Why this matters:
     /// Title should be prominent and readable
-    testWidgets('title has bold black text', (WidgetTester tester) async {
+    testWidgets('title has semibold dark text', (WidgetTester tester) async {
       // ARRANGE
       final link = createLink(title: 'Apple Vision Pro');
       final linkWithTags = LinkWithTags(link: link, tags: []);
 
       // ACT
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: LinkCard(linkWithTags: linkWithTags),
-          ),
-        ),
+        createTestWidget(LinkCard(linkWithTags: linkWithTags)),
       );
 
-      // ASSERT: Title text should be bold and dark
+      // ASSERT: Title text should be semibold (w600) and dark
       final titleText = tester.widget<Text>(
         find.text('Apple Vision Pro'),
       );
 
-      expect(titleText.style?.fontWeight, FontWeight.bold);
-      expect(titleText.style?.color, Colors.black);
+      expect(titleText.style?.fontWeight, FontWeight.w600); // Semibold
+      expect(titleText.style?.color, const Color(0xff0a090d)); // Dark color from Figma
     });
 
-    /// Test #10: Note has proper styling (gray, smaller)
+    /// Test #10: Note has proper styling (teal color)
     ///
     /// Why this matters:
-    /// Note should be secondary information, not as prominent as title
-    testWidgets('note has gray smaller text', (WidgetTester tester) async {
+    /// Note should be visually distinct from description
+    testWidgets('note has teal text color', (WidgetTester tester) async {
       // ARRANGE
       final link = createLink(note: 'Check this out later');
       final linkWithTags = LinkWithTags(link: link, tags: []);
 
       // ACT
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: LinkCard(linkWithTags: linkWithTags),
-          ),
-        ),
+        createTestWidget(LinkCard(linkWithTags: linkWithTags)),
       );
 
-      // ASSERT: Note text should be gray and smaller than title
+      // ASSERT: Note text should be teal (Anchor brand color)
       final noteText = tester.widget<Text>(
         find.text('Check this out later'),
       );
 
-      expect(noteText.style?.color, Colors.grey[600]);
-      expect(noteText.style?.fontSize, lessThan(16)); // Smaller than typical title
+      expect(noteText.style?.color, const Color(0xff075a52)); // Anchor teal
+      expect(noteText.style?.fontSize, 13); // Font size from implementation
     });
 
-    /// Test #11: Limits note to 2 lines with ellipsis
+    /// Test #11: Limits note to 1 line with ellipsis
     ///
     /// Why this matters:
     /// Long notes would make cards too tall. Truncate for consistency.
-    testWidgets('limits note to 2 lines', (WidgetTester tester) async {
+    testWidgets('limits note to 1 line', (WidgetTester tester) async {
       // ARRANGE: Link with very long note
       final link = createLink(
-        note: 'This is a very long note that should be truncated to only two lines '
+        note: 'This is a very long note that should be truncated to only one line '
               'so that the card does not become too tall and maintains consistent sizing',
       );
       final linkWithTags = LinkWithTags(link: link, tags: []);
 
       // ACT
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: LinkCard(linkWithTags: linkWithTags),
-          ),
-        ),
+        createTestWidget(LinkCard(linkWithTags: linkWithTags)),
       );
 
-      // ASSERT: Note should have maxLines and overflow
+      // ASSERT: Note should have maxLines: 1 and ellipsis overflow
       final noteText = tester.widget<Text>(find.byType(Text).last);
-      expect(noteText.maxLines, 2);
+      expect(noteText.maxLines, 1); // Notes are limited to 1 line per Figma specs
       expect(noteText.overflow, TextOverflow.ellipsis);
     });
 
@@ -358,11 +329,7 @@ void main() {
 
       // ACT
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: LinkCard(linkWithTags: linkWithTags),
-          ),
-        ),
+        createTestWidget(LinkCard(linkWithTags: linkWithTags)),
       );
 
       // ASSERT: Should use AspectRatio widget or similar for consistency
@@ -381,11 +348,7 @@ void main() {
 
       // ACT
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: LinkCard(linkWithTags: linkWithTags),
-          ),
-        ),
+        createTestWidget(LinkCard(linkWithTags: linkWithTags)),
       );
 
       // Perform long press on the card
@@ -409,11 +372,7 @@ void main() {
 
       // ACT
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: LinkCard(linkWithTags: linkWithTags),
-          ),
-        ),
+        createTestWidget(LinkCard(linkWithTags: linkWithTags)),
       );
 
       // Perform regular tap on the card

@@ -118,6 +118,21 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+#### Link Card Widget Test Failures (2025-11-16 17:15)
+- **Problem**: All 15 Link Card Widget tests failing with "Bad state: No ProviderScope found" error
+- **Root Cause**: LinkCard is a ConsumerWidget that uses `ref.watch(spacesProvider)` at line 39, but tests wrapped the widget in MaterialApp without ProviderScope, causing Riverpod to throw an error
+- **Solution**:
+  - Added `flutter_riverpod` import to test file
+  - Created `createTestWidget()` helper function that wraps widgets in ProviderScope (following pattern from space_detail_screen_test.dart)
+  - Updated all 15 test cases to use helper instead of directly using MaterialApp
+  - Fixed 3 test assertions to match actual implementation:
+    - Test #9: Changed expected title color from `Colors.black` to `Color(0xff0a090d)` (dark), fontWeight from `FontWeight.bold` to `FontWeight.w600` (semibold)
+    - Test #10: Changed expected note color from `Colors.grey[600]` to `Color(0xff075a52)` (Anchor teal)
+    - Test #11: Changed expected note maxLines from 2 to 1 (per Figma specs)
+- **Files Changed**:
+  - `test/features/links/widgets/link_card_test.dart` - Added ProviderScope wrapper and fixed test assertions
+- **Result**: ✅ All 15 Link Card Widget tests now passing (23/44 total test failures fixed = 52.3% complete)
+
 #### Delete Link Context.mounted Issue (2025-11-15 08:30)
 - **Problem**: Delete confirmation dialog appeared but link wasn't deleted - `context.mounted` was `false` after async dialog operation
 - **Root Cause**: Used modal bottom sheet's context (from `builder` parameter) which became unmounted after `Navigator.pop()`. When dialog returned after async operation, that context was no longer valid, causing `context.mounted` check to fail.
