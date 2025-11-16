@@ -129,15 +129,15 @@ class AddLinkNotifier extends StateNotifier<AddLinkState> {
       // Fetch metadata with 10s timeout
       LinkMetadata? metadata;
       try {
-        print('🔍 [ADD_LINK] Starting metadata fetch for: ${state.url}');
+        debugPrint('🔍 [ADD_LINK] Starting metadata fetch for: ${state.url}');
         metadata = await _metadataService
             .fetchMetadata(state.url)
             .timeout(const Duration(seconds: 10));
-        print('✅ [ADD_LINK] Metadata fetched successfully: ${metadata.title}');
+        debugPrint('✅ [ADD_LINK] Metadata fetched successfully: ${metadata.title}');
       } catch (e) {
         // Timeout or error - continue without metadata
         // This is okay per user requirements
-        print('❌ [ADD_LINK] Metadata fetch failed: $e');
+        debugPrint('❌ [ADD_LINK] Metadata fetch failed: $e');
         metadata = null;
       }
 

@@ -142,7 +142,7 @@ class _AddDetailsScreenState extends ConsumerState<AddDetailsScreen>
       // Update state with tag IDs
       ref.read(addLinkProvider.notifier).updateTags(tagIds);
     } catch (e) {
-      print('Error creating tags: $e');
+      debugPrint('🔴 [AddDetailsScreen] Error creating tags: $e');
     } finally {
       setState(() => _isCreatingTags = false);
     }

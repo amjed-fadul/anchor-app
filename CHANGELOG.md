@@ -8,6 +8,66 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+#### Space Indicator on Link Cards (2025-11-16 12:00)
+- **Feature**: Visual indicator showing which space a link belongs to
+- **Implementation**: 4px colored stripe at top edge of link card thumbnail
+- **Design**: Uses space's assigned color for instant visual recognition
+- **Files Added**: None (enhanced existing LinkCard widget)
+- **Files Changed**: `mobile/lib/features/links/widgets/link_card.dart`
+- **Result**: ✅ Users can quickly identify link organization at a glance
+
+#### Add to Space / Remove from Space Actions (2025-11-16 12:15)
+- **Feature**: Complete space management from link action menu
+- **Implementation**:
+  - Dynamic action: "Add to Space" (if link has no space) or "Remove from Space" (if link is in a space)
+  - Space picker bottom sheet for selecting destination space
+  - Confirmation dialog for removal with space name
+  - Success snackbar messages with space names
+- **Files Added**: `mobile/lib/features/links/widgets/space_picker_sheet.dart`
+- **Files Changed**: `mobile/lib/features/links/widgets/link_card.dart`
+- **Result**: ✅ Users can organize links into spaces from any screen
+
+#### Reusable StyledAddButton Component (2025-11-16 12:20)
+- **Feature**: Consistent "+" button UI across app
+- **Implementation**: Reusable widget with teal background, white plus icon, consistent sizing
+- **Usage**: Space detail screen, Spaces screen header
+- **Files Added**: `mobile/lib/shared/widgets/styled_add_button.dart`
+- **Files Changed**: `mobile/lib/features/spaces/screens/space_detail_screen.dart`, `mobile/lib/features/spaces/screens/spaces_screen.dart`
+- **Result**: ✅ Consistent UI pattern, DRY principle, easier maintenance
+
+### Improved
+
+#### Code Quality: Debug Log Cleanup (2025-11-16 12:30)
+- **Issue**: 50+ verbose debug logs cluttering console output during development
+- **Solution**: Systematic cleanup keeping only critical error/warning logs
+- **Impact**:
+  - Removed ~46 verbose flow-tracing logs (🔵 🟢 ✅ 🔍 📊)
+  - Kept 15 critical logs (🔴 errors + ⚠️ warnings)
+- **Files Changed**:
+  - `mobile/lib/features/links/widgets/link_card.dart` (20 logs removed)
+  - `mobile/lib/features/spaces/providers/space_provider.dart` (17 logs removed)
+  - `mobile/lib/features/spaces/services/space_service.dart` (6 logs removed)
+  - `mobile/lib/features/links/widgets/tag_picker_sheet.dart` (3 logs removed)
+- **Result**: ✅ Cleaner console output, easier debugging, production-safe logging
+
+#### Code Quality: Replaced Deprecated Color API (2025-11-16 12:45)
+- **Issue**: 7 uses of deprecated `.withOpacity()` causing Flutter 3.x warnings
+- **Solution**: Replaced with new `.withValues(alpha: ...)` API
+- **Files Changed**:
+  - `mobile/lib/features/links/widgets/link_action_sheet.dart` (3 replacements)
+  - `mobile/lib/features/spaces/widgets/space_menu_bottom_sheet.dart` (4 replacements)
+- **Result**: ✅ 0 deprecation warnings, future-proof code
+
+#### Code Quality: Replaced print() with debugPrint() (2025-11-16 12:50)
+- **Issue**: 4 production print() statements (not production-safe)
+- **Solution**: Replaced with debugPrint() for debug-only logging
+- **Files Changed**:
+  - `mobile/lib/features/links/providers/add_link_provider.dart` (3 replacements)
+  - `mobile/lib/features/links/screens/add_details_screen.dart` (1 replacement)
+- **Result**: ✅ Production-safe logging, consistent with codebase standards
+
 ### Fixed
 
 #### Space Menu Icon Rendering Issues (2025-11-16 00:00)

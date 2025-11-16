@@ -436,7 +436,7 @@ class _CreateSpaceBottomSheetState extends State<CreateSpaceBottomSheet> {
       children: [
         // Row 1 (first 7 colors)
         Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: spaceColors
               .take(7)
               .map((color) => _buildColorOption(color))
@@ -447,7 +447,7 @@ class _CreateSpaceBottomSheetState extends State<CreateSpaceBottomSheet> {
 
         // Row 2 (last 7 colors)
         Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: spaceColors
               .skip(7)
               .map((color) => _buildColorOption(color))
@@ -468,7 +468,7 @@ class _CreateSpaceBottomSheetState extends State<CreateSpaceBottomSheet> {
       child: Container(
         width: 32,
         height: 32,
-        margin: const EdgeInsets.symmetric(horizontal: 8),
+        margin: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
           color: Color(int.parse(color.replaceFirst('#', '0xFF'))),
           borderRadius: BorderRadius.circular(4),

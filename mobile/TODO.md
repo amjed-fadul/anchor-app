@@ -1,6 +1,6 @@
 # TODO & Project Roadmap
 
-**Last Updated:** 2025-11-14 01:15
+**Last Updated:** 2025-11-16 11:45
 
 This file tracks active tasks, planned features, known issues, and future ideas for the Anchor App.
 
@@ -15,12 +15,49 @@ This file tracks active tasks, planned features, known issues, and future ideas 
 
 ## 🚧 Active Tasks
 
-*No active tasks - Sprint 2 completed! 🎉*
+### High Priority Tasks (2025-11-16)
 
-**Ready to start Sprint 3:**
-- Link editing functionality
-- Enhanced search capabilities
-- Spaces UI implementation
+📋 **Commit Recent Spaces Work** (Pending) 🟢 SAFE
+- Save uncommitted changes (link_card, spaces screens, new components)
+- Update CHANGELOG.md with recent Space management features
+- Files: link_card.dart, space_detail_screen.dart, spaces_screen.dart, create_space_bottom_sheet.dart
+- New files: space_picker_sheet.dart, styled_add_button.dart
+- **Priority:** HIGH (save work before moving forward)
+- **Risk:** None - just committing existing work
+
+📋 **Fix Test Failures** (Pending) 🟡 LOW RISK
+- 18 test errors blocking CI/CD and TDD workflow
+- Fix Supabase mocking in link_service_test.dart (11 errors)
+- Fix provider overrides in space_detail_screen_test.dart (6 errors)
+- **Priority:** HIGH (TDD compliance)
+- **Impact:** Restores ability to verify code works
+
+📋 **Implement Tap-to-Open Link** (Pending) 🟡 LOW RISK ⭐ **CRITICAL UX**
+- Users can't tap link cards to open URLs in browser!
+- Add onTap → open link.url using url_launcher package
+- **Priority:** HIGH (critical missing feature for link management app)
+- **Impact:** Basic expected functionality
+
+### Code Cleanup Sprint (2025-11-16)
+
+**Goal:** Clean up codebase for maintainability and remove technical debt
+
+🚧 **Remove debug logs** (In Progress) 🟢 SAFE
+- 50+ debugPrint statements added during bug fixing
+- Keep critical error logs, remove verbose flow tracing
+- Files: link_card.dart (30 logs), space_provider.dart, space_service.dart, tag_picker_sheet.dart
+- **Priority:** MEDIUM (code quality)
+
+📋 **Replace deprecated .withOpacity() calls** (Pending) 🟢 SAFE
+- 8 uses of deprecated API → .withValues(alpha: ...)
+- Files: link_action_sheet.dart, space_menu_bottom_sheet.dart
+- **Priority:** MEDIUM (Flutter 3.x deprecation warnings)
+
+📋 **Replace print() with logger** (Pending) 🟢 SAFE
+- 13+ print() statements in production code
+- Add logger package and replace all print() calls
+- Files: add_link_provider.dart, add_details_screen.dart, metadata_service.dart
+- **Priority:** MEDIUM (follows CLAUDE.md guidelines)
 
 ---
 
@@ -35,11 +72,11 @@ This file tracks active tasks, planned features, known issues, and future ideas 
 - 📋 **Space management** - Create, edit custom spaces
 
 ### Medium Priority
-- 📋 **Search functionality** - Full-text search for links
+- 📋 **Tap to open link** - CRITICAL: Users can't open URLs! Add onTap → open in browser (using url_launcher)
+- 📋 **Search functionality** - Full-text search for links (SearchBarWidget exists but non-functional)
 - 📋 **Link sharing** - Share saved links with others
-- 📋 **Tap to open** - Open links in browser from link card
 - 📋 **Offline mode** - Work without internet (already cached)
-- 📋 **Link organization** - Move links between spaces
+- 📋 **Link organization** - Move links between spaces (partially complete)
 
 ### Low Priority
 - 📋 **Dark mode** - System-based theme switching
@@ -52,12 +89,22 @@ This file tracks active tasks, planned features, known issues, and future ideas 
 
 ## 🐛 Known Issues
 
+### Test Failures - 18 Errors (2025-11-16)
+- **Issue**: Multiple test files have failures blocking CI/CD
+- **Affected Files**:
+  - `link_service_test.dart` (11 errors - Supabase mocking issues)
+  - `space_detail_screen_test.dart` (6 errors - provider override issues)
+- **Root Cause**: Supabase PostgrestBuilder mocking + provider testing strategy needs work
+- **Impact**: Tests won't run, can't verify code works properly
+- **Next Step**: Fix mocking strategy and provider overrides
+- **Priority**: HIGH (TDD compliance required)
+
 ### Test Mocking Strategy (2025-11-13 20:30)
 - **Issue**: LinkService tests use incorrect mocking for Supabase builders
 - **Impact**: Tests don't compile (implementation code is fine)
 - **Root Cause**: Supabase PostgrestBuilder has special Future-like pattern
 - **Next Step**: Research Supabase testing best practices
-- **Priority**: Low (doesn't block development)
+- **Priority**: High (part of 18 test failures above)
 
 ---
 

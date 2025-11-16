@@ -85,16 +85,10 @@ class SpacesNotifier extends AutoDisposeAsyncNotifier<List<Space>> {
   /// Riverpod automatically handles loading/error states.
   @override
   Future<List<Space>> build() async {
-    // 🐛 DEBUG: Track when and from where build() is called
-    debugPrint('🔵 [SpacesNotifier] build() called');
-    debugPrint('🔵 [SpacesNotifier] Stack trace:\n${StackTrace.current}');
-
     // Get the current user from auth
     // IMPORTANT: Use ref.watch() not ref.read() so provider rebuilds on auth changes
     final user = ref.watch(currentUserProvider);
     final userId = user?.id;
-
-    debugPrint('🔵 [SpacesNotifier] User ID: $userId');
 
     // If no user is logged in, return empty list
     if (userId == null) {
@@ -105,13 +99,9 @@ class SpacesNotifier extends AutoDisposeAsyncNotifier<List<Space>> {
     // Get the service
     final spaceService = ref.read(spaceServiceProvider);
 
-    debugPrint('🔵 [SpacesNotifier] About to fetch spaces from database...');
-
     // Fetch spaces
     // This is async, so Riverpod shows loading state automatically
     final spaces = await spaceService.getSpaces(userId);
-
-    debugPrint('✅ [SpacesNotifier] build() completed, returning ${spaces.length} spaces');
 
     return spaces;
   }
@@ -156,9 +146,6 @@ class SpacesNotifier extends AutoDisposeAsyncNotifier<List<Space>> {
   /// - Name is invalid (empty, too long)
   /// - Database error occurs
   Future<void> createSpace(String name, String color) async {
-    debugPrint('🔵 [SpacesNotifier] createSpace() called');
-    debugPrint('🔵 [SpacesNotifier] Name: $name, Color: $color');
-
     // Get current user
     final user = ref.read(currentUserProvider);
     final userId = user?.id;
@@ -189,12 +176,8 @@ class SpacesNotifier extends AutoDisposeAsyncNotifier<List<Space>> {
         color: color,
       );
 
-      debugPrint('✅ [SpacesNotifier] Space created: ${newSpace.name} (${newSpace.color})');
-
       // Refresh the spaces list to include the new space
       await refresh();
-
-      debugPrint('✅ [SpacesNotifier] Spaces list refreshed');
     } catch (e) {
       debugPrint('🔴 [SpacesNotifier] Error creating space: $e');
       rethrow; // Re-throw to let UI handle the error
@@ -222,9 +205,6 @@ class SpacesNotifier extends AutoDisposeAsyncNotifier<List<Space>> {
   /// Throws Exception if:
   /// - Database error occurs
   Future<void> updateSpace(String spaceId, {String? name, String? color}) async {
-    debugPrint('🔵 [SpacesNotifier] updateSpace() called');
-    debugPrint('🔵 [SpacesNotifier] Space ID: $spaceId, Name: $name, Color: $color');
-
     try {
       // Update space via service
       final spaceService = ref.read(spaceServiceProvider);
@@ -234,12 +214,8 @@ class SpacesNotifier extends AutoDisposeAsyncNotifier<List<Space>> {
         color: color,
       );
 
-      debugPrint('✅ [SpacesNotifier] Space updated successfully');
-
       // Refresh the spaces list to show updated space
       await refresh();
-
-      debugPrint('✅ [SpacesNotifier] Spaces list refreshed');
     } catch (e) {
       debugPrint('🔴 [SpacesNotifier] Error updating space: $e');
       rethrow; // Re-throw to let UI handle the error
@@ -264,20 +240,13 @@ class SpacesNotifier extends AutoDisposeAsyncNotifier<List<Space>> {
   /// - Trying to delete a default space (database trigger prevents this)
   /// - Database error occurs
   Future<void> deleteSpace(String spaceId) async {
-    debugPrint('🔵 [SpacesNotifier] deleteSpace() called');
-    debugPrint('🔵 [SpacesNotifier] Space ID: $spaceId');
-
     try {
       // Delete space via service
       final spaceService = ref.read(spaceServiceProvider);
       await spaceService.deleteSpace(spaceId);
 
-      debugPrint('✅ [SpacesNotifier] Space deleted successfully');
-
       // Refresh the spaces list to remove deleted space
       await refresh();
-
-      debugPrint('✅ [SpacesNotifier] Spaces list refreshed');
     } catch (e) {
       debugPrint('🔴 [SpacesNotifier] Error deleting space: $e');
       rethrow; // Re-throw to let UI handle the error

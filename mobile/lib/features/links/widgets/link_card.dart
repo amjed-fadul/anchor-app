@@ -19,8 +19,10 @@ import '../providers/link_provider.dart';
 import '../providers/links_by_space_provider.dart';
 import '../../tags/widgets/tag_badge.dart';
 import '../../tags/providers/tag_provider.dart';
+import '../../spaces/providers/space_provider.dart';
 import 'link_action_sheet.dart';
 import 'tag_picker_sheet.dart';
+import 'space_picker_sheet.dart';
 
 class LinkCard extends ConsumerWidget {
   final LinkWithTags linkWithTags;
@@ -32,6 +34,29 @@ class LinkCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watch spaces provider to get space color for the border
+    final spacesAsync = ref.watch(spacesProvider);
+
+    // Determine border color based on space assignment
+    Color? borderColor;
+
+    // Only add border if link is in a space
+    if (linkWithTags.link.spaceId != null) {
+      spacesAsync.whenData((spaces) {
+        try {
+          // Find the space this link belongs to
+          final space = spaces.firstWhere(
+            (s) => s.id == linkWithTags.link.spaceId,
+          );
+          // Parse the space's hex color
+          borderColor = _parseColor(space.color);
+        } catch (e) {
+          // Space not found or color parsing failed - no border
+          borderColor = null;
+        }
+      });
+    }
+
     return GestureDetector(
       onLongPress: () => _showActionSheet(context, ref),
       child: Card(
@@ -44,6 +69,20 @@ class LinkCard extends ConsumerWidget {
           children: [
             // Image (full width, fills card)
             _buildImage(),
+
+            // Colored space indicator stripe (top edge of image)
+            if (borderColor != null)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  height: 4.0, // 4px colored stripe
+                  decoration: BoxDecoration(
+                    color: borderColor,
+                  ),
+                ),
+              ),
 
             // Tags overlay (top-left)
             if (linkWithTags.tags.isNotEmpty) _buildTagsOverlay(),
@@ -105,8 +144,19 @@ class LinkCard extends ConsumerWidget {
           _showTagPicker(parentContext, ref);
         },
         onSpaceAction: () {
-          // TODO: Implement add/remove space
+          // Close action sheet first
           Navigator.pop(sheetContext);
+
+          // Check if link is currently in a space
+          final isInSpace = linkWithTags.link.spaceId != null;
+
+          if (isInSpace) {
+            // Link is in a space → Remove from space
+            _showRemoveFromSpaceConfirmation(parentContext, ref);
+          } else {
+            // Link is not in a space → Add to space
+            _showAddToSpaceSheet(parentContext, ref);
+          }
         },
         onDelete: () async {
           // Close action sheet first
@@ -190,8 +240,6 @@ class LinkCard extends ConsumerWidget {
   /// Uses Riverpod's AsyncValue.when() pattern to handle loading/error/data states.
   /// This avoids context.mounted issues with manual dialog management.
   void _showTagPicker(BuildContext context, WidgetRef ref) {
-    debugPrint('🔵 [LinkCard] _showTagPicker START');
-
     // Show bottom sheet that handles async states via AsyncValue.when()
     showModalBottomSheet(
       context: context,
@@ -202,24 +250,19 @@ class LinkCard extends ConsumerWidget {
           // Watch tags provider - Riverpod handles loading/error/data states
           final tagsAsync = consumerRef.watch(tagsProvider);
 
-          debugPrint('🔵 [LinkCard] tagsAsync state: ${tagsAsync.runtimeType}');
-
           return tagsAsync.when(
             // Loading state: Show spinner inside bottom sheet
             loading: () {
-              debugPrint('🔵 [LinkCard] Showing loading state');
               return _buildLoadingSheet();
             },
 
             // Error state: Show error message inside bottom sheet
             error: (error, stackTrace) {
-              debugPrint('🔴 [LinkCard] Error state: $error');
               return _buildErrorSheet(error);
             },
 
             // Data state: Show tag picker with loaded tags
             data: (tags) {
-              debugPrint('🟢 [LinkCard] Data state: ${tags.length} tags loaded');
               return TagPickerSheet(
                 availableTags: tags,
                 selectedTagIds:
@@ -227,9 +270,6 @@ class LinkCard extends ConsumerWidget {
                 onDone: (selectedTagIds) async {
                   // Update link's tags via LinkService
                   try {
-                    debugPrint(
-                        '🔵 [LinkCard] Updating tags: $selectedTagIds');
-
                     // Get the link service
                     final linkService = consumerRef.read(linkServiceProvider);
 
@@ -240,8 +280,6 @@ class LinkCard extends ConsumerWidget {
                       spaceId: linkWithTags.link.spaceId, // Preserve space assignment
                       tagIds: selectedTagIds,
                     );
-
-                    debugPrint('🟢 [LinkCard] Tags updated, refreshing links');
 
                     // Refresh the links provider to show updated tags
                     await consumerRef
@@ -512,5 +550,228 @@ class LinkCard extends ConsumerWidget {
       maxLines: 1, // Only 1 line for notes
       overflow: TextOverflow.ellipsis,
     );
+  }
+
+  /// Show Add to Space bottom sheet
+  ///
+  /// Displays a bottom sheet with list of available spaces for user to select.
+  /// After selection, updates the link with the new space assignment.
+  void _showAddToSpaceSheet(BuildContext context, WidgetRef ref) {
+    // Show bottom sheet that handles async states via AsyncValue.when()
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) => Consumer(
+        builder: (consumerContext, consumerRef, child) {
+          // Watch spaces provider - Riverpod handles loading/error/data states
+          final spacesAsync = consumerRef.watch(spacesProvider);
+
+          return spacesAsync.when(
+            // Loading state: Show spinner inside bottom sheet
+            loading: () {
+              return _buildLoadingSheet();
+            },
+
+            // Error state: Show error message inside bottom sheet
+            error: (error, stackTrace) {
+              return _buildErrorSheet(error);
+            },
+
+            // Data state: Show space picker with loaded spaces
+            data: (spaces) {
+              return SpacePickerSheet(
+                availableSpaces: spaces,
+                selectedSpaceId: linkWithTags.link.spaceId,
+                onSpaceSelected: (selectedSpaceId) async {
+                  // User selected a space - update the link
+                  if (selectedSpaceId == null) {
+                    // User deselected - close sheet without doing anything
+                    Navigator.pop(sheetContext);
+                    return;
+                  }
+
+                  try {
+                    // Get the link service
+                    final linkService = consumerRef.read(linkServiceProvider);
+
+                    // Update the link with new space (preserve existing note and tags)
+                    await linkService.updateLink(
+                      linkId: linkWithTags.link.id,
+                      note: linkWithTags.link.note, // Preserve existing note
+                      spaceId: selectedSpaceId, // Assign to selected space
+                      tagIds: linkWithTags.tags
+                          .map((tag) => tag.id)
+                          .toList(), // Preserve tags
+                    );
+
+                    // Close the sheet
+                    if (sheetContext.mounted) {
+                      Navigator.pop(sheetContext);
+                    }
+
+                    // Refresh the links provider to show updated space assignment
+                    await consumerRef
+                        .read(linksWithTagsProvider.notifier)
+                        .refresh();
+
+                    // Show success feedback
+                    if (context.mounted) {
+                      // Try to get space name for better feedback
+                      final spaceName = spaces
+                          .firstWhere((s) => s.id == selectedSpaceId)
+                          .name;
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Added to "$spaceName"'),
+                          backgroundColor: const Color(0xff075a52), // Anchor teal
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    debugPrint('🔴 [LinkCard] Error adding link to space: $e');
+
+                    // Close the sheet
+                    if (sheetContext.mounted) {
+                      Navigator.pop(sheetContext);
+                    }
+
+                    // Show error feedback
+                    if (consumerContext.mounted) {
+                      ScaffoldMessenger.of(consumerContext).showSnackBar(
+                        SnackBar(
+                          content: Text('Error adding to space: $e'),
+                          backgroundColor: Colors.red,
+                          duration: const Duration(seconds: 3),
+                        ),
+                      );
+                    }
+                  }
+                },
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  /// Show Remove from Space confirmation dialog
+  ///
+  /// Shows a confirmation dialog before removing the link from its current space.
+  /// After confirmation, updates the link to remove space assignment (set spaceId to null).
+  void _showRemoveFromSpaceConfirmation(BuildContext context, WidgetRef ref) async {
+    // Get the space name for better messaging
+    final spacesAsync = ref.read(spacesProvider);
+    final spaceName = spacesAsync.whenData((spaces) {
+      try {
+        return spaces.firstWhere((s) => s.id == linkWithTags.link.spaceId).name;
+      } catch (e) {
+        return 'this space';
+      }
+    }).value ?? 'this space';
+
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Remove from Space'),
+        content: Text(
+          'This link will be removed from "$spaceName". You can add to any space again later.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xff075a52), // Anchor teal
+            ),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+
+    // If user confirmed, remove link from space
+    if (confirmed == true && context.mounted) {
+      try {
+        // Store the original space ID for provider invalidation
+        final originalSpaceId = linkWithTags.link.spaceId;
+
+        // Get link service
+        final linkService = ref.read(linkServiceProvider);
+
+        // Update the link to remove space assignment (preserve existing note and tags)
+        await linkService.updateLink(
+          linkId: linkWithTags.link.id,
+          note: linkWithTags.link.note, // Preserve existing note
+          spaceId: null, // Remove from space
+          tagIds: linkWithTags.tags
+              .map((tag) => tag.id)
+              .toList(), // Preserve tags
+        );
+
+        // Refresh the home screen links provider
+        await ref.read(linksWithTagsProvider.notifier).refresh();
+
+        // Also refresh the space detail screen if link was in a space
+        if (originalSpaceId != null) {
+          ref.invalidate(linksBySpaceProvider(originalSpaceId));
+        }
+
+        // Show success message
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Removed from "$spaceName"'),
+              backgroundColor: const Color(0xff075a52), // Anchor teal
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('🔴 [LinkCard] Error removing link from space: $e');
+
+        // Show error message
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error removing from space: $e'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  /// Parse hex color string to Color object
+  ///
+  /// Handles hex strings like:
+  /// - "#7c3aed" → Color(0xff7c3aed)
+  /// - "7c3aed" → Color(0xff7c3aed)
+  /// - Invalid → Returns transparent color
+  Color _parseColor(String hexColor) {
+    try {
+      // Remove # if present
+      String cleanHex = hexColor.replaceAll('#', '');
+
+      // Add alpha channel (ff) if not present
+      if (cleanHex.length == 6) {
+        cleanHex = 'ff$cleanHex';
+      }
+
+      return Color(int.parse(cleanHex, radix: 16));
+    } catch (e) {
+      // Fallback to transparent if color parsing fails
+      debugPrint('⚠️ [LinkCard] Failed to parse space color: $hexColor');
+      return Colors.transparent;
+    }
   }
 }

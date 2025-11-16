@@ -445,8 +445,6 @@ class _TagPickerSheetState extends ConsumerState<TagPickerSheet> {
   /// 6. Shows success message
   Future<void> _createAndSelectTag(String tagName) async {
     try {
-      debugPrint('🔵 [TagPickerSheet] Creating tag: "$tagName"');
-
       // Get current user
       final user = ref.read(currentUserProvider);
       if (user == null) {
@@ -471,8 +469,6 @@ class _TagPickerSheetState extends ConsumerState<TagPickerSheet> {
         name: tagName,
       );
 
-      debugPrint('🟢 [TagPickerSheet] Tag created/retrieved: ${tag.id}');
-
       // Add to selection if not already selected
       setState(() {
         if (!_selectedTagIds.contains(tag.id)) {
@@ -485,8 +481,6 @@ class _TagPickerSheetState extends ConsumerState<TagPickerSheet> {
 
       // Refresh tags provider to show new tag in list
       await ref.read(tagsProvider.notifier).refresh();
-
-      debugPrint('🟢 [TagPickerSheet] Tags provider refreshed');
 
       // Show success message
       if (mounted) {

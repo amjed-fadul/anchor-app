@@ -33,6 +33,7 @@ import '../widgets/space_menu_bottom_sheet.dart';
 import '../../links/providers/links_by_space_provider.dart';
 import '../../links/widgets/link_card.dart';
 import '../../links/screens/add_link_flow_screen.dart';
+import '../../../shared/widgets/styled_add_button.dart';
 
 class SpaceDetailScreen extends ConsumerWidget {
   final Space space;
@@ -95,12 +96,12 @@ class SpaceDetailScreen extends ConsumerWidget {
         ),
         actions: [
           // Add Link button
-          IconButton(
-            icon: const Icon(Icons.add, color: Color(0xff075a52)),
-            iconSize: 28,
+          StyledAddButton(
             onPressed: () => _showAddLinkFlow(context),
             tooltip: 'Add link to ${currentSpace.name}',
           ),
+
+          const SizedBox(width: 8), // Spacing between buttons
 
           // Menu button (Edit / Delete space) - ONLY for custom spaces
           if (!currentSpace.isDefault)

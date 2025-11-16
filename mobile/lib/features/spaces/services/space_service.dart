@@ -43,8 +43,6 @@ class SpaceService {
   /// ```
   Future<List<Space>> getSpaces(String userId) async {
     try {
-      debugPrint('🔍 [SpaceService] Fetching spaces for user: $userId');
-
       // Query spaces table
       final response = await supabase
           .from('spaces')
@@ -53,19 +51,10 @@ class SpaceService {
           .order('is_default', ascending: false) // Default spaces first
           .order('name', ascending: true); // Then alphabetically
 
-      debugPrint('📊 [SpaceService] Raw response: $response');
-      debugPrint('📊 [SpaceService] Response type: ${response.runtimeType}');
-      debugPrint('📊 [SpaceService] Response length: ${(response as List).length}');
-
       // Convert JSON list to Space objects
       final spaces = (response as List)
           .map((json) => Space.fromJson(json as Map<String, dynamic>))
           .toList();
-
-      debugPrint('✅ [SpaceService] Fetched ${spaces.length} spaces');
-      for (final space in spaces) {
-        debugPrint('  - ${space.name} (${space.color}, default: ${space.isDefault})');
-      }
 
       return spaces;
     } catch (e) {
