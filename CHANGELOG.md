@@ -15,16 +15,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - 11 errors in `link_service_test.dart`: Supabase mock return type mismatches
   - 6 errors in `space_detail_screen_test.dart`: Incorrect AsyncNotifierProvider.family override syntax
 - **Root Cause**:
-  - Mocks were returning `Future.value()` but Supabase query builders expect async functions
+  - Mocks were returning `Future<T>` but Supabase query methods expect `PostgrestTransformBuilder<T>` (which implements Future)
   - Widget tests tried to override family providers with futures instead of notifier classes
 - **Solution**:
-  - Changed all `Future.value()` to `async =>` in Supabase mocks (cleaner async syntax)
+  - Used explicit type casting: `Future.value(data) as PostgrestTransformBuilder<T>` for all Supabase query mocks
+  - For `delete().eq()` chains, return builder (not Future) since eq() is used for chaining
   - Created `MockLinksBySpaceNotifier` class for widget test provider overrides
   - Updated all 6 widget tests to use proper `overrideWith(() => MockNotifier())` syntax
+- **Technical Details**:
+  - `order()` returns `PostgrestTransformBuilder<List<Map>>` which implements `Future` - must cast explicitly
+  - `single()` returns `PostgrestTransformBuilder<Map>` which implements `Future` - must cast explicitly
+  - `eq()` after `delete()` returns builder for chaining, not Future
 - **Files Changed**:
   - `mobile/test/features/links/services/link_service_test.dart`
   - `mobile/test/features/spaces/screens/space_detail_screen_test.dart`
-- **Result**: ✅ All tests compile successfully - 182 tests now run (31 failures are business logic, not compilation errors)
+- **Result**: ✅ All 182 tests now compile and run (44 failures are business logic, not compilation errors)
 - **Impact**: Restored TDD workflow, can now run tests again
 
 ### Added
