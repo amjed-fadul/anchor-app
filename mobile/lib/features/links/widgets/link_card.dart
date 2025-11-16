@@ -16,6 +16,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/link_service.dart' show LinkWithTags;
 import '../providers/link_provider.dart';
+import '../providers/links_by_space_provider.dart';
 import '../../tags/widgets/tag_badge.dart';
 import '../../tags/providers/tag_provider.dart';
 import 'link_action_sheet.dart';
@@ -145,8 +146,13 @@ class LinkCard extends ConsumerWidget {
               // Delete the link
               await linkService.deleteLink(linkWithTags.link.id);
 
-              // Refresh the links provider
+              // Refresh the home screen links provider
               await ref.read(linksWithTagsProvider.notifier).refresh();
+
+              // Also refresh the space detail screen if link was in a space
+              if (linkWithTags.link.spaceId != null) {
+                ref.invalidate(linksBySpaceProvider(linkWithTags.link.spaceId!));
+              }
 
               // Show success message
               if (parentContext.mounted) {
@@ -227,9 +233,11 @@ class LinkCard extends ConsumerWidget {
                     // Get the link service
                     final linkService = consumerRef.read(linkServiceProvider);
 
-                    // Update the link with new tags
+                    // Update the link with new tags (preserve existing note and space assignment)
                     await linkService.updateLink(
                       linkId: linkWithTags.link.id,
+                      note: linkWithTags.link.note, // Preserve existing note
+                      spaceId: linkWithTags.link.spaceId, // Preserve space assignment
                       tagIds: selectedTagIds,
                     );
 
@@ -239,6 +247,11 @@ class LinkCard extends ConsumerWidget {
                     await consumerRef
                         .read(linksWithTagsProvider.notifier)
                         .refresh();
+
+                    // Also refresh the space detail screen if link is in a space
+                    if (linkWithTags.link.spaceId != null) {
+                      consumerRef.invalidate(linksBySpaceProvider(linkWithTags.link.spaceId!));
+                    }
 
                     // Show success feedback
                     if (consumerContext.mounted) {

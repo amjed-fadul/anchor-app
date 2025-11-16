@@ -143,6 +143,7 @@ class AddLinkNotifier extends StateNotifier<AddLinkState> {
 
       // Save link to database IMMEDIATELY
       // (Even if metadata failed, we save the link)
+      // If spaceId is set (from Space Detail Screen), link will be assigned to that space
       final savedLink = await _linkService.createLink(
         userId: _userId,
         url: state.url,
@@ -151,6 +152,7 @@ class AddLinkNotifier extends StateNotifier<AddLinkState> {
         description: metadata?.description,
         thumbnailUrl: metadata?.thumbnailUrl,
         domain: UrlValidator.extractDomain(state.url),
+        spaceId: state.spaceId, // ✅ Include space assignment
       );
 
       // Update state with saved link and metadata

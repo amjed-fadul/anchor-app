@@ -20,26 +20,52 @@ class TagService {
     required String name,
   }) async {
     try {
-      // First, check if tag already exists for this user
-      final existingTags = await _supabase
-          .from('tags')
-          .select()
-          .eq('user_id', userId)
-          .ilike('name', name) // Case-insensitive match
-          .limit(1);
+      // First, check if tag already exists for this user (with retry)
+      List<dynamic>? existingTags;
+      for (int attempt = 1; attempt <= 2; attempt++) {
+        try {
+          existingTags = await _supabase
+              .from('tags')
+              .select()
+              .eq('user_id', userId)
+              .ilike('name', name) // Case-insensitive match
+              .limit(1)
+              .timeout(const Duration(seconds: 10));
+          break; // Success!
+        } catch (e) {
+          if (attempt == 2) rethrow;
+          await Future.delayed(const Duration(milliseconds: 500));
+        }
+      }
 
-      if (existingTags.isNotEmpty) {
+      if (existingTags!.isNotEmpty) {
         return Tag.fromJson(existingTags.first);
       }
 
-      // Tag doesn't exist, create it
-      final newTag = await _supabase.from('tags').insert({
-        'user_id': userId,
-        'name': name.trim(),
-        'color': _generateRandomColor(),
-      }).select().single();
+      // Tag doesn't exist, create it (with retry)
+      Tag? newTag;
+      for (int attempt = 1; attempt <= 2; attempt++) {
+        try {
+          final response = await _supabase
+              .from('tags')
+              .insert({
+                'user_id': userId,
+                'name': name.trim(),
+                'color': _generateRandomColor(),
+              })
+              .select()
+              .single()
+              .timeout(const Duration(seconds: 10));
 
-      return Tag.fromJson(newTag);
+          newTag = Tag.fromJson(response);
+          break; // Success!
+        } catch (e) {
+          if (attempt == 2) rethrow;
+          await Future.delayed(const Duration(milliseconds: 500));
+        }
+      }
+
+      return newTag!;
     } catch (e) {
       throw Exception('Failed to get or create tag: $e');
     }

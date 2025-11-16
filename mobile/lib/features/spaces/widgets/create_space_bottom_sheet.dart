@@ -223,11 +223,6 @@ class _CreateSpaceBottomSheetState extends State<CreateSpaceBottomSheet> {
               },
               decoration: InputDecoration(
                 hintText: 'Name your space',
-                prefixText: '| ', // Cursor indicator
-                prefixStyle: const TextStyle(
-                  color: Color(0xff0d9488),
-                  fontWeight: FontWeight.w500,
-                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: const BorderSide(

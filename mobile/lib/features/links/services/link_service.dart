@@ -86,7 +86,7 @@ class LinkService {
     List<String>? tagIds,
   }) async {
     try {
-      // Step 1: Insert the link
+      // Step 1: Insert the link (with retry logic)
       final linkData = {
         'user_id': userId,
         'url': url,
@@ -99,30 +99,52 @@ class LinkService {
         'space_id': spaceId,
       };
 
-      // Insert and get the created link back
-      final response = await _supabase
-          .from('links')
-          .insert(linkData)
-          .select()
-          .single();
+      // Insert link with timeout + retry
+      // Retries once after 500ms if connection drops
+      Link? createdLink;
+      for (int attempt = 1; attempt <= 2; attempt++) {
+        try {
+          final response = await _supabase
+              .from('links')
+              .insert(linkData)
+              .select()
+              .single()
+              .timeout(const Duration(seconds: 10));
 
-      final createdLink = Link.fromJson(response);
+          createdLink = Link.fromJson(response);
+          break; // Success!
+        } catch (e) {
+          if (attempt == 2) rethrow; // Give up after 2 attempts
+          await Future.delayed(const Duration(milliseconds: 500)); // Wait and retry
+        }
+      }
 
-      // Step 2: Create tag associations if tags were provided
+      // Step 2: Create tag associations if tags were provided (with retry logic)
       if (tagIds != null && tagIds.isNotEmpty) {
         // Prepare link_tags junction table data
         final linkTagsData = tagIds.map((tagId) {
           return {
-            'link_id': createdLink.id,
+            'link_id': createdLink!.id,
             'tag_id': tagId,
           };
         }).toList();
 
-        // Insert all tag associations at once
-        await _supabase.from('link_tags').insert(linkTagsData);
+        // Insert tag associations with timeout + retry
+        for (int attempt = 1; attempt <= 2; attempt++) {
+          try {
+            await _supabase
+                .from('link_tags')
+                .insert(linkTagsData)
+                .timeout(const Duration(seconds: 10));
+            break; // Success!
+          } catch (e) {
+            if (attempt == 2) rethrow;
+            await Future.delayed(const Duration(milliseconds: 500));
+          }
+        }
       }
 
-      return createdLink;
+      return createdLink!;
     } catch (e) {
       // Re-throw with context
       throw Exception('Failed to create link: $e');
@@ -155,27 +177,50 @@ class LinkService {
     List<String>? tagIds,
   }) async {
     try {
-      // Step 1: Update the link record
+      // Step 1: Update the link record (with retry logic)
       final updateData = {
         'note': note,
         'space_id': spaceId,
       };
 
-      final response = await _supabase
-          .from('links')
-          .update(updateData)
-          .eq('id', linkId)
-          .select()
-          .single();
+      // Update link with timeout + retry
+      Link? updatedLink;
+      for (int attempt = 1; attempt <= 2; attempt++) {
+        try {
+          final response = await _supabase
+              .from('links')
+              .update(updateData)
+              .eq('id', linkId)
+              .select()
+              .single()
+              .timeout(const Duration(seconds: 10));
 
-      final updatedLink = Link.fromJson(response);
+          updatedLink = Link.fromJson(response);
+          break; // Success!
+        } catch (e) {
+          if (attempt == 2) rethrow;
+          await Future.delayed(const Duration(milliseconds: 500));
+        }
+      }
 
-      // Step 2: Handle tag associations if provided
+      // Step 2: Handle tag associations if provided (with retry logic)
       if (tagIds != null) {
-        // Remove all existing tag associations for this link
-        await _supabase.from('link_tags').delete().eq('link_id', linkId);
+        // Remove all existing tag associations for this link (with retry)
+        for (int attempt = 1; attempt <= 2; attempt++) {
+          try {
+            await _supabase
+                .from('link_tags')
+                .delete()
+                .eq('link_id', linkId)
+                .timeout(const Duration(seconds: 10));
+            break; // Success!
+          } catch (e) {
+            if (attempt == 2) rethrow;
+            await Future.delayed(const Duration(milliseconds: 500));
+          }
+        }
 
-        // Create new tag associations
+        // Create new tag associations (with retry)
         if (tagIds.isNotEmpty) {
           final linkTagsData = tagIds.map((tagId) {
             return {
@@ -184,11 +229,22 @@ class LinkService {
             };
           }).toList();
 
-          await _supabase.from('link_tags').insert(linkTagsData);
+          for (int attempt = 1; attempt <= 2; attempt++) {
+            try {
+              await _supabase
+                  .from('link_tags')
+                  .insert(linkTagsData)
+                  .timeout(const Duration(seconds: 10));
+              break; // Success!
+            } catch (e) {
+              if (attempt == 2) rethrow;
+              await Future.delayed(const Duration(milliseconds: 500));
+            }
+          }
         }
       }
 
-      return updatedLink;
+      return updatedLink!;
     } catch (e) {
       throw Exception('Failed to update link: $e');
     }
@@ -207,13 +263,37 @@ class LinkService {
   /// Exception if database delete fails
   Future<void> deleteLink(String linkId) async {
     try {
-      // Step 1: Delete all tag associations for this link
+      // Step 1: Delete all tag associations for this link (with retry)
       // (This is automatic due to CASCADE DELETE in database schema,
       // but we do it explicitly for clarity and to work with all databases)
-      await _supabase.from('link_tags').delete().eq('link_id', linkId);
+      for (int attempt = 1; attempt <= 2; attempt++) {
+        try {
+          await _supabase
+              .from('link_tags')
+              .delete()
+              .eq('link_id', linkId)
+              .timeout(const Duration(seconds: 10));
+          break; // Success!
+        } catch (e) {
+          if (attempt == 2) rethrow;
+          await Future.delayed(const Duration(milliseconds: 500));
+        }
+      }
 
-      // Step 2: Delete the link
-      await _supabase.from('links').delete().eq('id', linkId);
+      // Step 2: Delete the link (with retry)
+      for (int attempt = 1; attempt <= 2; attempt++) {
+        try {
+          await _supabase
+              .from('links')
+              .delete()
+              .eq('id', linkId)
+              .timeout(const Duration(seconds: 10));
+          break; // Success!
+        } catch (e) {
+          if (attempt == 2) rethrow;
+          await Future.delayed(const Duration(milliseconds: 500));
+        }
+      }
     } catch (e) {
       throw Exception('Failed to delete link: $e');
     }
@@ -288,6 +368,87 @@ class LinkService {
     } catch (e) {
       // Re-throw with context
       throw Exception('Failed to fetch links: $e');
+    }
+  }
+
+  /// getLinksBySpace - Fetch all links in a specific space with their tags
+  ///
+  /// This is similar to getLinksWithTags but filters by BOTH user_id AND space_id.
+  ///
+  /// Why filter by both?
+  /// - Security: RLS policies ensure users only see their own links (user_id)
+  /// - Feature: We only want links in THIS specific space (space_id)
+  ///
+  /// Use Cases:
+  /// - Space Detail Screen: Show all links in "Design Resources" space
+  /// - Space Management: Count how many links are in each space
+  /// - Link Organization: Display links organized by space
+  ///
+  /// SQL equivalent (what Supabase does under the hood):
+  /// ```sql
+  /// SELECT links.*, tags.*
+  /// FROM links
+  /// LEFT JOIN link_tags ON links.id = link_tags.link_id
+  /// LEFT JOIN tags ON link_tags.tag_id = tags.id
+  /// WHERE links.user_id = $userId
+  ///   AND links.space_id = $spaceId
+  /// ORDER BY links.created_at DESC
+  /// ```
+  ///
+  /// Parameters:
+  /// - userId: The ID of the user whose links we're fetching
+  /// - spaceId: The ID of the space to filter by
+  ///
+  /// Returns:
+  /// List of LinkWithTags objects (link + its tags) for this specific space
+  ///
+  /// Throws:
+  /// Exception if database query fails
+  Future<List<LinkWithTags>> getLinksBySpace(
+      String userId, String spaceId) async {
+    try {
+      // Query links with their tags, filtered by user AND space
+      // The syntax: link_tags(tags(*)) means:
+      // - Get link_tags for this link
+      // - For each link_tag, get the full tag object
+      final response = await _supabase
+          .from('links')
+          .select('*, link_tags(tags(*))')
+          .eq('user_id', userId) // Security: Only this user's links
+          .eq('space_id', spaceId) // Feature: Only links in this space
+          .order('created_at', ascending: false);
+
+      // Convert the response to our models
+      final List<LinkWithTags> results = [];
+
+      for (final linkData in response) {
+        // Create Link object
+        final link = Link.fromJson(linkData);
+
+        // Extract tags from the nested link_tags array
+        final List<Tag> tags = [];
+        final linkTagsData = linkData['link_tags'] as List<dynamic>?;
+
+        if (linkTagsData != null) {
+          for (final linkTag in linkTagsData) {
+            final tagData = linkTag['tags'] as Map<String, dynamic>?;
+            if (tagData != null) {
+              tags.add(Tag.fromJson(tagData));
+            }
+          }
+        }
+
+        // Combine link with its tags
+        results.add(LinkWithTags(
+          link: link,
+          tags: tags,
+        ));
+      }
+
+      return results;
+    } catch (e) {
+      // Re-throw with context
+      throw Exception('Failed to fetch links for space: $e');
     }
   }
 }

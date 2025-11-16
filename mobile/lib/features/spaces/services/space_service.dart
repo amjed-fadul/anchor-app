@@ -94,19 +94,31 @@ class SpaceService {
     required String color,
   }) async {
     try {
-      // Insert new space
-      final response = await supabase
-          .from('spaces')
-          .insert({
-            'user_id': userId,
-            'name': name,
-            'color': color,
-            'is_default': false, // Custom spaces are never default
-          })
-          .select()
-          .single();
+      // Insert new space (with retry logic)
+      Space? createdSpace;
+      for (int attempt = 1; attempt <= 2; attempt++) {
+        try {
+          final response = await supabase
+              .from('spaces')
+              .insert({
+                'user_id': userId,
+                'name': name,
+                'color': color,
+                'is_default': false, // Custom spaces are never default
+              })
+              .select()
+              .single()
+              .timeout(const Duration(seconds: 10));
 
-      return Space.fromJson(response);
+          createdSpace = Space.fromJson(response);
+          break; // Success!
+        } catch (e) {
+          if (attempt == 2) rethrow;
+          await Future.delayed(const Duration(milliseconds: 500));
+        }
+      }
+
+      return createdSpace!;
     } catch (e) {
       throw Exception('Failed to create space: $e');
     }
@@ -139,15 +151,27 @@ class SpaceService {
       if (name != null) updates['name'] = name;
       if (color != null) updates['color'] = color;
 
-      // Update space
-      final response = await supabase
-          .from('spaces')
-          .update(updates)
-          .eq('id', spaceId)
-          .select()
-          .single();
+      // Update space (with retry logic)
+      Space? updatedSpace;
+      for (int attempt = 1; attempt <= 2; attempt++) {
+        try {
+          final response = await supabase
+              .from('spaces')
+              .update(updates)
+              .eq('id', spaceId)
+              .select()
+              .single()
+              .timeout(const Duration(seconds: 10));
 
-      return Space.fromJson(response);
+          updatedSpace = Space.fromJson(response);
+          break; // Success!
+        } catch (e) {
+          if (attempt == 2) rethrow;
+          await Future.delayed(const Duration(milliseconds: 500));
+        }
+      }
+
+      return updatedSpace!;
     } catch (e) {
       throw Exception('Failed to update space: $e');
     }
@@ -169,7 +193,20 @@ class SpaceService {
   /// ```
   Future<void> deleteSpace(String spaceId) async {
     try {
-      await supabase.from('spaces').delete().eq('id', spaceId);
+      // Delete space (with retry logic)
+      for (int attempt = 1; attempt <= 2; attempt++) {
+        try {
+          await supabase
+              .from('spaces')
+              .delete()
+              .eq('id', spaceId)
+              .timeout(const Duration(seconds: 10));
+          break; // Success!
+        } catch (e) {
+          if (attempt == 2) rethrow;
+          await Future.delayed(const Duration(milliseconds: 500));
+        }
+      }
     } catch (e) {
       throw Exception('Failed to delete space: $e');
     }

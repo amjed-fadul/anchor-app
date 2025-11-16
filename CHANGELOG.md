@@ -8,6 +8,129 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+#### Space Menu Icon Rendering Issues (2025-11-16 00:00)
+- **Problem**: SVG icons (`edit-01.svg`, `trash-01.svg`, `more-vertical.svg`) not visible or missing from assets
+- **Root Cause**: SVG files either don't exist or have rendering issues in Flutter
+- **Solution**: Replaced SVG icons with reliable Material icons:
+  - `edit-01.svg` → Material `Icons.edit`
+  - `trash-01.svg` → Existing `delete-02.svg` asset
+  - `more-vertical.svg` → Material `Icons.more_vert`
+- **Files Changed**: `mobile/lib/features/spaces/widgets/space_menu_bottom_sheet.dart`, `mobile/lib/features/spaces/screens/space_detail_screen.dart`
+- **Result**: ✅ All icons now render correctly, menu fully functional
+
+#### Default Spaces Showing Edit/Delete Menu (2025-11-16 00:05)
+- **Problem**: Menu button appeared for default spaces (Unread, Reference) which cannot be edited or deleted
+- **Root Cause**: No conditional logic to hide menu for default spaces
+- **Solution**: Added conditional rendering `if (!currentSpace.isDefault)` around menu IconButton
+- **Files Changed**: `mobile/lib/features/spaces/screens/space_detail_screen.dart` (line 106)
+- **Result**: ✅ Menu only shows for custom spaces, default spaces remain protected
+
+#### Keyboard Covering Edit Space Sheet (2025-11-16 00:10)
+- **Problem**: When editing space name, keyboard appears but input field is hidden behind it
+- **Root Cause**: Fixed height on EditSpaceSheet Container prevents natural resize with keyboard
+- **Solution**: Removed `height: MediaQuery.of(context).size.height * 0.5` to allow natural keyboard adjustment
+- **Files Changed**: `mobile/lib/features/spaces/widgets/space_menu_bottom_sheet.dart`
+- **Result**: ✅ Input field visible and accessible when keyboard appears
+
+#### RenderFlex Overflow in Edit Space Sheet (2025-11-16 00:15)
+- **Problem**: Console error "A RenderFlex overflowed by 50 pixels on the bottom"
+- **Root Cause**: `const Spacer()` conflicts with `mainAxisSize.min` in Column
+- **Solution**: Replaced `const Spacer()` with `const SizedBox(height: 24)` for fixed spacing
+- **Files Changed**: `mobile/lib/features/spaces/widgets/space_menu_bottom_sheet.dart`
+- **Result**: ✅ No overflow errors, proper layout
+
+#### Database RLS Policy Error on Space Update (2025-11-16 00:20)
+- **Problem**: PostgreSQL error "more than one row returned by a subquery used as an expression (code: 21000)" when updating space name
+- **Root Cause**: Buggy RLS policy in migration 002 with ambiguous WHERE clause in subquery returning multiple rows
+- **Solution**:
+  - Created migration 007 to drop old policy and use simpler approach
+  - Replaced complex WITH CHECK subquery with database trigger to prevent `is_default` flag changes
+  - New policy: `USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id)`
+  - Trigger: `prevent_default_flag_change()` raises exception if `is_default` changes
+- **Files Changed**:
+  - Created `supabase/migrations/007_fix_update_space_policy.sql`
+- **Result**: ✅ Space updates work correctly, default flag still protected
+
+#### Space Name Not Updating in Header After Edit (2025-11-16 00:25)
+- **Problem**: After editing space name and clicking save, header title still shows old name until navigating back
+- **Root Cause**: Using stale `space` parameter instead of watching provider for real-time updates
+- **Solution**:
+  - Added `import '../providers/space_provider.dart';`
+  - Watch `spacesProvider` to get updated space data
+  - Use `currentSpace` from provider instead of stale parameter
+  - Fallback to original space if not found
+- **Files Changed**: `mobile/lib/features/spaces/screens/space_detail_screen.dart` (lines 66-76, 89, 102, 212)
+- **Result**: ✅ Space name updates immediately in header after edit
+
+#### Deleted Link Still Showing in Space (2025-11-16 00:30)
+- **Problem**: After deleting a link from space detail screen, link card still appears until manual refresh
+- **Root Cause**: Only invalidating `linksWithTagsProvider` (home screen), not `linksBySpaceProvider` (space screen)
+- **Solution**: Added `ref.invalidate(linksBySpaceProvider(linkWithTags.link.spaceId!))` after deletion
+- **Files Changed**: `mobile/lib/features/links/widgets/link_card.dart` (lines 153-155)
+- **Result**: ✅ Deleted links disappear immediately from space detail screen
+
+#### Missing Pull-to-Refresh in Space Detail Screen (2025-11-16 00:35)
+- **Problem**: No way to manually refresh links in space detail screen
+- **Root Cause**: RefreshIndicator not implemented
+- **Solution**:
+  - Wrapped `linksAsync.when()` with RefreshIndicator
+  - Added `onRefresh` that invalidates `linksBySpaceProvider(space.id)` and waits for new data
+  - Made error and empty states scrollable (wrapped in ListView) for pull-to-refresh to work
+- **Files Changed**: `mobile/lib/features/spaces/screens/space_detail_screen.dart` (lines 129-246)
+- **Result**: ✅ Users can pull to refresh links in any space
+
+#### Tag Updates Not Reflecting in Space Detail Screen (2025-11-16 00:40)
+- **Problem**: When updating tags on a link from space detail screen, changes don't appear
+- **Root Cause**: Missing provider invalidation for `linksBySpaceProvider` after tag update
+- **Solution**: Added `consumerRef.invalidate(linksBySpaceProvider(linkWithTags.link.spaceId!))` after tag update
+- **Files Changed**: `mobile/lib/features/links/widgets/link_card.dart` (lines 251-254)
+- **Result**: ✅ Tag updates reflect immediately in space detail screen
+
+#### Links Disappearing When Adding Tags in Space (2025-11-16 00:45)
+- **Problem**: Adding a new tag to a link causes the link to disappear from its space
+- **Root Cause**: `updateLink()` was setting `space_id` to NULL because existing data wasn't being preserved
+- **Solution**:
+  - Preserve existing `note` and `spaceId` when calling `updateLink()` for tag changes
+  - Pass `linkWithTags.link.note` and `linkWithTags.link.spaceId` along with new `tagIds`
+- **Files Changed**: `mobile/lib/features/links/widgets/link_card.dart` (lines 237-241)
+- **Result**: ✅ Links stay in their assigned space when tags are updated
+
+#### Custom Spaces Showing Wrong Colors in Picker (2025-11-16 00:50)
+- **Problem**: Custom spaces all show green color in space picker instead of their actual assigned colors
+- **Root Cause**: Hardcoded `_getSpaceColor()` function defaulting to green for unknown space names
+- **Solution**:
+  - Deleted `_getSpaceColor()` method
+  - Added `_parseColor()` method that reads actual `space.color` from database
+  - Changed line 440 from `color: _getSpaceColor(space.name)` to `color: _parseColor(space.color)`
+- **Files Changed**: `mobile/lib/features/links/screens/add_details_screen.dart` (deleted lines 469-485, added lines 469-491, modified line 440)
+- **Result**: ✅ Space picker displays correct colors for all spaces (default and custom)
+
+#### New Links Not Appearing in Space After Assignment (2025-11-16 00:55)
+- **Problem**: When adding a link and assigning it to a space, link doesn't appear in that space until manual refresh
+- **Root Cause**: Only invalidating `initialSpaceId`, not final space if user changed it in details screen
+- **Solution**:
+  - Read final `spaceId` from `ref.read(addLinkProvider).spaceId` (the actual assigned space)
+  - Invalidate `linksBySpaceProvider(finalSpaceId)` instead of `initialSpaceId`
+  - Handles ALL scenarios: add from home, add from space, change space in details
+- **Files Changed**: `mobile/lib/features/links/screens/add_link_flow_screen.dart` (lines 84-98)
+- **Result**: ✅ New links appear immediately in their assigned space
+
+#### Spaces + Button Visual Style Update (2025-11-16 01:00)
+- **Problem**: Spaces screen "+" button was basic IconButton, inconsistent with home screen FAB style
+- **Root Cause**: Using simple IconButton instead of Material design with elevation and circular shape
+- **Solution**:
+  - Added design system import
+  - Replaced IconButton with Material/InkWell combination
+  - Used correct brand color (AnchorColors.anchorTeal = #0D9488) instead of wrong custom teal (#075a52)
+  - Added 2dp elevation for subtle shadow (AppBar context)
+  - Perfect circle shape with CircleBorder
+  - White icon at 24px for AppBar context (vs 56px FAB)
+  - Material ripple effect on tap via InkWell
+- **Files Changed**: `mobile/lib/features/spaces/screens/spaces_screen.dart` (added import line 25, replaced lines 199-206)
+- **Result**: ✅ Spaces + button now matches home screen FAB style with correct brand color and elevation
+
 ### Added
 
 #### Create Space Feature - Complete 2-Step Flow (2025-11-15 18:00)

@@ -19,6 +19,7 @@ library;
 /// - Chevron: gray, 24px
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../models/space_model.dart';
 
 class SpaceCard extends StatelessWidget {
@@ -39,8 +40,9 @@ class SpaceCard extends StatelessWidget {
       color: Colors.white,
       margin: const EdgeInsets.only(bottom: 12), // Space between cards
       child: InkWell(
-        // onTap disabled for now - will implement navigation to space detail later
-        onTap: null,
+        // Navigate to Space Detail Screen when tapped
+        // Using push() instead of go() so back button works
+        onTap: () => context.push('/spaces/${space.id}', extra: space),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),

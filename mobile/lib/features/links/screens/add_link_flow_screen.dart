@@ -21,9 +21,19 @@ import 'package:mobile/features/links/screens/url_input_screen.dart';
 import 'package:mobile/features/links/screens/link_success_screen.dart';
 import 'package:mobile/features/links/screens/add_details_screen.dart';
 import 'package:mobile/features/links/providers/link_provider.dart';
+import 'package:mobile/features/links/providers/links_by_space_provider.dart';
 
 class AddLinkFlowScreen extends ConsumerStatefulWidget {
-  const AddLinkFlowScreen({super.key});
+  /// Optional: Pre-select a space when adding a link
+  ///
+  /// When adding a link from a Space Detail Screen, this will be the space ID.
+  /// The link will be automatically assigned to this space.
+  final String? initialSpaceId;
+
+  const AddLinkFlowScreen({
+    super.key,
+    this.initialSpaceId,
+  });
 
   @override
   ConsumerState<AddLinkFlowScreen> createState() => _AddLinkFlowScreenState();
@@ -32,6 +42,22 @@ class AddLinkFlowScreen extends ConsumerStatefulWidget {
 class _AddLinkFlowScreenState extends ConsumerState<AddLinkFlowScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Pre-select space if initialSpaceId is provided
+    // This ensures the link is created with the correct space_id
+    // CRITICAL: Must happen BEFORE user enters URL and continues
+    if (widget.initialSpaceId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref
+            .read(addLinkProvider.notifier)
+            .updateSpace(widget.initialSpaceId);
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -55,8 +81,21 @@ class _AddLinkFlowScreenState extends ConsumerState<AddLinkFlowScreen> {
   }
 
   void _handleDone() {
+    // Get final space ID from add link state
+    // This is the space the link was actually assigned to (may differ from initialSpaceId)
+    final finalSpaceId = ref.read(addLinkProvider).spaceId;
+
     // Refresh home screen links
     ref.invalidate(linksWithTagsProvider);
+
+    // Refresh space detail screen if link is assigned to a space
+    // This handles ALL scenarios:
+    // - Adding from home and assigning space in details
+    // - Adding from space detail with pre-selected space
+    // - Changing space in details screen
+    if (finalSpaceId != null) {
+      ref.invalidate(linksBySpaceProvider(finalSpaceId));
+    }
 
     // Reset provider state
     ref.read(addLinkProvider.notifier).reset();
@@ -77,6 +116,7 @@ class _AddLinkFlowScreenState extends ConsumerState<AddLinkFlowScreen> {
         minChildSize: 0.5,
         maxChildSize: 0.95,
         builder: (context, scrollController) => AddDetailsScreen(
+          initialSpaceId: widget.initialSpaceId, // Pre-select space
           onDone: () {
             Navigator.pop(context); // Close modal
             _handleDone(); // Close entire flow

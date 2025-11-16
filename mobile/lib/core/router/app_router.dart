@@ -11,6 +11,8 @@ import '../../features/auth/screens/forgot_password_screen.dart';
 import '../../features/auth/screens/reset_password_screen.dart';
 import '../../shared/widgets/main_scaffold.dart';
 import '../../features/settings/screens/settings_screen.dart';
+import '../../features/spaces/screens/space_detail_screen.dart';
+import '../../features/spaces/models/space_model.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import 'go_router_refresh_stream.dart';
 import '../utils/app_logger.dart';
@@ -286,6 +288,20 @@ final routerProvider = Provider<GoRouter>((ref) {
           child: SettingsScreen(),
         ),
       ),
+
+      // Space Detail screen (requires authentication)
+      // Shows all links in a specific space
+      // The Space object is passed via state.extra
+      GoRoute(
+        path: '/spaces/:spaceId',
+        name: 'space-detail',
+        pageBuilder: (context, state) {
+          final space = state.extra as Space;
+          return MaterialPage(
+            child: SpaceDetailScreen(space: space),
+          );
+        },
+      ),
     ],
   );
 });
@@ -301,5 +317,7 @@ bool _isAuthRoute(String path) {
 
 /// Check if a route requires authentication
 bool _isProtectedRoute(String path) {
-  return path.startsWith('/home') || path.startsWith('/settings');
+  return path.startsWith('/home') ||
+      path.startsWith('/settings') ||
+      path.startsWith('/spaces');
 }

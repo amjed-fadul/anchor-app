@@ -200,6 +200,89 @@ class SpacesNotifier extends AutoDisposeAsyncNotifier<List<Space>> {
       rethrow; // Re-throw to let UI handle the error
     }
   }
+
+  /// updateSpace - Update an existing space
+  ///
+  /// Updates a space's name and/or color.
+  /// After update, automatically refreshes the spaces list.
+  ///
+  /// Parameters:
+  /// - spaceId: ID of the space to update
+  /// - name: New name (optional)
+  /// - color: New color (optional)
+  ///
+  /// Usage:
+  /// ```dart
+  /// await ref.read(spacesProvider.notifier).updateSpace(
+  ///   spaceId,
+  ///   name: 'Updated Name',
+  /// );
+  /// ```
+  ///
+  /// Throws Exception if:
+  /// - Database error occurs
+  Future<void> updateSpace(String spaceId, {String? name, String? color}) async {
+    debugPrint('🔵 [SpacesNotifier] updateSpace() called');
+    debugPrint('🔵 [SpacesNotifier] Space ID: $spaceId, Name: $name, Color: $color');
+
+    try {
+      // Update space via service
+      final spaceService = ref.read(spaceServiceProvider);
+      await spaceService.updateSpace(
+        spaceId: spaceId,
+        name: name,
+        color: color,
+      );
+
+      debugPrint('✅ [SpacesNotifier] Space updated successfully');
+
+      // Refresh the spaces list to show updated space
+      await refresh();
+
+      debugPrint('✅ [SpacesNotifier] Spaces list refreshed');
+    } catch (e) {
+      debugPrint('🔴 [SpacesNotifier] Error updating space: $e');
+      rethrow; // Re-throw to let UI handle the error
+    }
+  }
+
+  /// deleteSpace - Delete a space
+  ///
+  /// Deletes a space. Cannot delete default spaces (Unread, Reference).
+  /// Links in the deleted space are not deleted - they become unassigned.
+  /// After deletion, automatically refreshes the spaces list.
+  ///
+  /// Parameters:
+  /// - spaceId: ID of the space to delete
+  ///
+  /// Usage:
+  /// ```dart
+  /// await ref.read(spacesProvider.notifier).deleteSpace(spaceId);
+  /// ```
+  ///
+  /// Throws Exception if:
+  /// - Trying to delete a default space (database trigger prevents this)
+  /// - Database error occurs
+  Future<void> deleteSpace(String spaceId) async {
+    debugPrint('🔵 [SpacesNotifier] deleteSpace() called');
+    debugPrint('🔵 [SpacesNotifier] Space ID: $spaceId');
+
+    try {
+      // Delete space via service
+      final spaceService = ref.read(spaceServiceProvider);
+      await spaceService.deleteSpace(spaceId);
+
+      debugPrint('✅ [SpacesNotifier] Space deleted successfully');
+
+      // Refresh the spaces list to remove deleted space
+      await refresh();
+
+      debugPrint('✅ [SpacesNotifier] Spaces list refreshed');
+    } catch (e) {
+      debugPrint('🔴 [SpacesNotifier] Error deleting space: $e');
+      rethrow; // Re-throw to let UI handle the error
+    }
+  }
 }
 
 /// 🎓 Learning Summary: Riverpod AsyncNotifier Pattern

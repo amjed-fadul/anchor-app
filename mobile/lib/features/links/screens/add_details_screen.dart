@@ -28,9 +28,16 @@ import 'package:mobile/features/auth/providers/auth_provider.dart';
 class AddDetailsScreen extends ConsumerStatefulWidget {
   final VoidCallback onDone;
 
+  /// Optional: Pre-select a space when adding details
+  ///
+  /// When adding a link from a Space Detail Screen, this will be the space ID.
+  /// The link will be automatically assigned to this space.
+  final String? initialSpaceId;
+
   const AddDetailsScreen({
     super.key,
     required this.onDone,
+    this.initialSpaceId,
   });
 
   @override
@@ -53,6 +60,19 @@ class _AddDetailsScreenState extends ConsumerState<AddDetailsScreen>
     _tabController.addListener(() {
       setState(() {}); // Rebuild to update icon colors
     });
+
+    // Pre-select space if initialSpaceId is provided
+    //
+    // We use addPostFrameCallback to ensure the provider is ready
+    // before we try to update it. Calling ref.read() directly in
+    // initState can cause issues because the widget tree isn't fully built yet.
+    if (widget.initialSpaceId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref
+            .read(addLinkProvider.notifier)
+            .updateSpace(widget.initialSpaceId);
+      });
+    }
 
     // Note: We don't initialize _noteController here because
     // ref.read() in initState can cause issues. Instead, we'll
@@ -417,7 +437,7 @@ class _AddDetailsScreenState extends ConsumerState<AddDetailsScreen>
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: _getSpaceColor(space.name),
+                            color: _parseColor(space.color),
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
@@ -446,21 +466,27 @@ class _AddDetailsScreenState extends ConsumerState<AddDetailsScreen>
     );
   }
 
-  Color _getSpaceColor(String spaceName) {
-    // Match colors from Figma design
-    switch (spaceName.toLowerCase()) {
-      case 'unread':
-        return const Color(0xFF9747FF); // Purple
-      case 'reference':
-        return const Color(0xFFFF4747); // Red
-      case 'design inspiration':
-        return const Color(0xFF47FFFF); // Cyan
-      case 'articles':
-        return const Color(0xFFB8B8B8); // Gray
-      case 'test':
-        return const Color(0xFF000000); // Black
-      default:
-        return AnchorColors.anchorTeal;
+  /// Parse hex color string to Color object
+  ///
+  /// Handles hex strings like:
+  /// - "#7c3aed" → Color(0xff7c3aed)
+  /// - "7c3aed" → Color(0xff7c3aed)
+  /// - Invalid → Fallback gray color
+  Color _parseColor(String hexColor) {
+    try {
+      // Remove # if present
+      String cleanHex = hexColor.replaceAll('#', '');
+
+      // Add alpha channel (ff) if not present
+      if (cleanHex.length == 6) {
+        cleanHex = 'ff$cleanHex';
+      }
+
+      return Color(int.parse(cleanHex, radix: 16));
+    } catch (e) {
+      // Fallback to gray if color parsing fails
+      debugPrint('⚠️ Failed to parse space color: $hexColor, using fallback gray');
+      return const Color(0xff6a6770);
     }
   }
 }

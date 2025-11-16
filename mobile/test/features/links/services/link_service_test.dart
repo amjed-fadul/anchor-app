@@ -462,6 +462,166 @@ void main() {
         );
       });
     });
+
+    /// Test Group: getLinksBySpace() tests
+    ///
+    /// Testing the retrieval of links filtered by space ID
+    /// This is used in the Space Detail Screen to show links in a specific space
+    group('getLinksBySpace()', () {
+      /// Test #1: Successfully fetch links for a specific space with tags
+      ///
+      /// Why this matters:
+      /// This is the core functionality for Space Detail Screen - showing all links in a space
+      test('returns links with tags for specific space', () async {
+        // ARRANGE: Mock database response with links in a specific space
+        final mockResponse = [
+          {
+            'id': 'link-1',
+            'user_id': 'user-123',
+            'space_id': 'space-456', // Links in this specific space
+            'url': 'https://example.com',
+            'normalized_url': 'https://example.com',
+            'title': 'Example 1',
+            'description': 'First link',
+            'thumbnail_url': null,
+            'domain': 'example.com',
+            'note': 'Check later',
+            'opened_at': null,
+            'created_at': '2025-11-13T10:00:00Z',
+            'updated_at': '2025-11-13T10:00:00Z',
+            'link_tags': [
+              {
+                'tags': {
+                  'id': 'tag-1',
+                  'user_id': 'user-123',
+                  'name': 'Work',
+                  'color': '#f42cff',
+                  'created_at': '2025-11-13T09:00:00Z',
+                }
+              },
+            ],
+          },
+          {
+            'id': 'link-2',
+            'user_id': 'user-123',
+            'space_id': 'space-456', // Same space
+            'url': 'https://example2.com',
+            'normalized_url': 'https://example2.com',
+            'title': 'Example 2',
+            'description': null,
+            'thumbnail_url': null,
+            'domain': 'example2.com',
+            'note': null,
+            'opened_at': null,
+            'created_at': '2025-11-13T11:00:00Z',
+            'updated_at': '2025-11-13T11:00:00Z',
+            'link_tags': [],
+          },
+        ];
+
+        final mockQueryBuilder = MockSupabaseQueryBuilder();
+        final mockFilterBuilder = MockPostgrestFilterBuilder();
+
+        when(() => mockSupabase.from('links')).thenReturn(mockQueryBuilder);
+        when(() => mockQueryBuilder.select(any())).thenReturn(mockFilterBuilder);
+        when(() => mockFilterBuilder.eq('user_id', any())).thenReturn(mockFilterBuilder);
+        when(() => mockFilterBuilder.eq('space_id', any())).thenReturn(mockFilterBuilder);
+        when(() => mockFilterBuilder.order(any(), ascending: any(named: 'ascending')))
+            .thenAnswer((_) => Future.value(mockResponse as List<Map<String, dynamic>>));
+
+        // ACT: Get links for specific space
+        final result = await linkService.getLinksBySpace('user-123', 'space-456');
+
+        // ASSERT: Verify we got links from that space
+        expect(result.length, 2);
+
+        // Check first link with tag
+        expect(result[0].link.id, 'link-1');
+        expect(result[0].link.spaceId, 'space-456');
+        expect(result[0].tags.length, 1);
+        expect(result[0].tags[0].name, 'Work');
+
+        // Check second link without tags
+        expect(result[1].link.id, 'link-2');
+        expect(result[1].link.spaceId, 'space-456');
+        expect(result[1].tags.length, 0);
+
+        // Verify correct query parameters were used
+        verify(() => mockFilterBuilder.eq('user_id', 'user-123')).called(1);
+        verify(() => mockFilterBuilder.eq('space_id', 'space-456')).called(1);
+      });
+
+      /// Test #2: Return empty list when space has no links
+      ///
+      /// Why this matters:
+      /// Newly created spaces or spaces with all links deleted should show empty state
+      test('returns empty list when space has no links', () async {
+        // ARRANGE: Empty response
+        final mockQueryBuilder = MockSupabaseQueryBuilder();
+        final mockFilterBuilder = MockPostgrestFilterBuilder();
+
+        when(() => mockSupabase.from('links')).thenReturn(mockQueryBuilder);
+        when(() => mockQueryBuilder.select(any())).thenReturn(mockFilterBuilder);
+        when(() => mockFilterBuilder.eq('user_id', any())).thenReturn(mockFilterBuilder);
+        when(() => mockFilterBuilder.eq('space_id', any())).thenReturn(mockFilterBuilder);
+        when(() => mockFilterBuilder.order(any(), ascending: any(named: 'ascending')))
+            .thenAnswer((_) async => []);
+
+        // ACT
+        final result = await linkService.getLinksBySpace('user-123', 'empty-space-id');
+
+        // ASSERT: Should return empty list
+        expect(result, []);
+        expect(result.length, 0);
+      });
+
+      /// Test #3: Handle database error
+      ///
+      /// Why this matters:
+      /// Network issues or database errors should throw exceptions
+      test('throws exception on database error', () async {
+        // ARRANGE: Mock database throwing error
+        final mockQueryBuilder = MockSupabaseQueryBuilder();
+        final mockFilterBuilder = MockPostgrestFilterBuilder();
+
+        when(() => mockSupabase.from('links')).thenReturn(mockQueryBuilder);
+        when(() => mockQueryBuilder.select(any())).thenReturn(mockFilterBuilder);
+        when(() => mockFilterBuilder.eq('user_id', any())).thenReturn(mockFilterBuilder);
+        when(() => mockFilterBuilder.eq('space_id', any())).thenReturn(mockFilterBuilder);
+        when(() => mockFilterBuilder.order(any(), ascending: any(named: 'ascending')))
+            .thenThrow(Exception('Network timeout'));
+
+        // ACT & ASSERT: Should throw exception
+        expect(
+          () => linkService.getLinksBySpace('user-123', 'space-456'),
+          throwsException,
+        );
+      });
+
+      /// Test #4: Only returns user's own links (RLS verification)
+      ///
+      /// Why this matters:
+      /// Security - users should only see their own links, not other users' links
+      test('filters by both userId and spaceId', () async {
+        // ARRANGE
+        final mockQueryBuilder = MockSupabaseQueryBuilder();
+        final mockFilterBuilder = MockPostgrestFilterBuilder();
+
+        when(() => mockSupabase.from('links')).thenReturn(mockQueryBuilder);
+        when(() => mockQueryBuilder.select(any())).thenReturn(mockFilterBuilder);
+        when(() => mockFilterBuilder.eq('user_id', any())).thenReturn(mockFilterBuilder);
+        when(() => mockFilterBuilder.eq('space_id', any())).thenReturn(mockFilterBuilder);
+        when(() => mockFilterBuilder.order(any(), ascending: any(named: 'ascending')))
+            .thenAnswer((_) async => []);
+
+        // ACT
+        await linkService.getLinksBySpace('user-123', 'space-456');
+
+        // ASSERT: Verify BOTH filters were applied
+        verify(() => mockFilterBuilder.eq('user_id', 'user-123')).called(1);
+        verify(() => mockFilterBuilder.eq('space_id', 'space-456')).called(1);
+      });
+    });
   });
 }
 

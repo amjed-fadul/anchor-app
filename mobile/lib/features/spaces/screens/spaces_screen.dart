@@ -22,6 +22,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/space_provider.dart';
 import '../widgets/space_card.dart';
 import '../widgets/create_space_bottom_sheet.dart';
+import '../../../design_system/design_system.dart';
 
 class SpacesScreen extends ConsumerStatefulWidget {
   const SpacesScreen({super.key});
@@ -197,21 +198,25 @@ class _SpacesScreenState extends ConsumerState<SpacesScreen> {
           const Spacer(),
 
           // Plus button (for creating new space)
-          IconButton(
-            icon: const Icon(Icons.add),
-            color: const Color(0xff075a52), // Teal
-            iconSize: 28,
-            onPressed: _showCreateSpaceSheet,
-            tooltip: 'Create new space',
-          ),
-
-          // Menu button (for settings/actions - disabled for now)
-          IconButton(
-            icon: const Icon(Icons.menu),
-            color: const Color(0xff6a6770), // Gray
-            iconSize: 28,
-            onPressed: null, // Disabled for now
-            tooltip: 'Spaces menu',
+          // Styled to match home screen FAB with circular teal button
+          Material(
+            elevation: 2, // Subtle shadow for depth (AppBar context)
+            shape: const CircleBorder(), // Perfect circle
+            color: AnchorColors.anchorTeal, // Brand teal background (#0D9488)
+            child: InkWell(
+              onTap: _showCreateSpaceSheet,
+              borderRadius: BorderRadius.circular(20), // Circular tap effect
+              child: Container(
+                width: 40, // Compact size for AppBar (vs 56 for FAB)
+                height: 40,
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.add,
+                  color: Colors.white, // White icon (like FAB)
+                  size: 24, // Slightly smaller for AppBar
+                ),
+              ),
+            ),
           ),
         ],
       ),
