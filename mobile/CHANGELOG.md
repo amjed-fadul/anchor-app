@@ -12,6 +12,22 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+#### Onboarding Carousel - Synchronized Descriptions (2025-11-16 18:00)
+- **What**: Added dynamic descriptions that sync with the onboarding carousel
+- **Features**:
+  - Each carousel word (Anchor, Instant, Find) now has a unique description
+  - Descriptions change automatically when carousel scrolls
+  - Smooth fade in/out transitions using AnimatedSwitcher (300ms)
+  - Synchronized via onSelectedItemChanged callback
+  - Specific user-facing descriptions:
+    - "Anchor": "Not just saving links, creating anchors you can always return to."
+    - "Instant": "Save from any app. Find it anytime. Add context when you have time."
+    - "Find": "Create collections that make sense to you. Everything stays where you put it."
+- **Files Modified**:
+  - `lib/features/auth/screens/onboarding_screen.dart` - Replaced static tagline with AnimatedSwitcher containing dynamic descriptions
+- **Design Pattern**: Uses state tracking with `_currentDescriptionIndex` and AnimatedSwitcher with ValueKey for smooth transitions
+- **Result**: ✅ Onboarding screen now provides context-specific messaging for each carousel item, improving user understanding
+
 #### Bottom Navigation and Spaces Screen MVP (2025-11-15 10:30)
 - **What**: Implemented bottom navigation bar with Home and Spaces tabs, and created the Spaces screen
 - **Features**:
