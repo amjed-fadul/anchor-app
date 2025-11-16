@@ -6,11 +6,14 @@ import 'package:go_router/go_router.dart';
 import '../../../design_system/design_system.dart';
 import '../../../core/providers/onboarding_provider.dart';
 
-/// Onboarding screen with animated text and gradient background
+/// Onboarding screen with animated carousel and synchronized descriptions
 ///
-/// Shows the Anchor brand with animated "Instant" and "Find" text
-/// that fades in sequentially, along with the tagline "Find It Anytime"
-/// and a call-to-action button.
+/// Features:
+/// - Carousel with 3 words: "Anchor", "Instant", "Find" (with icons)
+/// - Description text that changes in sync with carousel
+/// - Smooth fade transitions between descriptions
+/// - Gradient background (teal to green)
+/// - "Get Started" call-to-action button
 ///
 /// RESPONSIVE: Uses Column with Spacer for flexible layout across all device sizes
 class OnboardingScreen extends ConsumerStatefulWidget {
@@ -24,12 +27,25 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   late FixedExtentScrollController _scrollController;
   Timer? _autoScrollTimer;
   int _currentItem = 1000; // Start high for infinite scrolling
+  int _currentDescriptionIndex = 0; // Track current description for text sync
 
-  // The three words in carousel order
+  // The three words in carousel order with their descriptions
   final List<Map<String, String>> _carouselItems = [
-    {'word': 'Anchor', 'icon': 'assets/images/app_stack_icon.svg'},
-    {'word': 'Instant', 'icon': 'assets/images/instant_icon.svg'},
-    {'word': 'Find', 'icon': 'assets/images/find_icon.svg'},
+    {
+      'word': 'Anchor',
+      'icon': 'assets/images/app_stack_icon.svg',
+      'description': 'Not just saving links, creating anchors you can always return to.',
+    },
+    {
+      'word': 'Instant',
+      'icon': 'assets/images/instant_icon.svg',
+      'description': 'Save from any app. Find it anytime. Add context when you have time.',
+    },
+    {
+      'word': 'Find',
+      'icon': 'assets/images/find_icon.svg',
+      'description': 'Create collections that make sense to you. Everything stays where you put it.',
+    },
   ];
 
   // Style constants
@@ -146,7 +162,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         }),
                       ),
                       onSelectedItemChanged: (index) {
-                        // Optional: track selected item
+                        // Sync description text with carousel position
+                        setState(() {
+                          _currentDescriptionIndex = index % _carouselItems.length;
+                        });
                       },
                     ),
                   ),
@@ -155,55 +174,32 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 // Middle spacing - flexible (reduced to ensure button visibility on small screens)
                 const Spacer(flex: 2),
 
-                // App icon and tagline - left-aligned
-                Align(
-                  alignment: Alignment.centerLeft,
+                // Dynamic description text - synced with carousel
+                Center(
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 26),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // App icon
-                        Container(
-                          width: 50,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: const Center(
-                            child: Text(
-                              'A',
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF2C3E50), // Anchor slate
-                              ),
-                            ),
-                          ),
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      switchInCurve: Curves.easeInOut,
+                      switchOutCurve: Curves.easeInOut,
+                      transitionBuilder: (child, animation) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: child,
+                        );
+                      },
+                      child: Text(
+                        _carouselItems[_currentDescriptionIndex]['description']!,
+                        key: ValueKey(_currentDescriptionIndex),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFF2C3E50), // Anchor slate
+                          letterSpacing: -0.2,
+                          height: 1.4,
                         ),
-
-                        const SizedBox(height: 16),
-
-                        // "Find It Anytime" tagline
-                        Text(
-                          'Find It\nAnytime',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w400,
-                            color: AnchorColors.anchorSlate, // #2C3E50
-                            letterSpacing: -0.22,
-                            height: 1.2,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
