@@ -1,6 +1,6 @@
 # TODO & Project Roadmap
 
-**Last Updated:** 2025-11-16 11:45
+**Last Updated:** 2025-11-16 16:45
 
 This file tracks active tasks, planned features, known issues, and future ideas for the Anchor App.
 
@@ -17,18 +17,16 @@ This file tracks active tasks, planned features, known issues, and future ideas 
 
 ### High Priority Tasks (2025-11-16)
 
-📋 **Commit Recent Spaces Work** (Pending) 🟢 SAFE
-- Save uncommitted changes (link_card, spaces screens, new components)
-- Update CHANGELOG.md with recent Space management features
-- Files: link_card.dart, space_detail_screen.dart, spaces_screen.dart, create_space_bottom_sheet.dart
-- New files: space_picker_sheet.dart, styled_add_button.dart
-- **Priority:** HIGH (save work before moving forward)
-- **Risk:** None - just committing existing work
-
-📋 **Fix Test Failures** (Pending) 🟡 LOW RISK
-- 18 test errors blocking CI/CD and TDD workflow
-- Fix Supabase mocking in link_service_test.dart (11 errors)
-- Fix provider overrides in space_detail_screen_test.dart (6 errors)
+🚧 **Fix Test Failures** (In Progress) 🟡 LOW RISK
+- **Original**: 44 test failures blocking TDD workflow
+- **Progress**: 10 tests fixed (22.7% complete)
+  - ✅ Link Model tests: 8/8 fixed (missing normalized_url, description, etc.)
+  - ✅ Link Service tests: 2/14 fixed (getLinksWithTags tests)
+  - 🚧 Link Service tests: 12 failures remaining (mock setup issue)
+  - 📋 Link Card Widget tests: 15 failures pending
+  - 📋 Splash Screen tests: 4 failures pending
+  - 📋 Tag Picker Sheet tests: 3 failures pending
+- **Current Issue**: "Cannot call `when` within a stub response" in Link Service tests
 - **Priority:** HIGH (TDD compliance)
 - **Impact:** Restores ability to verify code works
 
@@ -89,22 +87,24 @@ This file tracks active tasks, planned features, known issues, and future ideas 
 
 ## 🐛 Known Issues
 
-### Test Failures - 18 Errors (2025-11-16)
-- **Issue**: Multiple test files have failures blocking CI/CD
-- **Affected Files**:
-  - `link_service_test.dart` (11 errors - Supabase mocking issues)
-  - `space_detail_screen_test.dart` (6 errors - provider override issues)
-- **Root Cause**: Supabase PostgrestBuilder mocking + provider testing strategy needs work
-- **Impact**: Tests won't run, can't verify code works properly
-- **Next Step**: Fix mocking strategy and provider overrides
+### Test Failures - 34 Remaining (2025-11-16 16:45)
+- **Original**: 44 test failures
+- **Progress**: 10 fixed, 34 remaining (22.7% complete)
+- **Fixed**:
+  - ✅ Link Model tests (8/8) - Added missing fields to test data
+  - ✅ Link Service `getLinksWithTags()` tests (2/2) - Same fix
+- **Current Issue**: Link Service mock setup error
+  - **Error**: "Bad state: Cannot call `when` within a stub response"
+  - **Affected**: 12 Link Service tests (createLink, deleteLink, getLinksBySpace)
+  - **Root Cause**: Mocktail state contamination or nested mock setup
+  - **Next Step**: Investigate mock reset/setup in failing tests
+- **Remaining Work**:
+  - 🚧 Link Service: 12 tests (mock setup issue)
+  - 📋 Link Card Widget: 15 tests (pending investigation)
+  - 📋 Splash Screen: 4 tests (pending investigation)
+  - 📋 Tag Picker Sheet: 3 tests (pending investigation)
+- **Impact**: Partial TDD compliance, some features verified
 - **Priority**: HIGH (TDD compliance required)
-
-### Test Mocking Strategy (2025-11-13 20:30)
-- **Issue**: LinkService tests use incorrect mocking for Supabase builders
-- **Impact**: Tests don't compile (implementation code is fine)
-- **Root Cause**: Supabase PostgrestBuilder has special Future-like pattern
-- **Next Step**: Research Supabase testing best practices
-- **Priority**: High (part of 18 test failures above)
 
 ---
 
