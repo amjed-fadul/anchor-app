@@ -104,7 +104,7 @@ void main() {
       when(() => mockQueryBuilder.select(any())).thenReturn(mockFilterBuilder);
       when(() => mockFilterBuilder.eq(any(), any())).thenReturn(mockFilterBuilder);
       when(() => mockFilterBuilder.order(any(), ascending: any(named: 'ascending')))
-          .thenAnswer((_) => Future.value(mockResponse as List<Map<String, dynamic>>));
+          .thenAnswer((_) => Future.value(mockResponse) as PostgrestTransformBuilder<List<Map<String, dynamic>>>);
 
       // ACT: Call the service method
       final result = await linkService.getLinksWithTags('user-123');
@@ -154,7 +154,7 @@ void main() {
       when(() => mockQueryBuilder.select(any())).thenReturn(mockFilterBuilder);
       when(() => mockFilterBuilder.eq(any(), any())).thenReturn(mockFilterBuilder);
       when(() => mockFilterBuilder.order(any(), ascending: any(named: 'ascending')))
-          .thenAnswer((_) => Future.value(mockResponse as List<Map<String, dynamic>>));
+          .thenAnswer((_) => Future.value(mockResponse) as PostgrestTransformBuilder<List<Map<String, dynamic>>>);
 
       // ACT
       final result = await linkService.getLinksWithTags('user-123');
@@ -179,7 +179,7 @@ void main() {
       when(() => mockQueryBuilder.select(any())).thenReturn(mockFilterBuilder);
       when(() => mockFilterBuilder.eq(any(), any())).thenReturn(mockFilterBuilder);
       when(() => mockFilterBuilder.order(any(), ascending: any(named: 'ascending')))
-          .thenAnswer((_) async => []);
+          .thenAnswer((_) => Future.value(<Map<String, dynamic>>[]) as PostgrestTransformBuilder<List<Map<String, dynamic>>>);
 
       // ACT
       final result = await linkService.getLinksWithTags('user-123');
@@ -241,7 +241,7 @@ void main() {
       when(() => mockSupabase.from('links')).thenReturn(mockQueryBuilder);
       when(() => mockQueryBuilder.insert(any())).thenReturn(mockFilterBuilder);
       when(() => mockFilterBuilder.select()).thenReturn(mockTransformBuilder);
-      when(() => mockTransformBuilder.single()).thenAnswer((_) => Future.value(mockResponse as Map<String, dynamic>));
+      when(() => mockTransformBuilder.single()).thenAnswer((_) => Future.value(mockResponse) as PostgrestTransformBuilder<Map<String, dynamic>>);
 
       // ACT: Create a link
       final result = await linkService.createLink(
@@ -300,7 +300,7 @@ void main() {
       when(() => mockLinksQueryBuilder.insert(any())).thenReturn(mockLinksFilterBuilder);
       when(() => mockLinksFilterBuilder.select()).thenReturn(mockLinksTransformBuilder);
       when(() => mockLinksTransformBuilder.single())
-          .thenAnswer((_) => Future.value(mockLinkResponse as Map<String, dynamic>));
+          .thenAnswer((_) => Future.value(mockLinkResponse) as PostgrestTransformBuilder<Map<String, dynamic>>);
 
       // Mock tag associations creation
       when(() => mockSupabase.from('link_tags'))
@@ -355,7 +355,7 @@ void main() {
       when(() => mockSupabase.from('links')).thenReturn(mockQueryBuilder);
       when(() => mockQueryBuilder.insert(any())).thenReturn(mockFilterBuilder);
       when(() => mockFilterBuilder.select()).thenReturn(mockTransformBuilder);
-      when(() => mockTransformBuilder.single()).thenAnswer((_) => Future.value(mockResponse as Map<String, dynamic>));
+      when(() => mockTransformBuilder.single()).thenAnswer((_) => Future.value(mockResponse) as PostgrestTransformBuilder<Map<String, dynamic>>);
 
       // ACT: Create link without spaceId
       final result = await linkService.createLink(
@@ -420,12 +420,12 @@ void main() {
         // Mock link_tags deletion
         when(() => mockSupabase.from('link_tags')).thenReturn(mockLinkTagsBuilder);
         when(() => mockLinkTagsBuilder.delete()).thenReturn(mockLinkTagsFilter);
-        when(() => mockLinkTagsFilter.eq('link_id', 'link-123')).thenAnswer((_) async => []);
+        when(() => mockLinkTagsFilter.eq('link_id', 'link-123')).thenReturn(mockLinkTagsFilter);
 
         // Mock links deletion
         when(() => mockSupabase.from('links')).thenReturn(mockLinksBuilder);
         when(() => mockLinksBuilder.delete()).thenReturn(mockLinksFilter);
-        when(() => mockLinksFilter.eq('id', 'link-123')).thenAnswer((_) async => []);
+        when(() => mockLinksFilter.eq('id', 'link-123')).thenReturn(mockLinksFilter);
 
         // ACT: Delete the link
         await linkService.deleteLink('link-123');
@@ -527,7 +527,7 @@ void main() {
         when(() => mockFilterBuilder.eq('user_id', any())).thenReturn(mockFilterBuilder);
         when(() => mockFilterBuilder.eq('space_id', any())).thenReturn(mockFilterBuilder);
         when(() => mockFilterBuilder.order(any(), ascending: any(named: 'ascending')))
-            .thenAnswer((_) => Future.value(mockResponse as List<Map<String, dynamic>>));
+            .thenAnswer((_) => Future.value(mockResponse) as PostgrestTransformBuilder<List<Map<String, dynamic>>>);
 
         // ACT: Get links for specific space
         final result = await linkService.getLinksBySpace('user-123', 'space-456');
@@ -565,7 +565,7 @@ void main() {
         when(() => mockFilterBuilder.eq('user_id', any())).thenReturn(mockFilterBuilder);
         when(() => mockFilterBuilder.eq('space_id', any())).thenReturn(mockFilterBuilder);
         when(() => mockFilterBuilder.order(any(), ascending: any(named: 'ascending')))
-            .thenAnswer((_) async => []);
+            .thenAnswer((_) => Future.value(<Map<String, dynamic>>[]) as PostgrestTransformBuilder<List<Map<String, dynamic>>>);
 
         // ACT
         final result = await linkService.getLinksBySpace('user-123', 'empty-space-id');
@@ -612,7 +612,7 @@ void main() {
         when(() => mockFilterBuilder.eq('user_id', any())).thenReturn(mockFilterBuilder);
         when(() => mockFilterBuilder.eq('space_id', any())).thenReturn(mockFilterBuilder);
         when(() => mockFilterBuilder.order(any(), ascending: any(named: 'ascending')))
-            .thenAnswer((_) async => []);
+            .thenAnswer((_) => Future.value(<Map<String, dynamic>>[]) as PostgrestTransformBuilder<List<Map<String, dynamic>>>);
 
         // ACT
         await linkService.getLinksBySpace('user-123', 'space-456');

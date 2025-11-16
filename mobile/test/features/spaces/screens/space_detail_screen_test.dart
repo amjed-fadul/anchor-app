@@ -21,6 +21,32 @@ import 'package:mobile/features/links/services/link_service.dart';
 import 'package:mobile/features/links/providers/links_by_space_provider.dart';
 import 'package:mobile/features/tags/models/tag_model.dart';
 
+/// Mock Notifier for testing - returns predefined data
+class MockLinksBySpaceNotifier extends FamilyAsyncNotifier<List<LinkWithTags>, String> {
+  final List<LinkWithTags> mockData;
+  final Object? mockError;
+  final Duration? mockDelay;
+
+  MockLinksBySpaceNotifier({
+    this.mockData = const [],
+    this.mockError,
+    this.mockDelay,
+  });
+
+  @override
+  Future<List<LinkWithTags>> build(String arg) async {
+    if (mockDelay != null) {
+      await Future.delayed(mockDelay!);
+    }
+
+    if (mockError != null) {
+      throw mockError!;
+    }
+
+    return mockData;
+  }
+}
+
 /// Helper function to create a test widget with providers
 Widget createTestWidget(Widget child, {List<Override> overrides = const []}) {
   return ProviderScope(
@@ -46,13 +72,13 @@ void main() {
 
     /// Test #1: Screen renders with space name in header
     testWidgets('displays space name in header', (WidgetTester tester) async {
-      // Arrange: Override provider to return loading state initially
+      // Arrange: Override provider to return empty list
       await tester.pumpWidget(
         createTestWidget(
           SpaceDetailScreen(space: testSpace),
           overrides: [
             linksBySpaceProvider(testSpace.id).overrideWith(
-              (ref) => Future.value(<LinkWithTags>[]),
+              () => MockLinksBySpaceNotifier(mockData: []),
             ),
           ],
         ),
@@ -74,7 +100,7 @@ void main() {
           SpaceDetailScreen(space: testSpace),
           overrides: [
             linksBySpaceProvider(testSpace.id).overrideWith(
-              (ref) => Future.value(<LinkWithTags>[]),
+              () => MockLinksBySpaceNotifier(mockData: []),
             ),
           ],
         ),
@@ -144,7 +170,7 @@ void main() {
           SpaceDetailScreen(space: testSpace),
           overrides: [
             linksBySpaceProvider(testSpace.id).overrideWith(
-              (ref) => Future.value(mockLinks),
+              () => MockLinksBySpaceNotifier(mockData: mockLinks),
             ),
           ],
         ),
@@ -169,9 +195,9 @@ void main() {
           SpaceDetailScreen(space: testSpace),
           overrides: [
             linksBySpaceProvider(testSpace.id).overrideWith(
-              (ref) => Future.delayed(
-                const Duration(seconds: 1),
-                () => <LinkWithTags>[],
+              () => MockLinksBySpaceNotifier(
+                mockData: [],
+                mockDelay: const Duration(seconds: 1),
               ),
             ),
           ],
@@ -193,7 +219,9 @@ void main() {
           SpaceDetailScreen(space: testSpace),
           overrides: [
             linksBySpaceProvider(testSpace.id).overrideWith(
-              (ref) => Future.error('Failed to fetch links'),
+              () => MockLinksBySpaceNotifier(
+                mockError: 'Failed to fetch links',
+              ),
             ),
           ],
         ),
@@ -214,7 +242,7 @@ void main() {
           SpaceDetailScreen(space: testSpace),
           overrides: [
             linksBySpaceProvider(testSpace.id).overrideWith(
-              (ref) => Future.value(<LinkWithTags>[]),
+              () => MockLinksBySpaceNotifier(mockData: []),
             ),
           ],
         ),

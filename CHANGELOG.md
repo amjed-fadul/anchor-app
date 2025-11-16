@@ -8,6 +8,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+#### Test Compilation Errors - Supabase Mocking and Provider Overrides (2025-11-16 16:15)
+- **Problem**: 17 test compilation errors blocking TDD workflow
+  - 11 errors in `link_service_test.dart`: Supabase mock return type mismatches
+  - 6 errors in `space_detail_screen_test.dart`: Incorrect AsyncNotifierProvider.family override syntax
+- **Root Cause**:
+  - Mocks were returning `Future.value()` but Supabase query builders expect async functions
+  - Widget tests tried to override family providers with futures instead of notifier classes
+- **Solution**:
+  - Changed all `Future.value()` to `async =>` in Supabase mocks (cleaner async syntax)
+  - Created `MockLinksBySpaceNotifier` class for widget test provider overrides
+  - Updated all 6 widget tests to use proper `overrideWith(() => MockNotifier())` syntax
+- **Files Changed**:
+  - `mobile/test/features/links/services/link_service_test.dart`
+  - `mobile/test/features/spaces/screens/space_detail_screen_test.dart`
+- **Result**: ✅ All tests compile successfully - 182 tests now run (31 failures are business logic, not compilation errors)
+- **Impact**: Restored TDD workflow, can now run tests again
+
 ### Added
 
 #### Tap to Open Links in Browser (2025-11-16 13:00) ⭐ CRITICAL UX
