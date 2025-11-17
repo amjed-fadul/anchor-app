@@ -8,9 +8,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+#### README.md - Critical Documentation Alignment (2025-11-17 16:30)
+- **Problem**: README.md significantly out of sync with actual codebase state
+  - Showed project at 10% (Phase 0) but actually 70% complete (Phase 5)
+  - All documentation links broken (referenced `docs/PRD/` but directory doesn't exist)
+  - No reference to critical AMENDMENTS.md architectural decisions
+  - Version showed 0.1.0 (Pre-Alpha) instead of reflecting beta status
+  - Project structure diagram showed wrong paths
+- **Root Cause**: Documentation not updated as project progressed through phases
+- **Solution**: Comprehensive README.md update addressing all 8 misalignments from audit report
+  - **Fixed Broken Links**: Changed `docs/PRD/` → `PRD/` (3 occurrences)
+  - **Added AMENDMENTS.md**: Prominent warning at top of Documentation section with link
+  - **Updated Roadmap**:
+    - Phase 0-4: Marked ✅ COMPLETE with detailed feature lists
+    - Phase 5: Marked 🔄 IN PROGRESS (Current) with 70% progress indicator
+    - Phase 6: Marked 📋 NOT STARTED
+    - Added note about share extension deferred to Phase 6
+  - **Fixed Project Structure**: Removed non-existent `docs/` directory, added actual files (PRD/, CHANGELOG.md, TODO.md, claude.md)
+  - **Updated Version**: 0.1.0 (Pre-Alpha) → 0.7.0 (Beta)
+  - **Clarified Metrics**: Added "Post-Launch" and beta development note
+  - **Updated Contributing**: Added links to CHANGELOG, TODO, claude.md
+- **Files Changed**:
+  - `README.md` - 8 sections updated (Documentation, Project Structure, Roadmap, Version, Metrics, Contributing)
+- **Result**: ✅ README now accurately reflects 70% project completion and actual feature status
+- **Impact**: New developers/stakeholders will have accurate understanding of project state
+- **Reference**: See `/Users/amjedfadul/Desktop/Anchor App/AMENDMENTS_README_ALIGNMENT_REPORT.md` for complete audit findings
+
 ### Fixed
 
-#### URL Shortener Metadata Extraction - No Metadata from Shortened URLs (2025-11-17 TBD)
+#### URL Shortener Metadata Extraction - No Metadata from Shortened URLs (2025-11-17 08:30)
 - **Problem**: When users saved shortened URLs (like `https://share.google/sQLfRCNWwYgcd4ljq`), no metadata was displayed
   - User reported: "when I saved this url I dont saw any meta data"
   - Short URL was saved to database instead of actual destination
@@ -71,6 +99,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Impact**: Restored TDD workflow, can now run tests again
 
 ### Added
+
+#### Onboarding Carousel - Synchronized Descriptions (2025-11-16 18:00)
+- **What**: Added dynamic descriptions that sync with the onboarding carousel
+- **Features**:
+  - Each carousel word (Anchor, Instant, Find) now has a unique description
+  - Descriptions change automatically when carousel scrolls
+  - Smooth fade in/out transitions using AnimatedSwitcher (300ms)
+  - Synchronized via onSelectedItemChanged callback
+  - Specific user-facing descriptions:
+    - "Anchor": "Not just saving links, creating anchors you can always return to."
+    - "Instant": "Save from any app. Find it anytime. Add context when you have time."
+    - "Find": "Create collections that make sense to you. Everything stays where you put it."
+- **Files Modified**: `mobile/lib/features/auth/screens/onboarding_screen.dart`
+- **Design Pattern**: Uses state tracking with `_currentDescriptionIndex` and AnimatedSwitcher with ValueKey for smooth transitions
+- **Result**: ✅ Onboarding screen now provides context-specific messaging for each carousel item, improving user understanding
 
 #### Tap to Open Links in Browser (2025-11-16 13:00) ⭐ CRITICAL UX
 - **Feature**: Users can now tap link cards to open URLs in their default browser

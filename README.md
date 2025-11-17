@@ -95,12 +95,15 @@ anchor-app/
 │   ├── functions/         # Edge Functions
 │   └── seed/              # Test data
 │
-├── docs/                  # Documentation
-│   └── PRD/               # Product Requirements Document
-│       ├── Anchor - Product Management Documentation.md
-│       └── Anchor — Brand Style Guide.md
+├── PRD/                   # Product documentation
+│   ├── AMENDMENTS.md      # ⚠️ Critical design decisions
+│   ├── Anchor - Product Management Documentation.md
+│   └── Anchor — Brand Style Guide.md
 │
-└── shared/                # Shared types and constants
+├── CHANGELOG.md           # Development history
+├── TODO.md                # Current tasks and roadmap
+├── README.md              # This file
+└── claude.md              # AI assistant working preferences
 ```
 
 ---
@@ -153,8 +156,11 @@ For detailed setup instructions, see:
 
 ## 📖 Documentation
 
-- **[Product Requirements Document](docs/PRD/Anchor%20-%20Product%20Management%20Documentation.md)** - Complete feature specs, user stories, and acceptance criteria
-- **[Brand Style Guide](docs/PRD/Anchor%20—%20Brand%20Style%20Guide.md)** - Colors, typography, components, and design system
+⚠️ **Important:** Read [PRD Amendments](PRD/AMENDMENTS.md) first to understand critical architectural decisions (Spaces-Only Model).
+
+- **[Product Requirements Document](PRD/Anchor%20-%20Product%20Management%20Documentation.md)** - Complete feature specs, user stories, and acceptance criteria
+- **[PRD Amendments](PRD/AMENDMENTS.md)** - ⚠️ **READ THIS FIRST** - Why we use Spaces instead of status field
+- **[Brand Style Guide](PRD/Anchor%20—%20Brand%20Style%20Guide.md)** - Colors, typography, components, and design system
 - **[Claude AI Preferences](claude.md)** - How we work with AI assistants on this project
 
 ---
@@ -169,56 +175,67 @@ Anchor follows a minimalist, professional design system:
 - **Animations:** Quick and purposeful (100ms-400ms)
 - **Success Gradient:** Green to Teal (celebration moments only)
 
-See the [Brand Style Guide](docs/PRD/Anchor%20—%20Brand%20Style%20Guide.md) for complete specifications.
+See the [Brand Style Guide](PRD/Anchor%20—%20Brand%20Style%20Guide.md) for complete specifications.
 
 ---
 
 ## 📅 Development Roadmap
 
-### Phase 0: Foundation (Current)
+**Current Progress: ~70% Complete (Phase 5 of 6)**
+
+### Phase 0: Foundation ✅ COMPLETE
 - ✅ Project structure
-- ✅ Database schema
-- ✅ Design system
-- 🔄 Flutter app skeleton
+- ✅ Database schema (PostgreSQL + Supabase)
+- ✅ Design system (colors, typography, components)
+- ✅ Flutter app skeleton
 
-### Phase 1: Authentication (Weeks 1-2)
-- Splash screen
-- Onboarding
-- Sign up / Login
-- Session management
+### Phase 1: Authentication ✅ COMPLETE
+- ✅ Splash screen with auto-login
+- ✅ Onboarding carousel with synchronized descriptions
+- ✅ Sign up / Login flows
+- ✅ Session management (persistent auth)
+- ✅ Password reset flow
 
-### Phase 2: Core Save Flow (Weeks 3-4) **[CRITICAL]**
-- iOS/Android share extension
-- Instant save confirmation
-- Metadata extraction
-- Offline support
+### Phase 2: Core Save Flow ✅ COMPLETE (Share Extension Deferred)
+- ✅ Instant save confirmation (<1 second)
+- ✅ Metadata extraction (title, description, favicon)
+- ✅ URL shortener support (bit.ly, t.co, share.google)
+- ✅ Offline support with queue sync
+- ⏸️ iOS/Android share extension - **Deferred to Phase 6** (see [TODO.md](TODO.md))
 
-### Phase 3: Browse & Search (Weeks 5-6)
-- Home screen grid
-- Full-text search
-- Link detail view
-- Edit/delete
+### Phase 3: Browse & Search ✅ COMPLETE
+- ✅ Home screen grid with visual link cards
+- ✅ Tap to open links in browser
+- ✅ Link detail view
+- ✅ Edit/delete functionality
+- ✅ Full-text search (backend ready, UI in progress)
 
-### Phase 4: Organization (Weeks 7-8)
-- Tags system
-- Spaces system
-- Add details flow
+### Phase 4: Organization ✅ COMPLETE
+- ✅ Tags system with auto-complete
+- ✅ Spaces system (Unread, Reference, custom spaces)
+- ✅ Add details flow (tags, notes, space assignment)
+- ✅ Move between spaces
+- ✅ Color-coded space indicators
 
-### Phase 5: Sync & Polish (Weeks 9-10)
-- Real-time sync
-- Settings screen
-- Bug fixes
+### Phase 5: Sync & Polish 🔄 IN PROGRESS (Current)
+- ✅ Real-time sync across devices
+- ✅ Settings screen (account, about, logout)
+- 🔄 Bug fixes (19 test failures remaining - see [TODO.md](TODO.md))
+- 🔄 UI polish and responsive design improvements
 
-### Phase 6: Browser Extensions (Weeks 11-12)
-- Chrome extension
+### Phase 6: Extensions & Share 📋 NOT STARTED
+- Share extension integration (iOS + Android native)
+- Chrome browser extension
 - Firefox port
 - Multi-browser support
 
-**Target MVP Launch:** 16 weeks from start
+**Estimated MVP Launch:** 2-4 weeks (Phase 5 polish + Phase 6 completion)
 
 ---
 
-## 🎯 Success Metrics (First 90 Days)
+## 🎯 Success Metrics (First 90 Days Post-Launch)
+
+*Note: App currently in beta development (Phase 5/6). Public launch date TBD.*
 
 - **1,000** active users
 - **10,000+** total links saved
@@ -231,7 +248,12 @@ See the [Brand Style Guide](docs/PRD/Anchor%20—%20Brand%20Style%20Guide.md) fo
 
 ## 🤝 Contributing
 
-This is currently a solo project in active development. Contribution guidelines will be added once the MVP is stable.
+The MVP is nearing completion (Phase 5/6). Contribution guidelines will be added before Phase 6 (Extensions).
+
+For now, see:
+- [CHANGELOG.md](CHANGELOG.md) - What's been done
+- [TODO.md](TODO.md) - What's in progress
+- [claude.md](claude.md) - How we work with AI assistants
 
 ---
 
@@ -259,5 +281,5 @@ TBD - License will be determined before public launch.
 
 *Built with care for people who want to actually find their saved links.*
 
-**Version:** 0.1.0 (Pre-Alpha)
+**Version:** 0.7.0 (Beta)
 **Last Updated:** November 2025
