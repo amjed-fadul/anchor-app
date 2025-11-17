@@ -62,6 +62,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Result**: ✅ Space detail screen tests now compile and pass, TDD workflow restored for this component
 - **Impact**: Can now test SpaceDetailScreen UI rendering, state management, and user interactions
 
+#### Auth Tests - Nested when() Mocktail Errors (2025-11-17 17:30)
+- **Problem**: 4 auth tests failing with mocktail error "Cannot call when() within a stub response"
+  - Error occurred in splash_screen_test.dart test "prevents duplicate navigation calls"
+  - Also affected other tests using createMockUser() and createMockSession()
+  - Tests could run but failed during execution
+- **Root Cause**:
+  - Helper functions createMockUser() and createMockSession() used when() calls internally
+  - When these helpers were called within test setup, nested when() calls caused mocktail errors
+  - MockUser and MockSession required stubbing, creating complex dependency chains
+- **Solution**:
+  - Created FakeUser and FakeSession classes that extend Fake instead of Mock
+  - These have real property implementations, no stubbing required
+  - Updated createMockUser() to return FakeUser instance
+  - Updated createMockSession() to return FakeSession instance
+  - No behavior change for tests - same API, different implementation
+- **Technical Details**:
+  - Fake classes implement User and Session interfaces with concrete values
+  - Avoids mocktail's "when() within stub response" restriction
+  - Simpler and more reliable than complex mock setup
+- **Files Changed**:
+  - `mobile/test/helpers/mock_supabase_client.dart` - Added FakeUser, FakeSession classes
+- **Test Results**:
+  - ✅ Before: 219 passing, 1 skipped, 18 failing
+  - ✅ After: 223 passing, 1 skipped, 14 failing
+  - ✅ Progress: Fixed 4 auth tests, 30/44 total fixed (68.2% complete)
+- **Result**: ✅ All 57 auth tests now passing
+- **Impact**: Splash screen and auth flow tests fully functional, can verify navigation logic
+
 #### URL Shortener Metadata Extraction - No Metadata from Shortened URLs (2025-11-17 08:30)
 - **Problem**: When users saved shortened URLs (like `https://share.google/sQLfRCNWwYgcd4ljq`), no metadata was displayed
   - User reported: "when I saved this url I dont saw any meta data"

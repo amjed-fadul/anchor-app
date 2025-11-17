@@ -1,6 +1,6 @@
 # TODO & Project Roadmap
 
-**Last Updated:** 2025-11-17 17:00
+**Last Updated:** 2025-11-17 17:30
 
 This file tracks active tasks, planned features, known issues, and future ideas for the Anchor App.
 
@@ -18,17 +18,18 @@ This file tracks active tasks, planned features, known issues, and future ideas 
 ### High Priority Tasks (2025-11-17)
 
 🚧 **Fix Remaining Test Failures** (In Progress) 🟡 LOW RISK
-- **Current Status**: 219 passing ✅, 1 skipped ⏭️, 18 failing ❌
-- **Progress**: 26 tests fixed from original 44 failures (59.1% complete) 📈
+- **Current Status**: 223 passing ✅, 1 skipped ⏭️, 14 failing ❌
+- **Progress**: 30 tests fixed from original 44 failures (68.2% complete) 📈
   - ✅ Link Model tests: 8/8 fixed (missing normalized_url, description, etc.)
   - ✅ Link Service tests: 2/2 fixed (getLinksWithTags tests)
   - ✅ Test compilation errors: 17 fixed (Supabase mocking, provider overrides)
   - ✅ Space Detail Screen tests: 6/6 fixed (2025-11-17 17:00) - provider override syntax
-  - 🐛 Remaining: 18 runtime test failures (need investigation)
-- **Latest Fix (2025-11-17 17:00)**: Fixed space_detail_screen_test.dart compilation errors
-  - Changed provider overrides from instance to family: `linksBySpaceProvider.overrideWith()`
-  - Updated mock to extend actual `LinksBySpaceNotifier` class
-  - All 6 space detail screen tests now passing
+  - ✅ Auth tests: 4/4 fixed (2025-11-17 17:30) - mocktail nested when() errors
+  - 🐛 Remaining: 14 runtime test failures (need investigation)
+- **Latest Fix (2025-11-17 17:30)**: Fixed auth test mocktail errors
+  - Created FakeUser and FakeSession classes (no stubbing required)
+  - Replaced Mock-based helpers with Fake-based implementations
+  - All 57 auth tests now passing
 - **Priority:** HIGH (TDD compliance)
 - **Impact:** Restores full test coverage and verification
 
@@ -69,23 +70,36 @@ This file tracks active tasks, planned features, known issues, and future ideas 
 
 ## 🐛 Known Issues
 
-### Test Failures - 18 Remaining (2025-11-17 17:00)
-- **Current Status**: 219 passing ✅ | 1 skipped ⏭️ | 18 failing ❌
+### Test Failures - 14 Remaining (2025-11-17 17:30)
+- **Current Status**: 223 passing ✅ | 1 skipped ⏭️ | 14 failing ❌
 - **Original**: 44 test failures
-- **Progress**: 26 fixed, 18 remaining (59.1% complete) 📈
+- **Progress**: 30 fixed, 14 remaining (68.2% complete) 📈
 - **Fixed**:
   - ✅ Link Model tests (8/8) - Added missing fields to test data
   - ✅ Link Service `getLinksWithTags()` tests (2/2) - Added missing fields
   - ✅ Test compilation errors (17/17) - Fixed Supabase mocking and provider overrides
   - ✅ Space Detail Screen tests (6/6) - Fixed provider override syntax (2025-11-17 17:00)
+  - ✅ Auth tests (4/4) - Fixed mocktail nested when() errors (2025-11-17 17:30)
 - **Current Blockers**:
-  - 🐛 **Runtime failures**: 18 tests with business logic issues (need investigation)
+  - 🐛 **Runtime failures**: 14 tests with business logic issues (need investigation)
 - **Impact**: Partial TDD compliance, most features verified
 - **Priority**: HIGH (TDD compliance required)
 
 ---
 
 ## ✅ Recently Completed (Last 7 Days)
+
+### 2025-11-17 Evening: Auth Test Fixes 🧪
+
+**Auth Tests - Mocktail Nested when() Fix (17:30)** ✅ 🟡 LOW RISK
+- ✅ Fixed 4 auth test failures caused by mocktail errors
+- ✅ Created FakeUser and FakeSession classes extending Fake (not Mock)
+- ✅ Replaced when()-based stubbing with real property implementations
+- ✅ Updated createMockUser() and createMockSession() helpers
+- **Root Cause**: Nested when() calls in helper functions conflicted with mocktail
+- **Impact**: All 57 auth tests now passing, splash screen navigation tests working
+- **Test Progress**: 219 → 223 passing, 18 → 14 failing (68.2% complete)
+- **Files Changed**: `mobile/test/helpers/mock_supabase_client.dart`
 
 ### 2025-11-17 Evening: Space Detail Screen Test Fixes 🧪
 

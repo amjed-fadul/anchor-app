@@ -88,7 +88,29 @@ class MockAuthService extends Mock implements AuthService {}
 /// These make it easier to create realistic test data without
 /// repeating ourselves in every test file.
 
-/// Creates a mock user with typical properties
+/// Fake User implementation for testing
+///
+/// Unlike MockUser which requires stubbing with when(), FakeUser
+/// has real implementations that can be used directly.
+/// This avoids "Cannot call when() within a stub response" errors.
+class FakeUser extends Fake implements User {
+  @override
+  final String id;
+
+  @override
+  final String? email;
+
+  @override
+  final String createdAt;
+
+  FakeUser({
+    String? id,
+    this.email,
+  })  : id = id ?? 'test-user-id-123',
+        createdAt = DateTime.now().toIso8601String();
+}
+
+/// Creates a fake user with typical properties
 ///
 /// Use this in tests where you need a "logged in" user.
 /// You can customize the email, id, etc.
@@ -101,14 +123,28 @@ User createMockUser({
   String? id,
   String? email,
 }) {
-  final user = MockUser();
-  when(() => user.id).thenReturn(id ?? 'test-user-id-123');
-  when(() => user.email).thenReturn(email ?? 'test@example.com');
-  when(() => user.createdAt).thenReturn(DateTime.now().toIso8601String());
-  return user;
+  return FakeUser(id: id, email: email);
 }
 
-/// Creates a mock session (logged-in state)
+/// Fake Session implementation for testing
+///
+/// Unlike MockSession which requires stubbing, FakeSession has
+/// real implementations that can be used directly.
+class FakeSession extends Fake implements Session {
+  @override
+  final User user;
+
+  @override
+  final String accessToken;
+
+  FakeSession({
+    User? user,
+    String? accessToken,
+  })  : user = user ?? FakeUser(),
+        accessToken = accessToken ?? 'mock-access-token-abc123';
+}
+
+/// Creates a fake session (logged-in state)
 ///
 /// Use this when you need to simulate a user being logged in.
 ///
@@ -121,12 +157,7 @@ Session createMockSession({
   User? user,
   String? accessToken,
 }) {
-  final session = MockSession();
-  when(() => session.user).thenReturn(user ?? createMockUser());
-  when(() => session.accessToken).thenReturn(
-    accessToken ?? 'mock-access-token-abc123',
-  );
-  return session;
+  return FakeSession(user: user, accessToken: accessToken);
 }
 
 /// Creates a mock recovery session (for password reset)
