@@ -2,6 +2,7 @@ import 'dart:async'; // For Timer (debouncing)
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:skeletonizer/skeletonizer.dart'; // Skeleton loading screens
 import '../../../design_system/design_system.dart';
 import '../../../shared/widgets/search_bar_widget.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -9,6 +10,8 @@ import '../../links/providers/link_provider.dart';
 import '../../links/providers/search_provider.dart'; // NEW: Search functionality
 import '../../links/widgets/link_card.dart';
 import '../../links/screens/add_link_flow_screen.dart';
+import '../../links/models/link_model.dart'; // For skeleton data
+import '../../links/services/link_service.dart'; // For LinkWithTags
 import '../../../core/services/deep_link_service.dart';
 import '../../../core/services/deep_link_state.dart';
 
@@ -334,26 +337,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  /// Build loading state
+  /// Build loading state with skeleton cards
   ///
-  /// Shows circular progress indicator while fetching links from database.
+  /// Shows modern shimmer skeleton cards while fetching links from database.
+  /// This creates a better UX than a simple spinner - users see the layout
+  /// they're about to get, which makes the app feel faster.
+  ///
+  /// Uses Skeletonizer package which automatically turns real widgets into
+  /// shimmering skeletons - no need to duplicate the LinkCard layout!
   Widget _buildLoadingState() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(
-            color: AnchorColors.anchorTeal,
-          ),
-          SizedBox(height: 16),
-          Text(
-            'Loading your links...',
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 14,
-            ),
-          ),
-        ],
+    // Create fake link data for skeleton cards
+    final skeletonLinks = List.generate(
+      6, // Show 6 skeleton cards
+      (index) => LinkWithTags(
+        link: Link(
+          id: 'skeleton-$index',
+          url: 'https://example.com',
+          normalizedUrl: 'https://example.com',
+          title: 'Loading Link Title Placeholder...',
+          description: 'Loading description text here that shows while data is being fetched from the database...',
+          thumbnailUrl: null, // No thumbnail for skeleton
+          domain: 'example.com',
+          note: 'Loading note text here...',
+          userId: 'skeleton-user',
+          spaceId: null,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          openedAt: null,
+        ),
+        tags: [], // No tags for skeleton
+      ),
+    );
+
+    return Skeletonizer(
+      enabled: true, // Enable skeleton effect
+      child: GridView.builder(
+        padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2, // Match real grid layout
+          childAspectRatio: 0.75, // Match real card ratio
+          crossAxisSpacing: 8, // Match real spacing
+          mainAxisSpacing: 8, // Match real spacing
+        ),
+        itemCount: skeletonLinks.length,
+        itemBuilder: (context, index) {
+          // Skeletonizer automatically turns LinkCard into a skeleton!
+          return LinkCard(linkWithTags: skeletonLinks[index]);
+        },
       ),
     );
   }

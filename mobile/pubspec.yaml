@@ -73,6 +73,9 @@ dependencies:
   # Image Loading - Cached network images with loading placeholders
   cached_network_image: ^3.3.1
 
+  # Skeleton Loading - Modern shimmer skeleton screens
+  skeletonizer: ^2.1.0
+
   # Logging - Better debugging with log levels
   logger: ^2.5.0
 
