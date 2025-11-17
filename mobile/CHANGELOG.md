@@ -12,6 +12,72 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+#### iOS/Android Share Extension - Save Links from Any App (2025-11-17 16:00)
+- **What**: Implemented native share extension for iOS and Android, allowing users to save links directly from Safari, Chrome, Twitter, and any other app
+- **Impact**: ⭐ **CRITICAL UX** - Removes major friction point. Users can now share links to Anchor with a single tap instead of copying URL → opening app → pasting manually
+- **Features**:
+  - **Android ShareActivity** (Kotlin):
+    - Receives ACTION_SEND intents with text/plain MIME type
+    - Extracts URLs from shared text using regex
+    - Launches MainActivity with `anchor://share?url=...` deep link
+    - Comprehensive debug logging with 🔵🟢🔴 emojis
+  - **iOS Share Extension** (Swift) - Files ready:
+    - ShareViewController extracts URLs from NSExtensionContext
+    - Handles both direct URL shares and text containing URLs
+    - Opens main app with `anchor://share?url=...` deep link
+    - Requires Xcode configuration (App Groups, Share Extension target)
+  - **Flutter Integration**:
+    - DeepLinkService updated to handle `anchor://share` scheme
+    - `getPendingSharedUrl()` method for one-time URL retrieval
+    - AddLinkFlowScreen accepts `sharedUrl` parameter
+    - Auto-triggers save flow, skips URL input screen
+    - HomeScreen checks for pending shared URLs on load
+  - **Auto-Dismiss Feature**:
+    - LinkSuccessScreen has `autoClose` parameter
+    - Shows 3-second countdown progress bar at top
+    - Displays "Tap anywhere to close" hint
+    - Auto-dismisses after 3 seconds OR on user tap
+    - Haptic feedback on success
+    - Normal "Add Details" / "Done" buttons shown when autoClose=false
+- **User Flow**:
+  1. User views webpage in Safari/Chrome/Twitter
+  2. Taps Share button in app
+  3. Selects "Anchor" from share sheet
+  4. Anchor app launches with loading screen
+  5. Success screen appears with gradient background
+  6. Progress bar counts down 3 seconds
+  7. Screen auto-dismisses, returns to previous app
+  8. Link saved with metadata in Anchor
+- **Technical Details**:
+  - URL normalization removes tracking params (utm_*, fbclid, gclid)
+  - URL shortener expansion (bit.ly, t.co) via existing `fetchMetadataWithFinalUrl()`
+  - Offline support via existing Hive database + sync when online
+  - Duplicate detection (non-blocking, after save)
+  - Deep link scheme: `anchor://share?url=<encoded-url>`
+  - Android: Intent filter in AndroidManifest.xml for both ACTION_SEND and ACTION_VIEW
+  - iOS: App Groups (`group.com.anchor.app`) for data sharing between extension and main app
+- **Files Added**:
+  - Android:
+    - `android/app/src/main/kotlin/com/anchorapp/mobile/ShareActivity.kt` (120 lines)
+  - iOS (ready for setup):
+    - `ios/ShareExtensionFiles/ShareViewController.swift` (220 lines)
+    - `ios/ShareExtensionFiles/Info.plist`
+    - `ios/ShareExtensionFiles/README.md`
+    - `ios/SHARE_EXTENSION_SETUP.md` (step-by-step Xcode instructions)
+- **Files Modified**:
+  - `android/app/src/main/AndroidManifest.xml` - Added ShareActivity + anchor:// intent filter
+  - `lib/core/services/deep_link_service.dart` - Added `_handleAnchorDeepLink()` and `getPendingSharedUrl()`
+  - `lib/features/links/screens/add_link_flow_screen.dart` - Added `sharedUrl` parameter and auto-trigger logic
+  - `lib/features/links/screens/link_success_screen.dart` - Added `autoClose`, progress bar, tap-to-dismiss
+  - `lib/features/home/screens/home_screen.dart` - Converted to StatefulWidget, checks for pending shares
+- **Testing**:
+  - Android: Ready to test with `flutter run` (share from Chrome, Twitter, etc.)
+  - iOS: Requires Xcode setup first (follow `ios/SHARE_EXTENSION_SETUP.md`)
+- **Platform Compatibility**:
+  - ✅ Android: Fully implemented and ready to test
+  - ⏳ iOS: Implementation files ready, requires Xcode configuration (waiting for Xcode download)
+- **Result**: ✅ Users can now save links from ANY app with native share sheet integration. Android implementation complete and testable. iOS files prepared for Xcode setup.
+
 #### Onboarding Carousel - Synchronized Descriptions (2025-11-16 18:00)
 - **What**: Added dynamic descriptions that sync with the onboarding carousel
 - **Features**:

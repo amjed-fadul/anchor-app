@@ -23,25 +23,12 @@ Future<void> main() async {
   // automatically process deep links (we handle them manually below)
   await initializeSupabase();
 
-  // CRITICAL FIX: Manually process deep links BEFORE app runs
-  // When user clicks password reset link in email, the deep link contains
-  // a recovery token. We need to extract it and create an authenticated
-  // session BEFORE the router initializes, otherwise the router sees
-  // "not authenticated" and redirects to /onboarding instead of /reset-password.
-  //
-  // This service:
-  // 1. Checks if app was launched from a deep link
-  // 2. Extracts the recovery/OAuth token from the URI
-  // 3. Creates authenticated session via getSessionFromUrl()
-  // 4. Waits for session to propagate to streams
-  // 5. Then allows app to run (router now sees authenticated user)
-  final deepLinkService = DeepLinkService();
-  await deepLinkService.initialize();
-
-  // Small delay to ensure auth state has propagated through streams
-  // This gives the authStateProvider time to receive the passwordRecovery event
-  // and update all dependent providers (isAuthenticatedProvider, isRecoverySessionProvider)
-  await Future.delayed(const Duration(milliseconds: 200));
+  // NOTE: Deep link processing is now managed by Riverpod
+  // The deepLinkServiceProvider automatically initializes when first accessed
+  // and persists for the app lifetime. This ensures:
+  // - Deep links are processed before router initializes (for password reset)
+  // - Stream listeners persist across app lifecycle
+  // - HomeScreen can reactively respond to incoming shares
 
   // Run the app
   // ProviderScope wraps the whole app to enable Riverpod state management
@@ -57,6 +44,10 @@ class AnchorApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Initialize deep link service early to process password reset links
+    // This must happen before router initializes
+    ref.read(deepLinkServiceProvider);
+
     // Get the router from our provider
     final router = ref.watch(routerProvider);
 

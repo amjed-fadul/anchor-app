@@ -1,7 +1,9 @@
 import 'package:app_links/app_links.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/supabase_config.dart';
 import '../utils/app_logger.dart';
+import 'deep_link_state.dart';
 
 /// Deep Link Handler Service
 ///
@@ -46,11 +48,13 @@ import '../utils/app_logger.dart';
 ///      ↓
 /// Navigates to /reset-password ✅
 /// ```
-class DeepLinkService {
+class DeepLinkService extends StateNotifier<DeepLinkState> {
   final AppLinks _appLinks = AppLinks();
   final SupabaseClient _supabase;
 
-  DeepLinkService([SupabaseClient? client]) : _supabase = client ?? supabase;
+  DeepLinkService([SupabaseClient? client])
+      : _supabase = client ?? supabase,
+        super(const DeepLinkInitial());
 
   /// Initialize deep link handling
   ///
@@ -121,6 +125,7 @@ class DeepLinkService {
   /// - Password recovery: `io.supabase.flutterquickstart://reset-password/?token=...`
   /// - OAuth callback: `io.supabase.flutterquickstart://login-callback/?access_token=...`
   /// - Magic link: `io.supabase.flutterquickstart://login-callback/?token=...`
+  /// - Share from other apps: `anchor://share?url=...`
   Future<void> _handleDeepLink(Uri uri) async {
     logger.d('🔗 [DEEP_LINK] Processing URI');
     logger.d('  - Full URI: ${uri.toString()}');
@@ -129,11 +134,17 @@ class DeepLinkService {
     logger.d('  - Path: ${uri.path}');
     logger.d('  - Has token: ${uri.queryParameters.containsKey('token')}');
     logger.d('  - Has access_token: ${uri.queryParameters.containsKey('access_token')}');
+    logger.d('  - Has url (share): ${uri.queryParameters.containsKey('url')}');
 
-    // Only process URIs from our app scheme (security measure)
-    if (uri.scheme != 'io.supabase.flutterquickstart') {
+    // Handle different URI schemes
+    if (uri.scheme == 'anchor') {
+      // Handle Anchor-specific deep links (share from other apps)
+      await _handleAnchorDeepLink(uri);
+      return;
+    } else if (uri.scheme != 'io.supabase.flutterquickstart') {
+      // Only process auth URIs from Supabase scheme (security measure)
       logger.d('🔗 [DEEP_LINK] ❌ Invalid scheme "${uri.scheme}", ignoring');
-      logger.d('  Expected: io.supabase.flutterquickstart');
+      logger.d('  Expected: io.supabase.flutterquickstart or anchor');
       return;
     }
 
@@ -174,4 +185,70 @@ class DeepLinkService {
       // (e.g., "Session expired, please request a new reset link")
     }
   }
+
+  /// Handle Anchor-specific deep links (share from other apps)
+  ///
+  /// Processes deep links with "anchor://" scheme:
+  /// - Share links: `anchor://share?url=https://example.com`
+  ///
+  /// This is used by the iOS Share Extension and Android ShareActivity
+  /// to pass shared URLs from other apps into the Anchor app.
+  Future<void> _handleAnchorDeepLink(Uri uri) async {
+    logger.d('🔗 [DEEP_LINK] Processing Anchor deep link');
+    logger.d('  - Host: ${uri.host}');
+
+    // Handle share links
+    if (uri.host == 'share') {
+      final sharedUrl = uri.queryParameters['url'];
+
+      if (sharedUrl == null || sharedUrl.isEmpty) {
+        logger.d('🔗 [DEEP_LINK] ❌ Share link missing URL parameter');
+        return;
+      }
+
+      logger.d('🔗 [DEEP_LINK] ✅ Received shared URL: $sharedUrl');
+
+      // Emit state change to notify listeners (HomeScreen)
+      // HomeScreen will listen to this state and show AddLinkFlowScreen
+      state = DeepLinkUrlPending(sharedUrl);
+
+      logger.d('🔗 [DEEP_LINK] Shared URL state emitted, HomeScreen will process it');
+    } else {
+      logger.d('🔗 [DEEP_LINK] ❌ Unknown Anchor deep link host: ${uri.host}');
+    }
+  }
+
+  /// Reset state back to initial after processing a shared URL
+  ///
+  /// HomeScreen should call this after showing AddLinkFlowScreen
+  /// to prevent the same URL from being processed again.
+  void resetState() {
+    logger.d('🔗 [DEEP_LINK] Resetting state to initial');
+    state = const DeepLinkInitial();
+  }
 }
+
+/// Deep Link Service Provider
+///
+/// Provides a single instance of DeepLinkService throughout the app.
+/// This ensures:
+/// - Deep link listeners persist for app lifetime
+/// - State is shared across all widgets
+/// - HomeScreen can reactively respond to incoming shares
+///
+/// Usage in HomeScreen:
+/// ```dart
+/// ref.listen<DeepLinkState>(deepLinkServiceProvider, (previous, next) {
+///   if (next is DeepLinkUrlPending) {
+///     // Show AddLinkFlowScreen with next.url
+///     ref.read(deepLinkServiceProvider.notifier).resetState();
+///   }
+/// });
+/// ```
+final deepLinkServiceProvider =
+    StateNotifierProvider<DeepLinkService, DeepLinkState>((ref) {
+  final service = DeepLinkService();
+  // Initialize on creation (sets up stream listeners)
+  service.initialize();
+  return service;
+});

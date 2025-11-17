@@ -7,6 +7,8 @@ import '../../auth/providers/auth_provider.dart';
 import '../../links/providers/link_provider.dart';
 import '../../links/widgets/link_card.dart';
 import '../../links/screens/add_link_flow_screen.dart';
+import '../../../core/services/deep_link_service.dart';
+import '../../../core/services/deep_link_state.dart';
 
 /// Home Screen
 ///
@@ -27,6 +29,35 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
     final linksAsync = ref.watch(linksWithTagsProvider);
+
+    // Listen for incoming shared URLs from DeepLinkService
+    // This listener is called whenever a URL is shared from another app
+    ref.listen<DeepLinkState>(
+      deepLinkServiceProvider,
+      (previous, next) {
+        // When a URL is pending, show AddLinkFlowScreen
+        if (next is DeepLinkUrlPending) {
+          debugPrint('🔵 [HomeScreen] Received shared URL: ${next.url}');
+
+          // Show AddLinkFlowScreen with the shared URL
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            useSafeArea: true,
+            isDismissible: false, // Don't dismiss on tap outside for shared links
+            builder: (context) => SizedBox(
+              width: double.infinity,
+              height: MediaQuery.of(context).size.height,
+              child: AddLinkFlowScreen(sharedUrl: next.url),
+            ),
+          );
+
+          // Reset state to prevent showing again
+          ref.read(deepLinkServiceProvider.notifier).resetState();
+        }
+      },
+    );
 
     return Scaffold(
       // No AppBar - we'll build custom header

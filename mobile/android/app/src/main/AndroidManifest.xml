@@ -45,7 +45,36 @@
                     android:scheme="io.supabase.flutterquickstart"
                     android:host="login-callback" />
             </intent-filter>
+
+            <!-- Deep link for share extension -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="anchor"
+                    android:host="share" />
+            </intent-filter>
         </activity>
+
+        <!-- Share Activity - Receives shares from other apps -->
+        <activity
+            android:name=".ShareActivity"
+            android:label="Anchor"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:launchMode="singleInstance"
+            android:taskAffinity="">
+
+            <!-- Intent filter for sharing text (URLs) -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/*" />
+            </intent-filter>
+        </activity>
+
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

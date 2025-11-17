@@ -30,9 +30,17 @@ class AddLinkFlowScreen extends ConsumerStatefulWidget {
   /// The link will be automatically assigned to this space.
   final String? initialSpaceId;
 
+  /// Optional: Pre-filled URL from share extension
+  ///
+  /// When a URL is shared from another app (Safari, Chrome, etc.),
+  /// this will contain the shared URL. The flow will skip the URL input
+  /// screen and automatically save the link.
+  final String? sharedUrl;
+
   const AddLinkFlowScreen({
     super.key,
     this.initialSpaceId,
+    this.sharedUrl,
   });
 
   @override
@@ -42,10 +50,14 @@ class AddLinkFlowScreen extends ConsumerStatefulWidget {
 class _AddLinkFlowScreenState extends ConsumerState<AddLinkFlowScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  bool _isSharedUrl = false; // Track if this is a shared URL
 
   @override
   void initState() {
     super.initState();
+
+    // Check if this is a shared URL from another app
+    _isSharedUrl = widget.sharedUrl != null;
 
     // Pre-select space if initialSpaceId is provided
     // This ensures the link is created with the correct space_id
@@ -55,6 +67,37 @@ class _AddLinkFlowScreenState extends ConsumerState<AddLinkFlowScreen> {
         ref
             .read(addLinkProvider.notifier)
             .updateSpace(widget.initialSpaceId);
+      });
+    }
+
+    // Auto-trigger save if URL is shared from another app
+    if (widget.sharedUrl != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _handleSharedUrl();
+      });
+    }
+  }
+
+  /// Handle URL shared from another app (iOS Share Extension / Android ShareActivity)
+  ///
+  /// This bypasses the URL input screen and automatically:
+  /// 1. Pre-fills the URL in the provider
+  /// 2. Triggers metadata fetch and save
+  /// 3. Shows loading → success screens
+  void _handleSharedUrl() {
+    debugPrint('🔵 [AddLinkFlow] Handling shared URL: ${widget.sharedUrl}');
+
+    // Pre-fill URL in provider
+    ref.read(addLinkProvider.notifier).updateUrl(widget.sharedUrl!);
+
+    // Start the save process (skip URL input screen)
+    ref.read(addLinkProvider.notifier).continueWithUrl();
+
+    // Start on loading page (index 1) instead of URL input (index 0)
+    if (_pageController.hasClients) {
+      _pageController.jumpToPage(1);
+      setState(() {
+        _currentPage = 1;
       });
     }
   }
@@ -174,6 +217,7 @@ class _AddLinkFlowScreenState extends ConsumerState<AddLinkFlowScreen> {
           LinkSuccessScreen(
             onDone: _handleDone,
             onAddDetails: _handleAddDetails,
+            autoClose: false, // Always show buttons, let user control when to close
           ),
         ],
       ),
