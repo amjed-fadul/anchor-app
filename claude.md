@@ -195,31 +195,136 @@ Every week:
 4. **Set Priorities**: High/Medium/Low helps focus on what matters
 5. **Keep It Current**: A stale TODO.md is useless - update it often!
 
-### 4. Make Small, Incremental Changes
+### 4. Documentation Lifecycle - Preventing Drift (MANDATORY)
+
+**The Documentation Pyramid:**
+Every change must flow through ALL relevant documentation levels.
+
+```
+┌─────────────────────────────────────┐
+│   README.md (Project Overview)      │ ← Update when phases/features change
+├─────────────────────────────────────┤
+│   AMENDMENTS.md (Architecture)      │ ← Update when design decisions made
+├─────────────────────────────────────┤
+│   TODO.md (Active Work)             │ ← Update when starting/finishing tasks
+├─────────────────────────────────────┤
+│   CHANGELOG.md (History)            │ ← Update when committing code
+└─────────────────────────────────────┘
+```
+
+**CRITICAL RULE:** Documentation is NOT optional cleanup - it's PART OF THE TASK.
+
+**A task is NOT complete until ALL relevant documentation is updated.**
+
+---
+
+#### When to Update Each Document
+
+**📋 TODO.md** - Update IMMEDIATELY when:
+- ✅ **Starting a task** → Move to "Active Tasks" with 🚧 emoji + timestamp
+- ✅ **Finishing a task** → Move to "Recently Completed" with ✅ emoji + timestamp
+- ✅ **Discovering a bug** → Add to "Known Issues" with 🐛 emoji
+- ✅ **Planning a feature** → Add to "Planned Features" with 📋 emoji and priority
+- ✅ **Rejecting a feature** → Add to "🚫 Explicitly Rejected Ideas" with detailed reason
+- ✅ **Daily** → Update "Last Updated" timestamp at top of file
+
+**📝 CHANGELOG.md** - Update BEFORE committing:
+- ✅ **After every feature** → Add to `### Added` section
+- ✅ **After every bug fix** → Add to `### Fixed` section
+- ✅ **After refactor** → Add to `### Changed` section
+- ✅ **After code quality improvements** → Add to `### Improved` section
+- ✅ **Always include**: Problem, Root Cause, Solution, Files Changed, Result
+- ✅ **Never commit code without updating CHANGELOG.md first!**
+
+**📖 README.md** - Update when:
+- ✅ **Phase/sprint completes** → Update roadmap status (Phase X: ✅ COMPLETE)
+- ✅ **New major feature** → Add to "Key Features" section if user-facing
+- ✅ **Technology stack changes** → Update "Technology Stack" section
+- ✅ **Project structure changes** → Update folder diagram
+- ✅ **Version milestones** → Update version number (e.g., 0.7.0 → 0.8.0)
+- ✅ **Weekly** → Verify roadmap accuracy vs actual TODO.md progress
+
+**⚙️ PRD/AMENDMENTS.md** - Update when:
+- ✅ **Architectural decision made** → Add new section with rationale
+- ✅ **Feature explicitly rejected** → Document in "What We're NOT Doing" with reason
+- ✅ **Database schema changes** → Update schema examples if they affect core model
+- ✅ **Core organizational model changes** → Document design decision (e.g., Spaces-Only model)
+- ✅ **Design conflicts discovered** → Document conflict + resolution strategy
+
+---
+
+#### Validation Checklist (Run Weekly)
+
+**Prevent Documentation Drift:**
+
+🔍 **Question 1:** Does TODO.md "Active Tasks" match what you're actually working on?
+- ❌ If not: Update TODO.md immediately - you're working on undocumented tasks
+
+🔍 **Question 2:** Does README.md roadmap show the correct current phase?
+- ❌ If not: Update README.md with actual progress (e.g., Phase 0 → Phase 5)
+
+🔍 **Question 3:** Are there features in TODO.md marked "✅ Complete" but not in CHANGELOG.md?
+- ❌ If yes: Those features aren't actually complete until documented
+
+🔍 **Question 4:** Are there git commits from the last week without CHANGELOG.md entries?
+- ❌ If yes: Add retroactive entries immediately (never skip this!)
+
+🔍 **Question 5:** Did you make an architectural decision that's not in AMENDMENTS.md?
+- ❌ If yes: Document it now with full rationale before you forget
+
+🔍 **Question 6:** Does README.md reference correct file paths?
+- ❌ If not: Fix broken links (e.g., `docs/PRD/` → `PRD/`)
+
+**The 3-Second Rule:**
+If you can't find a feature/decision in documentation within 3 seconds, the docs have drifted. **Fix immediately.**
+
+---
+
+#### Real-World Analogy
+
+Think of documentation like a **GPS navigation system**:
+
+**Without proper docs (❌):**
+- Like driving without GPS - you might reach the destination, but nobody else knows how
+- Team members get lost trying to understand what's been done
+- You forget your own decisions 6 months later
+- New contributors have no idea where the project is going
+
+**With proper docs (✅):**
+- Like GPS with real-time updates - everyone knows current location and destination
+- Clear trail of decisions and progress
+- New team members can jump in immediately
+- Future you says "thank you" when revisiting the project
+
+**Documentation drift is like GPS showing you in the wrong city - dangerous and confusing!**
+
+---
+
+### 5. Make Small, Incremental Changes
 - **Never** create large files or make sweeping changes
 - Break everything into tiny, digestible steps
 - One logical change per commit
 - Easier to understand, review, and learn from
 
-### 5. Push to GitHub Frequently
+### 6. Push to GitHub Frequently
 - Commit after each small change
 - Clear, descriptive commit messages
 - Keep commit history clean and educational
 
-### 6. Be in Learning Mode (CRITICAL)
+### 7. Be in Learning Mode (CRITICAL)
 - **Explain everything** as if teaching a beginner
 - Break down complex concepts into simple parts
 - Use analogies and real-world examples
 - Add detailed code comments explaining what AND why
 - Share reasoning process, not just solutions
 
-### 7. Educational Code Changes
+### 8. Educational Code Changes
 - Explain each step before implementing
 - Break code changes into individual modifications
 - Add inline comments for learning (can be removed later)
 - Show before/after comparisons when helpful
 
-### 8. Always Use Test-Driven Development (TDD) - MANDATORY
+### 9. Always Use Test-Driven Development (TDD) - MANDATORY
 
 **What is TDD?**
 Test-Driven Development means writing tests BEFORE writing the actual code. It's a three-step cycle called **Red-Green-Refactor**:
@@ -395,7 +500,7 @@ flutter test --watch
 - Refactoring? Tests ensure you don't break anything
 - Even "simple" functions need tests
 
-### 9. Analyze Impact Before Fixing Bugs (CRITICAL)
+### 10. Analyze Impact Before Fixing Bugs (CRITICAL)
 
 **What is Impact Analysis?**
 Before fixing ANY bug, analyze ALL related features and workflows that might be affected by your fix. Think of it like **surgery** - you need to know what else is connected before cutting!
@@ -565,7 +670,7 @@ If you answer "no" or "not sure" to ANY of these → **DO MORE ANALYSIS!**
 
 Remember: **Taking time to analyze is FASTER than fixing bugs your fix creates!**
 
-### 10. Always Add Debug Logging Before Fixing Bugs (CRITICAL)
+### 11. Always Add Debug Logging Before Fixing Bugs (CRITICAL)
 
 **What is Debug Logging First?**
 Before attempting to fix ANY bug, ALWAYS add comprehensive debug logging (`debugPrint()`) to trace the execution flow and identify the exact location where the issue occurs.
@@ -783,26 +888,43 @@ Our User class shows:
 
 ---
 
-## 🔄 Workflow Summary (with TDD)
+## 🔄 Workflow Summary (with TDD + Documentation)
 
-1. **Explain** the task in simple terms
-2. **Highlight** the risk level with emoji
-3. **Wait** for approval if needed
-4. **Write test FIRST** (🔴 RED)
+**Before Starting Any Task:**
+1. **Update TODO.md** → Move task to "🚧 Active Tasks" with emoji + timestamp
+2. **Check AMENDMENTS.md** → Is this task consistent with architectural decisions?
+
+**During Task Execution:**
+3. **Explain** the task in simple terms
+4. **Highlight** the risk level with emoji
+5. **Wait** for approval if needed (MEDIUM/HIGH risk)
+6. **Write test FIRST** (🔴 RED)
    - Create test file if it doesn't exist
    - Write test that describes expected behavior
    - Run test - it MUST fail
-5. **Show** the test code with detailed comments
-6. **Write implementation** (🟢 GREEN)
+7. **Show** the test code with detailed comments
+8. **Write implementation** (🟢 GREEN)
    - Write minimal code to make test pass
    - Show the code with detailed comments
-7. **Run test** - verify it passes (🟢 GREEN)
-8. **Refactor** if needed (🔵 REFACTOR)
-   - Clean up code
-   - Run tests again - should still pass
-9. **Commit** to GitHub with clear message
-   - Include "Tests: ✅ passing" in commit message
-10. **Move** to next small step
+9. **Run test** - verify it passes (🟢 GREEN)
+10. **Refactor** if needed (🔵 REFACTOR)
+    - Clean up code
+    - Run tests again - should still pass
+
+**After Completing Task (MANDATORY DOCUMENTATION):**
+11. **Update CHANGELOG.md** → Add detailed entry (Problem, Solution, Files, Result)
+12. **Update TODO.md** → Move task to "✅ Recently Completed" with emoji + timestamp
+13. **Update README.md** (if applicable) → Phase progress, new features, roadmap
+14. **Update AMENDMENTS.md** (if applicable) → Architectural decisions, rejected features
+15. **Commit** to GitHub with clear message
+    - Include "Tests: ✅ passing" in commit
+    - Commit code + all updated docs together (NEVER separate!)
+16. **Verify docs sync** → Quick scan: Does everything align?
+17. **Move** to next task
+
+**📚 Documentation is NOT "cleanup" - it's PART OF COMPLETING THE TASK.**
+
+**🚫 A task with code but no docs = INCOMPLETE TASK**
 
 ---
 
@@ -829,9 +951,16 @@ Changes are successful when:
 - ✅ **Tests were written FIRST** (before implementation)
 - ✅ **All tests pass** (`flutter test` shows no failures)
 - ✅ **Test coverage for new/changed code** (unit tests for all logic)
-- ✅ Code is committed to GitHub
+- ✅ **CHANGELOG.md updated** with detailed entry (Problem, Solution, Files, Result)
+- ✅ **TODO.md updated** (moved task to "Recently Completed" with ✅ + timestamp)
+- ✅ **README.md updated** (if phase/feature/roadmap changed)
+- ✅ **AMENDMENTS.md updated** (if architectural decision made or feature rejected)
+- ✅ **Documentation sync verified** - All docs align, no drift detected
+- ✅ Code + all updated docs committed to GitHub together (NEVER separate commits!)
 - ✅ No errors or warnings
 - ✅ Ready for next step
+
+**🚨 CRITICAL: If ANY item above is ❌, the task is NOT complete. No exceptions.**
 
 ---
 
