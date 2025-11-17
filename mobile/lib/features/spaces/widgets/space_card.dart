@@ -33,9 +33,14 @@ class SpaceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 0, // Flat design as per Figma
+      elevation: 2, // Subtle shadow to stand out from white background
+      shadowColor: Colors.black.withValues(alpha: 0.1), // Light shadow
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(
+          color: Color(0xFFEEEEEE), // Lighter grey border
+          width: 1,
+        ),
       ),
       color: Colors.white,
       margin: const EdgeInsets.only(bottom: 12), // Space between cards

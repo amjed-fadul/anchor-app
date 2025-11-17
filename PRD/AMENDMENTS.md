@@ -696,7 +696,90 @@ Predefined space sets for different use cases:
 - Researcher: "Papers", "Data", "Tools"
 ```
 
-#### 3. Space Analytics
+#### 3. Filtering & Sorting System (2025-11-17)
+
+**Decision Status:** 💡 Deferred to Future Sprint
+
+**User Need:**
+Users with large link collections (100+ links) need better ways to find specific links beyond search. Common use cases include:
+- "Show me what I saved this week" (time-based recall)
+- "Show me all my unread design links" (combination filtering)
+- "Sort by most recently opened" (recency prioritization)
+
+**Proposed Solution:**
+
+**Phase 1: Sort Options (Highest Priority)**
+- Sort by Newest First / Oldest First (uses `createdAt`)
+- Sort by Recently Opened (uses `openedAt`)
+- Sort by Alphabetical (uses `title`)
+- Implementation: Dropdown in header, persist preference locally
+- Complexity: 🟢 LOW (2-3 hours)
+- Rationale: Sorting solves 80% of time-based needs without filter UI complexity
+
+**Phase 2: Time Range Filtering**
+- Filter by date saved: Today / This Week / This Month / Older
+- Uses `createdAt` field (when user saved the link)
+- Optional future enhancement: Monthly granularity (Nov, Oct, Sep...)
+- Complexity: 🟡 MEDIUM (1 day)
+- Rationale: Complements search for "recent discovery" workflows
+
+**Phase 3: Advanced Filters**
+- Filter by Tags (multi-select) - Cross-space topical filtering
+- Filter by Spaces (multi-select) - Cross-folder views
+- Filter by Read Status (All / Unread / Read) - Uses `openedAt` null/not-null
+- Filter by Domain - Group by website/source
+- Filter by Note Status (Has notes / No notes)
+- Complexity: 🟡 MEDIUM (1-2 days per filter)
+- Rationale: Powerful when combined (e.g., "unread design links from this week")
+
+**Why Not Now:**
+1. **Existing organization sufficient for MVP**: Users already have Spaces (topical) and Tags (cross-cutting)
+2. **Search covers most needs**: Real-time search by title/note/domain/tags handles 90% of use cases
+3. **UI complexity**: Mobile filter UI requires careful design to avoid cluttering interface
+4. **Premature optimization**: Better to validate need with real user behavior first
+
+**Why Sorting First:**
+- Minimal UI overhead (single dropdown)
+- Solves time-based recall without filter complexity
+- Low implementation cost, high perceived value
+- Natural complement to existing search
+
+**Implementation Strategy:**
+- Start with client-side filtering (fast for <1000 links, O(n) complexity)
+- Migrate to server-side when dataset grows (PostgreSQL full-text search, GIN indexes)
+- Use bottom sheet for filter UI (mobile-friendly, doesn't clutter main view)
+- Show active filters as dismissible chips
+- Combine with existing search (filters apply to search results)
+
+**Data Available for Filtering:**
+```dart
+Link fields:
+  - createdAt: DateTime (when saved)
+  - openedAt: DateTime? (last viewed, null = unread)
+  - spaceId: String? (current folder)
+  - title: String? (link title)
+  - domain: String? (website domain)
+  - note: String? (user annotation)
+  - tags: List<Tag> (user-created labels)
+```
+
+**Alternative Considered:**
+- **Status Field Addition**: Add `status` enum with values like 'unread', 'read', 'archived'
+- **Rejected**: Conflicts with Spaces-Only model, creates dual organizational system (see Amendment #1)
+- **Better Approach**: Use `openedAt` null/not-null for read status (simple, no schema change)
+
+**Deferred Until:**
+- After core features complete (network error handling, share extension)
+- After gathering user behavior data (do users need filters? which ones?)
+- After validating current search + spaces/tags organization is insufficient
+
+**References:**
+- TODO.md: Future Ideas section (detailed breakdown)
+- User feedback (2025-11-17): Requested time/date filtering like Apple Finder
+
+---
+
+#### 4. Space Analytics
 ```
 Show user insights:
 - "You have 47 links in Unread - want to review?"

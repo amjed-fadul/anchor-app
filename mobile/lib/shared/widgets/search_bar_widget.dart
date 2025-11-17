@@ -2,12 +2,18 @@ library;
 
 /// SearchBar Widget
 ///
-/// A visual search input component for the home screen.
-/// Currently displays the UI only - search functionality will be added later.
+/// A functional search input component with clear button and controller support.
+///
+/// Features:
+/// - Text input with search icon
+/// - Clear button (X) appears when text is entered
+/// - Optional TextEditingController for external control
+/// - onChanged callback for reactive search
 ///
 /// Think of this like a search box on a website:
 /// - Shows where users can type
 /// - Has a magnifying glass icon hint
+/// - X button to quickly clear search
 /// - Placeholder text explains what you can search
 ///
 /// Real-World Analogy:
@@ -16,11 +22,22 @@ library;
 ///
 /// Usage:
 /// ```dart
+/// // Basic usage (widget manages its own controller)
 /// SearchBarWidget(
 ///   onChanged: (query) {
-///     // Handle search later
+///     // Handle search
 ///   },
 /// )
+///
+/// // Advanced usage (external controller)
+/// final controller = TextEditingController();
+/// SearchBarWidget(
+///   controller: controller,
+///   onChanged: (query) {
+///     // Handle search
+///   },
+/// )
+/// // Later: controller.clear() to reset search
 /// ```
 ///
 /// Note: We call it SearchBarWidget (not SearchBar) because Flutter already
@@ -28,9 +45,38 @@ library;
 
 import 'package:flutter/material.dart';
 
-/// SearchBarWidget - Visual search input component
-class SearchBarWidget extends StatelessWidget {
-  /// Callback when search text changes (optional for now)
+/// SearchBarWidget - Functional search input component
+///
+/// Why StatefulWidget now?
+/// - Need to manage internal TextEditingController (if not provided)
+/// - Need to listen to controller for clear button visibility
+/// - Need to clean up controller in dispose()
+///
+/// Previous version was StatelessWidget because it had no state.
+/// Now we have state: whether clear button should be visible.
+class SearchBarWidget extends StatefulWidget {
+  /// Optional external TextEditingController
+  ///
+  /// Why optional?
+  /// - Most use cases don't need external control (null = we create internal)
+  /// - Advanced use cases (like HomeScreen) may want to control text externally
+  ///
+  /// Example:
+  /// ```dart
+  /// // Let widget manage controller (most common)
+  /// SearchBarWidget()
+  ///
+  /// // Control externally
+  /// final _controller = TextEditingController();
+  /// SearchBarWidget(controller: _controller)
+  /// // Later: _controller.clear()
+  /// ```
+  final TextEditingController? controller;
+
+  /// Callback when search text changes
+  ///
+  /// Called whenever user types or clears the field.
+  /// Includes when clear button is tapped (sends empty string).
   final ValueChanged<String>? onChanged;
 
   /// Placeholder text shown when empty
@@ -38,9 +84,116 @@ class SearchBarWidget extends StatelessWidget {
 
   const SearchBarWidget({
     super.key,
+    this.controller,
     this.onChanged,
     this.placeholder = 'Search bookmarks, links or tags',
   });
+
+  @override
+  State<SearchBarWidget> createState() => _SearchBarWidgetState();
+}
+
+class _SearchBarWidgetState extends State<SearchBarWidget> {
+  /// Internal controller (used if no external controller provided)
+  ///
+  /// Why late?
+  /// - Initialized in initState() (can't initialize in declaration)
+  /// - Guaranteed to be initialized before first use
+  ///
+  /// Why nullable?
+  /// - Only created if widget.controller is null
+  /// - If external controller provided, this stays null
+  late TextEditingController? _internalController;
+
+  /// The actual controller being used (external or internal)
+  ///
+  /// This is a getter that returns whichever controller is active.
+  /// Makes rest of code simpler - just use `_controller` everywhere.
+  TextEditingController get _controller =>
+      widget.controller ?? _internalController!;
+
+  /// Whether clear button should be visible
+  ///
+  /// True when text is not empty, false when empty.
+  /// Updates via listener on controller.
+  bool _showClearButton = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Create internal controller if no external controller provided
+    if (widget.controller == null) {
+      _internalController = TextEditingController();
+    } else {
+      _internalController = null;
+    }
+
+    // Listen to controller changes to show/hide clear button
+    // addListener() is called whenever text changes
+    _controller.addListener(_onTextChanged);
+
+    // Set initial clear button visibility
+    _showClearButton = _controller.text.isNotEmpty;
+  }
+
+  @override
+  void didUpdateWidget(SearchBarWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // If controller changed (unlikely but handle it), update listeners
+    if (widget.controller != oldWidget.controller) {
+      // Remove listener from old controller
+      oldWidget.controller?.removeListener(_onTextChanged);
+      _internalController?.removeListener(_onTextChanged);
+
+      // If switching from internal to external or vice versa
+      if (widget.controller == null && oldWidget.controller != null) {
+        // Switching to internal controller
+        _internalController = TextEditingController();
+      } else if (widget.controller != null && oldWidget.controller == null) {
+        // Switching to external controller
+        _internalController?.dispose();
+        _internalController = null;
+      }
+
+      // Add listener to new controller
+      _controller.addListener(_onTextChanged);
+      _showClearButton = _controller.text.isNotEmpty;
+    }
+  }
+
+  @override
+  void dispose() {
+    // Remove listener before disposing
+    _controller.removeListener(_onTextChanged);
+
+    // Only dispose internal controller (external controllers are managed by parent)
+    _internalController?.dispose();
+
+    super.dispose();
+  }
+
+  /// Callback when text changes
+  ///
+  /// Updates clear button visibility based on whether text is empty.
+  /// Called automatically via controller listener.
+  void _onTextChanged() {
+    setState(() {
+      _showClearButton = _controller.text.isNotEmpty;
+    });
+  }
+
+  /// Handle clear button tap
+  ///
+  /// Clears the text field and calls onChanged with empty string.
+  /// This resets search results to show all links.
+  void _handleClear() {
+    _controller.clear();
+    // onChanged is automatically called by TextField when text changes
+    // But if onChanged is provided, we ensure it's called with empty string
+    widget.onChanged?.call('');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,8 +202,11 @@ class SearchBarWidget extends StatelessWidget {
       padding: const EdgeInsets.only(top: 12),
 
       child: TextField(
-        // onChanged callback (will be used when search is functional)
-        onChanged: onChanged,
+        // Controller - manages the text content
+        controller: _controller,
+
+        // onChanged callback (called when user types)
+        onChanged: widget.onChanged,
 
         // Decoration: Visual styling of the text field
         decoration: InputDecoration(
@@ -61,8 +217,25 @@ class SearchBarWidget extends StatelessWidget {
             size: 22,
           ),
 
+          // Suffix icon: Clear button (X) on the right
+          // Only shown when text is not empty
+          suffixIcon: _showClearButton
+              ? IconButton(
+                  icon: Icon(
+                    Icons.close,
+                    color: Colors.grey[600],
+                    size: 20,
+                  ),
+                  onPressed: _handleClear,
+                  tooltip: 'Clear search',
+                  // Smaller padding to fit nicely in search bar
+                  padding: const EdgeInsets.all(8),
+                  constraints: const BoxConstraints(),
+                )
+              : null,
+
           // Hint text: Placeholder shown when empty
-          hintText: placeholder,
+          hintText: widget.placeholder,
           hintStyle: TextStyle(
             color: Colors.grey[500],
             fontSize: 15,
@@ -108,79 +281,69 @@ class SearchBarWidget extends StatelessWidget {
   }
 }
 
-/// 🎓 Learning Summary: TextField Widget
+/// 🎓 Learning Summary: StatefulWidget vs StatelessWidget
 ///
-/// **What is TextField?**
-/// A widget that lets users type text input.
-/// Think of it like an HTML <input> element.
+/// **When to Use StatefulWidget:**
+/// - When widget needs to manage internal state (like clear button visibility)
+/// - When widget needs to listen to controllers/streams
+/// - When widget needs lifecycle methods (initState, dispose)
+/// - When widget needs to update UI based on changes
 ///
-/// **Key Properties:**
+/// **When to Use StatelessWidget:**
+/// - When widget is purely presentational
+/// - When all data comes from constructor parameters
+/// - When widget doesn't need to track changes
+/// - When widget doesn't need cleanup (no dispose)
 ///
-/// 1. **decoration**: Visual styling
-///    - InputDecoration controls how it looks
-///    - Icons, borders, hints, colors, etc.
+/// **SearchBarWidget Evolution:**
+/// - v1: StatelessWidget (just displayed TextField)
+/// - v2: StatefulWidget (manages controller, clear button state)
 ///
-/// 2. **prefixIcon**: Icon on the left side
-///    - Magnifying glass indicates "search"
-///    - User icon might indicate "username"
-///    - Lock icon might indicate "password"
+/// **TextEditingController Pattern:**
 ///
-/// 3. **hintText**: Placeholder when empty
-///    - Shows what user should type
-///    - Disappears when user starts typing
-///    - Gray color so it doesn't look like actual input
+/// Why we support both internal and external controllers:
 ///
-/// 4. **filled & fillColor**: Background color
-///    - filled: true enables background
-///    - fillColor: sets the color
-///    - Light gray (grey[100]) is common for search
+/// ```dart
+/// // Internal controller (most common)
+/// SearchBarWidget()  // Widget creates and manages controller
 ///
-/// 5. **Borders**: Different states
-///    - enabledBorder: Normal state (not focused)
-///    - focusedBorder: When user taps in
-///    - errorBorder: When validation fails
+/// // External controller (advanced)
+/// final _controller = TextEditingController();
+/// SearchBarWidget(controller: _controller)
+/// // Parent can control: _controller.clear(), _controller.text = 'foo'
+/// ```
 ///
-/// **Border Styles:**
+/// **Listener Pattern:**
 ///
-/// OutlineInputBorder:
-/// - Creates rounded rectangle border
-/// - borderRadius: how rounded the corners are
-/// - borderSide: the actual border line
-/// - BorderSide.none: no visible border
+/// ```dart
+/// _controller.addListener(_onTextChanged);  // Register listener
+/// // When text changes: _onTextChanged() is called
+/// _controller.removeListener(_onTextChanged);  // Cleanup
+/// ```
 ///
-/// **Why BorderSide.none?**
-/// For search bars, we often want just a filled background
-/// without a border line. This creates a cleaner, modern look.
-/// When focused, we show teal border for feedback.
+/// **Why This Matters:**
+/// - Clear button only shown when needed (better UX)
+/// - External control enables programmatic search clearing
+/// - Proper cleanup prevents memory leaks
 ///
-/// **Responsive Design:**
-/// This widget is responsive because:
-/// - Width adapts to parent (no fixed width)
-/// - Padding uses EdgeInsets (scales with screen)
-/// - Font sizes are readable on all devices
-/// - Touch target is large enough (44px+ height)
+/// **Memory Management:**
+/// - Internal controller: We create it → we dispose it
+/// - External controller: Parent creates it → parent disposes it
+/// - This prevents double-disposal bugs!
 ///
-/// **State Management Note:**
-/// We use StatelessWidget because:
-/// - TextField manages its own text internally
-/// - We don't need to store or manipulate the text yet
-/// - onChanged callback sends text to parent when needed
+/// **Real-World Analogy:**
 ///
-/// **Later Enhancements:**
-/// When we add search functionality:
-/// 1. Add TextEditingController to control text
-/// 2. Implement search logic in onChanged
-/// 3. Add loading indicator while searching
-/// 4. Show search results dropdown
-/// 5. Add clear button (X) when text is entered
+/// Think of TextEditingController like a TV remote:
+/// - Internal controller: Widget has its own remote (most common)
+/// - External controller: Parent passes down their remote (advanced control)
+/// - Either way, someone owns the remote and is responsible for its batteries
 ///
-/// **Material Design Guidelines:**
-/// - Search fields should be easy to find (top of screen)
-/// - Use magnifying glass icon universally recognized
-/// - Placeholder text should explain what's searchable
-/// - Focus state should be visually distinct
-/// - Field should be wide enough to show search terms
+/// **Testing Note:**
+/// All the tests we wrote earlier should now pass!
+/// - Clear button visibility tests
+/// - Clear button tap tests
+/// - External controller tests
+/// - onChanged callback tests
 ///
 /// **Next:**
-/// This SearchBar will be used in the home screen header
-/// along with the user avatar and greeting.
+/// Integrate this SearchBarWidget into HomeScreen with debounced search!

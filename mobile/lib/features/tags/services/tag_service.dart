@@ -94,26 +94,42 @@ class TagService {
   }
 
   /// Get all tags for a user
+  ///
+  /// Retry Logic:
+  /// - 2 attempts with 500ms delay between retries
+  /// - 10 second timeout per attempt
+  /// - Handles intermittent network failures (DNS lookup, connection drops)
   Future<List<Tag>> getUserTags(String userId) async {
-    debugPrint('🔵 [TagService] getUserTags START - userId: $userId');
     try {
-      debugPrint('🔵 [TagService] Executing Supabase query: tags table, user_id = $userId');
-      // Query tags table (matches SpaceService.getSpaces pattern)
-      final response = await _supabase
-          .from('tags')
-          .select()
-          .eq('user_id', userId)
-          .order('created_at', ascending: false);
+      // Fetch tags (with retry logic for network resilience)
+      List<dynamic>? response;
+      for (int attempt = 1; attempt <= 2; attempt++) {
+        try {
+          debugPrint('🔵 [TagService] getUserTags attempt $attempt/2');
 
-      debugPrint('🟢 [TagService] Supabase query returned successfully');
-      debugPrint('🔵 [TagService] Response type: ${response.runtimeType}, length: ${(response as List).length}');
+          // Query tags table (matches SpaceService.getSpaces pattern)
+          response = await _supabase
+              .from('tags')
+              .select()
+              .eq('user_id', userId)
+              .order('created_at', ascending: false)
+              .timeout(const Duration(seconds: 10));
 
-      final tags = response.map((json) => Tag.fromJson(json)).toList();
+          debugPrint('🟢 [TagService] Successfully fetched tags');
+          break; // Success!
+        } catch (e) {
+          debugPrint('🔴 [TagService] Error fetching tags (attempt $attempt/2): $e');
+          if (attempt == 2) rethrow;
+          await Future.delayed(const Duration(milliseconds: 500));
+        }
+      }
+
+      final tags = (response! as List).map((json) => Tag.fromJson(json)).toList();
       debugPrint('🟢 [TagService] Mapped to ${tags.length} Tag objects');
       return tags;
     } catch (e, stackTrace) {
       // Log error and rethrow (matches SpaceService pattern)
-      debugPrint('🔴 [TagService] ERROR: $e');
+      debugPrint('🔴 [TagService] Failed to fetch tags after retries: $e');
       debugPrint('🔴 [TagService] Stack trace: $stackTrace');
       throw Exception('Failed to fetch tags: $e');
     }

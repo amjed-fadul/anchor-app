@@ -63,8 +63,6 @@ class _SpacesScreenState extends ConsumerState<SpacesScreen> {
 
     return SafeArea(
       child: Scaffold(
-        backgroundColor: const Color(0xfff5f5f0), // Light gray from Figma
-
         body: Column(
           children: [
             // Header with title and action buttons
@@ -80,40 +78,70 @@ class _SpacesScreenState extends ConsumerState<SpacesScreen> {
                   ),
                 ),
 
-                // Error state: Show error message
-                error: (error, stackTrace) => Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.error_outline,
-                          size: 64,
-                          color: Colors.red,
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Error loading spaces',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xff0a090d),
+                // Error state: Show error message with retry button
+                error: (error, stackTrace) {
+                  // Parse error to show user-friendly message
+                  final errorString = error.toString().toLowerCase();
+                  final isNetworkError =
+                      errorString.contains('socketexception') ||
+                          errorString.contains('failed host lookup') ||
+                          errorString.contains('network') ||
+                          errorString.contains('connection');
+
+                  final friendlyMessage = isNetworkError
+                      ? 'Network error. Please check your connection and try again.'
+                      : 'Something went wrong. Please try again.';
+
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            size: 64,
+                            color: Colors.red,
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          error.toString(),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Color(0xff6a6770),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Error loading spaces',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xff0a090d),
+                            ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 8),
+                          Text(
+                            friendlyMessage,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xff6a6770),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          // Retry button
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              // Invalidate provider to trigger a fresh fetch
+                              ref.invalidate(spacesProvider);
+                            },
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Try Again'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xff075a52), // Anchor teal
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 12),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                },
 
                 // Data state: Show list of spaces
                 data: (spaces) {
@@ -182,7 +210,6 @@ class _SpacesScreenState extends ConsumerState<SpacesScreen> {
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.all(16),
-      color: const Color(0xfff5f5f0), // Match background
       child: Row(
         children: [
           // "Spaces" title

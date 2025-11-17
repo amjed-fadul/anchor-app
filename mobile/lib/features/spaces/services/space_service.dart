@@ -36,6 +36,11 @@ class SpaceService {
   /// - Users always see default spaces at top
   /// - Custom spaces are alphabetically sorted for easy finding
   ///
+  /// Retry Logic:
+  /// - 2 attempts with 500ms delay between retries
+  /// - 10 second timeout per attempt
+  /// - Handles intermittent network failures (DNS lookup, connection drops)
+  ///
   /// Example:
   /// ```dart
   /// final spaces = await service.getSpaces(userId);
@@ -43,23 +48,38 @@ class SpaceService {
   /// ```
   Future<List<Space>> getSpaces(String userId) async {
     try {
-      // Query spaces table
-      final response = await supabase
-          .from('spaces')
-          .select()
-          .eq('user_id', userId)
-          .order('is_default', ascending: false) // Default spaces first
-          .order('name', ascending: true); // Then alphabetically
+      // Fetch spaces (with retry logic for network resilience)
+      List<Space>? spaces;
+      for (int attempt = 1; attempt <= 2; attempt++) {
+        try {
+          debugPrint('🔵 [SpaceService] getSpaces attempt $attempt/2');
 
-      // Convert JSON list to Space objects
-      final spaces = (response as List)
-          .map((json) => Space.fromJson(json as Map<String, dynamic>))
-          .toList();
+          final response = await supabase
+              .from('spaces')
+              .select()
+              .eq('user_id', userId)
+              .order('is_default', ascending: false) // Default spaces first
+              .order('name', ascending: true) // Then alphabetically
+              .timeout(const Duration(seconds: 10));
 
-      return spaces;
+          // Convert JSON list to Space objects
+          spaces = (response as List)
+              .map((json) => Space.fromJson(json as Map<String, dynamic>))
+              .toList();
+
+          debugPrint('🟢 [SpaceService] Successfully fetched ${spaces.length} spaces');
+          break; // Success!
+        } catch (e) {
+          debugPrint('🔴 [SpaceService] Error fetching spaces (attempt $attempt/2): $e');
+          if (attempt == 2) rethrow;
+          await Future.delayed(const Duration(milliseconds: 500));
+        }
+      }
+
+      return spaces!;
     } catch (e) {
       // Log error and rethrow
-      debugPrint('🔴 [SpaceService] Error fetching spaces: $e');
+      debugPrint('🔴 [SpaceService] Failed to fetch spaces after retries: $e');
       throw Exception('Failed to fetch spaces: $e');
     }
   }
