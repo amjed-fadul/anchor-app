@@ -56,12 +56,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// - After 300ms → search executes with "design"
   Timer? _debounceTimer;
 
+  /// Scroll controller for infinite scroll
+  ///
+  /// Listens to scroll position to load more links when user scrolls near bottom.
+  /// Implements pagination for better performance with large link collections.
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Set up infinite scroll listener
+    _scrollController.addListener(_onScroll);
+  }
+
   @override
   void dispose() {
     // Cancel timer to prevent memory leaks
     // If we don't do this, timer might fire after widget is disposed
     _debounceTimer?.cancel();
+    // Dispose scroll controller to free resources
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  /// Handle scroll events for infinite scroll
+  ///
+  /// Triggers loading of next page when user scrolls to 80% of content.
+  /// Prevents duplicate loading by checking hasMoreData and isLoadingMore flags.
+  void _onScroll() {
+    // Calculate scroll position (0.8 = 80% of the way down)
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.position.pixels;
+    final threshold = maxScroll * 0.8;
+
+    // If scrolled past 80% threshold, load next page
+    if (currentScroll >= threshold) {
+      ref.read(paginatedLinksProvider.notifier).loadNextPage();
+    }
   }
 
   /// Handle search input with debouncing
@@ -127,9 +158,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final user = ref.watch(currentUserProvider);
 
-    // Watch linksWithTagsProvider for loading/error states
-    // We need this for showing loading spinner while fetching from database
-    final linksAsync = ref.watch(linksWithTagsProvider);
+    // Watch paginatedLinksProvider for loading/error states with infinite scroll
+    // This loads links in pages (30 at a time) for better performance
+    final linksAsync = ref.watch(paginatedLinksProvider);
 
     // Watch filteredLinksProvider for actual display
     // This automatically filters based on searchQueryProvider
@@ -295,7 +326,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  /// Build links grid (2-column layout) with pull-to-refresh
+  /// Build links grid (2-column layout) with pull-to-refresh and infinite scroll
   ///
   /// RefreshIndicator:
   /// - Enables pull-down gesture to refresh
@@ -306,18 +337,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// - crossAxisCount: 2 = 2 columns
   /// - childAspectRatio: width/height ratio of each card
   /// - spacing: gaps between cards
+  /// - Infinite scroll: Loads more as user scrolls (via ScrollController)
+  /// - Bottom indicator: Shows loading spinner when fetching more links
   Widget _buildLinksGrid(links, WidgetRef ref) {
+    // Check if currently loading more links
+    final isLoadingMore =
+        ref.watch(paginatedLinksProvider.notifier).isLoadingMore;
+    final hasMoreData = ref.watch(paginatedLinksProvider.notifier).hasMoreData;
+
     return RefreshIndicator(
       // Color of the refresh indicator
       color: AnchorColors.anchorTeal,
 
       // Called when user pulls down to refresh
       onRefresh: () async {
-        // Call the provider's refresh method
-        await ref.read(linksWithTagsProvider.notifier).refresh();
+        // Call the provider's refresh method (resets pagination)
+        await ref.read(paginatedLinksProvider.notifier).refresh();
       },
 
       child: GridView.builder(
+        controller: _scrollController, // Attach scroll controller for infinite scroll
         padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2, // 2 columns
@@ -325,8 +364,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           crossAxisSpacing: 8, // Horizontal gap between cards
           mainAxisSpacing: 8, // Vertical gap between cards
         ),
-        itemCount: links.length,
+        // Add +1 to item count if loading more (for loading indicator)
+        itemCount: links.length + (isLoadingMore && hasMoreData ? 1 : 0),
         itemBuilder: (context, index) {
+          // If this is the last item and we're loading more, show loading indicator
+          if (index == links.length) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(
+                  color: Color(0xff075a52), // Anchor teal
+                ),
+              ),
+            );
+          }
+
+          // Otherwise, show the link card
           final linkWithTags = links[index];
           return LinkCard(linkWithTags: linkWithTags);
         },

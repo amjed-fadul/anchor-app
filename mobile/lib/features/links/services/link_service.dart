@@ -503,28 +503,21 @@ class LinkService {
 
     try {
       // STEP 1: Fetch links with pagination
+      // Removed retry logic - Supabase client handles retries internally
+      // Using 30s timeout for slower connections on initial load
       debugPrint('🔵 [LinkService] Step 1: Fetching links (paginated)');
-      List<dynamic>? linksResponse;
 
-      for (int attempt = 1; attempt <= 2; attempt++) {
-        try {
-          debugPrint('🔵 [LinkService] Links fetch attempt $attempt/2');
-          linksResponse = await _supabase
-              .from('links')
-              .select('*')
-              .eq('user_id', userId)
-              .order('created_at', ascending: false)
-              .range(offset, offset + limit - 1) // Supabase range is inclusive
-              .timeout(const Duration(seconds: 10));
-          debugPrint('🟢 [LinkService] Links fetched! Count: ${linksResponse.length}');
-          break;
-        } catch (e) {
-          debugPrint('🔴 [LinkService] Links fetch error (attempt $attempt/2): $e');
-          if (attempt == 2) rethrow;
-        }
-      }
+      final linksResponse = await _supabase
+          .from('links')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', ascending: false)
+          .range(offset, offset + limit - 1) // Supabase range is inclusive
+          .timeout(const Duration(seconds: 30));
 
-      if (linksResponse == null || linksResponse.isEmpty) {
+      debugPrint('🟢 [LinkService] Links fetched! Count: ${linksResponse.length}');
+
+      if (linksResponse.isEmpty) {
         debugPrint('🟢 [LinkService] No links found for this page');
         stopwatch.stop();
         debugPrint('⏱️ [LinkService] Total time: ${stopwatch.elapsedMilliseconds}ms');
@@ -536,24 +529,16 @@ class LinkService {
       debugPrint('🔵 [LinkService] Step 2: Extracting ${linkIds.length} link IDs');
 
       // STEP 3: Fetch tags for these links
+      // Removed retry logic - Supabase client handles retries internally
       debugPrint('🔵 [LinkService] Step 3: Fetching tags for page links in batch');
-      List<dynamic>? linkTagsResponse;
 
-      for (int attempt = 1; attempt <= 2; attempt++) {
-        try {
-          debugPrint('🔵 [LinkService] Tags fetch attempt $attempt/2');
-          linkTagsResponse = await _supabase
-              .from('link_tags')
-              .select('link_id, tags(*)')
-              .inFilter('link_id', linkIds)
-              .timeout(const Duration(seconds: 10));
-          debugPrint('🟢 [LinkService] Tags fetched! Count: ${linkTagsResponse.length}');
-          break;
-        } catch (e) {
-          debugPrint('🔴 [LinkService] Tags fetch error (attempt $attempt/2): $e');
-          if (attempt == 2) rethrow;
-        }
-      }
+      final linkTagsResponse = await _supabase
+          .from('link_tags')
+          .select('link_id, tags(*)')
+          .inFilter('link_id', linkIds)
+          .timeout(const Duration(seconds: 30));
+
+      debugPrint('🟢 [LinkService] Tags fetched! Count: ${linkTagsResponse.length}');
 
       // STEP 4: Group tags by link_id
       debugPrint('🔵 [LinkService] Step 4: Grouping tags by link_id');
