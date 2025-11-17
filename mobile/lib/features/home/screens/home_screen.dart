@@ -86,6 +86,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
+  /// Show the Add Link Flow sheet for a shared URL
+  ///
+  /// Extracted to a helper method so it can be called from:
+  /// 1. ref.listen() callback (warm start - app already running)
+  /// 2. After checking current state (cold start - state changed before listener set up)
+  void _showSharedLinkSheet(BuildContext context, String url) {
+    debugPrint('🟢 [HomeScreen] _showSharedLinkSheet called');
+    debugPrint('  - Shared URL: $url');
+    debugPrint('  - Context mounted: ${context.mounted}');
+
+    // Only show if context is still mounted
+    if (!context.mounted) {
+      debugPrint('🔴 [HomeScreen] Context not mounted, cannot show sheet');
+      return;
+    }
+
+    // Show AddLinkFlowScreen with the shared URL
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      useSafeArea: true,
+      isDismissible: false, // Don't dismiss on tap outside for shared links
+      builder: (context) => SizedBox(
+        width: double.infinity,
+        height: MediaQuery.of(context).size.height,
+        child: AddLinkFlowScreen(sharedUrl: url),
+      ),
+    );
+
+    // Reset state to prevent showing again
+    ref.read(deepLinkServiceProvider.notifier).resetState();
+    debugPrint('🟢 [HomeScreen] Sheet shown, state reset');
+  }
+
   @override
   Widget build(BuildContext context) {
     debugPrint('🔵 [HomeScreen] build() START');
@@ -104,12 +139,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // Used to differentiate "No links" from "No results"
     final searchQuery = ref.watch(searchQueryProvider);
 
-    // Check current deep link state (for cold start scenario)
-    final currentDeepLinkState = ref.read(deepLinkServiceProvider);
-    debugPrint('🔵 [HomeScreen] Current deep link state: ${currentDeepLinkState.runtimeType}');
-
     // Listen for incoming shared URLs from DeepLinkService
-    // This listener is called whenever a URL is shared from another app
+    // This listener catches FUTURE state changes (warm start scenario)
     debugPrint('🔵 [HomeScreen] Setting up ref.listen() for future state changes');
     ref.listen<DeepLinkState>(
       deepLinkServiceProvider,
@@ -120,28 +151,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
         // When a URL is pending, show AddLinkFlowScreen
         if (next is DeepLinkUrlPending) {
-          debugPrint('🟢 [HomeScreen] State is DeepLinkUrlPending, showing sheet');
-          debugPrint('  - Shared URL: ${next.url}');
-
-          // Show AddLinkFlowScreen with the shared URL
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            useSafeArea: true,
-            isDismissible: false, // Don't dismiss on tap outside for shared links
-            builder: (context) => SizedBox(
-              width: double.infinity,
-              height: MediaQuery.of(context).size.height,
-              child: AddLinkFlowScreen(sharedUrl: next.url),
-            ),
-          );
-
-          // Reset state to prevent showing again
-          ref.read(deepLinkServiceProvider.notifier).resetState();
+          _showSharedLinkSheet(context, next.url);
         }
       },
     );
+
+    // Check current deep link state (for cold start scenario)
+    // This handles the case where state changed BEFORE listener was set up
+    final currentDeepLinkState = ref.read(deepLinkServiceProvider);
+    debugPrint('🔵 [HomeScreen] Current deep link state: ${currentDeepLinkState.runtimeType}');
+
+    // If there's already a pending URL (cold start), show it after build completes
+    if (currentDeepLinkState is DeepLinkUrlPending) {
+      debugPrint('🟡 [HomeScreen] Found existing DeepLinkUrlPending state (cold start!)');
+      debugPrint('  - This means share was received before HomeScreen built');
+      debugPrint('  - Scheduling sheet to show after frame renders');
+
+      // We can't call showModalBottomSheet directly in build()
+      // We need to wait until after the first frame is rendered
+      // Use addPostFrameCallback to defer until widget tree is built
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        debugPrint('🟡 [HomeScreen] Post-frame callback executing');
+        _showSharedLinkSheet(context, currentDeepLinkState.url);
+      });
+    }
 
     return Scaffold(
       // No AppBar - we'll build custom header
