@@ -10,6 +10,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+#### URL Shortener Metadata Extraction - No Metadata from Shortened URLs (2025-11-17 TBD)
+- **Problem**: When users saved shortened URLs (like `https://share.google/sQLfRCNWwYgcd4ljq`), no metadata was displayed
+  - User reported: "when I saved this url I dont saw any meta data"
+  - Short URL was saved to database instead of actual destination
+  - Domain shown was "share.google" but metadata came from actual destination (confusing UX)
+- **Root Cause**:
+  - App was using `fetchMetadata()` which followed redirects but didn't expose the final URL
+  - Original short URL was saved to database instead of expanded destination URL
+  - Mismatch between domain (share.google) and metadata (Apple Vision Pro) caused confusion
+- **Solution**:
+  - Created new `fetchMetadataWithFinalUrl()` method in MetadataService
+  - Uses `http.Request` + `client.send()` instead of `client.get()` to capture final URL after redirects
+  - Accesses `response.request?.url` to get destination after all redirect hops
+  - Updated AddLinkProvider to save final URL instead of short URL
+  - Domain now matches metadata source (both from actual destination)
+- **Technical Implementation**:
+  - Returns tuple `(LinkMetadata, String finalUrl)` from new method
+  - Comprehensive debug logging tracks redirects: 📡🔀 logs show original → final URL
+  - Maintains backward compatibility - original `fetchMetadata()` still works
+  - All error handling preserved (timeouts, network errors return original URL)
+- **Test Coverage**:
+  - ✅ Added 6 new unit tests for redirect scenarios
+  - Tests cover: no redirect, single redirect, redirect chains, errors, timeouts
+  - Tests verify correct final URL returned for bit.ly, t.co, share.google shorteners
+  - All 16 metadata service tests passing
+- **Files Changed**:
+  - `mobile/lib/shared/services/metadata_service.dart` - Added fetchMetadataWithFinalUrl() method
+  - `mobile/lib/features/links/providers/add_link_provider.dart` - Updated to use new method
+  - `mobile/test/shared/services/metadata_service_test.dart` - Added 6 new tests
+- **Result**: ✅ Shortened URLs now display correct metadata and save actual destination URL
+- **User Impact**: Users can now save share.google, bit.ly, t.co links and see metadata immediately
+- **Example Flow**:
+  - User saves: `https://share.google/abc123`
+  - App follows redirects → `https://apple.com/vision-pro`
+  - Metadata extracted: "Apple Vision Pro"
+  - Database saves: `https://apple.com/vision-pro` (not short URL)
+  - Domain shown: "apple.com" (matches metadata!)
+
 #### Test Compilation Errors - Supabase Mocking and Provider Overrides (2025-11-16 16:15)
 - **Problem**: 17 test compilation errors blocking TDD workflow
   - 11 errors in `link_service_test.dart`: Supabase mock return type mismatches

@@ -124,35 +124,50 @@ class AddLinkNotifier extends StateNotifier<AddLinkState> {
     );
 
     try {
-      // Normalize URL
-      final normalizedUrl = UrlValidator.normalize(state.url);
-
-      // Fetch metadata with 10s timeout
+      // Fetch metadata AND final URL (handles URL shorteners)
+      // This captures the actual destination after redirects
       LinkMetadata? metadata;
+      String finalUrl = state.url; // Default to original if fetch fails
+
       try {
-        debugPrint('🔍 [ADD_LINK] Starting metadata fetch for: ${state.url}');
-        metadata = await _metadataService
-            .fetchMetadata(state.url)
+        debugPrint('🔍 [ADD_LINK] Starting metadata fetch with redirect tracking for: ${state.url}');
+
+        final (fetchedMetadata, expandedUrl) = await _metadataService
+            .fetchMetadataWithFinalUrl(state.url)
             .timeout(const Duration(seconds: 10));
+
+        metadata = fetchedMetadata;
+        finalUrl = expandedUrl;
+
         debugPrint('✅ [ADD_LINK] Metadata fetched successfully: ${metadata.title}');
+        if (expandedUrl != state.url) {
+          debugPrint('🔀 [ADD_LINK] URL expanded from ${state.url} to $expandedUrl');
+        }
       } catch (e) {
         // Timeout or error - continue without metadata
         // This is okay per user requirements
         debugPrint('❌ [ADD_LINK] Metadata fetch failed: $e');
         metadata = null;
+        // Keep finalUrl as original state.url
       }
 
-      // Save link to database IMMEDIATELY
+      // Normalize the FINAL URL (after redirects)
+      final normalizedUrl = UrlValidator.normalize(finalUrl);
+
+      // Save link to database IMMEDIATELY using FINAL URL
       // (Even if metadata failed, we save the link)
       // If spaceId is set (from Space Detail Screen), link will be assigned to that space
+      //
+      // KEY CHANGE: We now save the final destination URL instead of the short URL
+      // Example: https://share.google/xyz -> https://apple.com/vision-pro
       final savedLink = await _linkService.createLink(
         userId: _userId,
-        url: state.url,
+        url: finalUrl, // ← Use expanded URL, not short URL
         normalizedUrl: normalizedUrl,
         title: metadata?.title,
         description: metadata?.description,
         thumbnailUrl: metadata?.thumbnailUrl,
-        domain: UrlValidator.extractDomain(state.url),
+        domain: UrlValidator.extractDomain(finalUrl), // ← Domain from final URL
         spaceId: state.spaceId, // ✅ Include space assignment
       );
 

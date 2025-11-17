@@ -24,6 +24,8 @@ library;
 /// ```
 
 import 'dart:async';
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:html/dom.dart' as dom;
@@ -118,6 +120,102 @@ class MetadataService {
       print('❌ [METADATA] Error fetching metadata: $e');
       final domain = _extractDomain(url);
       return _fallbackMetadata(domain);
+    }
+  }
+
+  /// Fetches metadata AND captures final URL after redirects
+  ///
+  /// This method is specifically designed to handle URL shorteners (bit.ly, t.co, share.google, etc.)
+  /// by capturing the final destination URL after all redirects.
+  ///
+  /// Returns a tuple: (LinkMetadata, String finalUrl)
+  /// - LinkMetadata: Extracted metadata from the final destination
+  /// - String: The final URL after all redirects (or original if no redirects)
+  ///
+  /// Why this exists:
+  /// - When user saves https://share.google/abc123, we want to store the actual destination
+  /// - Metadata comes from final destination, so URL should match
+  /// - Better UX: User sees actual domain in the app, not "share.google"
+  ///
+  /// Example:
+  /// ```dart
+  /// final (metadata, finalUrl) = await service.fetchMetadataWithFinalUrl('https://bit.ly/abc');
+  /// // metadata.title: "Apple Vision Pro"
+  /// // finalUrl: "https://apple.com/vision-pro"
+  /// ```
+  Future<(LinkMetadata, String)> fetchMetadataWithFinalUrl(String url) async {
+    try {
+      // Extract domain for fallback
+      final domain = _extractDomain(url);
+      debugPrint('📡 [METADATA] Fetching metadata with redirect tracking for: $url');
+      debugPrint('📡 [METADATA] Original domain: $domain');
+
+      // Create HTTP Request (instead of using get())
+      // This allows us to access the final URL after redirects
+      final request = http.Request('GET', Uri.parse(url));
+      request.headers['User-Agent'] =
+          'Mozilla/5.0 (compatible; AnchorBot/1.0; +https://anchor.app)';
+
+      debugPrint('📡 [METADATA] Sending request...');
+
+      // Send request and get streamed response
+      final streamedResponse = await client.send(request).timeout(timeout);
+
+      // Get final URL from response (this contains the URL after all redirects)
+      final finalUrl = streamedResponse.request?.url.toString() ?? url;
+
+      debugPrint('📡 [METADATA] Response status: ${streamedResponse.statusCode}');
+      debugPrint('📡 [METADATA] Final URL: $finalUrl');
+
+      // Check if URL was redirected
+      if (finalUrl != url) {
+        debugPrint('🔀 [METADATA] URL was redirected!');
+        debugPrint('   Original: $url');
+        debugPrint('   Final:    $finalUrl');
+      }
+
+      // Check if request was successful
+      if (streamedResponse.statusCode != 200) {
+        // HTTP error (404, 500, etc.) - return fallback with original URL
+        debugPrint(
+            '⚠️ [METADATA] HTTP error ${streamedResponse.statusCode}, using fallback');
+        return (_fallbackMetadata(domain), url);
+      }
+
+      // Read response body from stream
+      final responseBody = await streamedResponse.stream.bytesToString();
+
+      // Parse HTML
+      debugPrint('📡 [METADATA] Parsing HTML from final destination...');
+      final document = html_parser.parse(responseBody);
+
+      // Extract metadata from parsed HTML (using final URL for domain and thumbnail resolution)
+      final finalDomain = _extractDomain(finalUrl);
+      final title = _extractTitle(document, finalDomain);
+      final description = _extractDescription(document);
+      final thumbnailUrl = _extractThumbnail(document, finalUrl);
+
+      debugPrint(
+          '✅ [METADATA] Extracted - Title: $title, Domain: $finalDomain, Thumbnail: ${thumbnailUrl != null ? 'Yes' : 'No'}');
+
+      final metadata = LinkMetadata(
+        title: title,
+        domain: finalDomain,
+        description: description,
+        thumbnailUrl: thumbnailUrl,
+      );
+
+      return (metadata, finalUrl);
+    } on TimeoutException catch (e) {
+      // Request timed out - return fallback with original URL
+      debugPrint('⏱️ [METADATA] Request timed out after ${timeout.inSeconds}s');
+      final domain = _extractDomain(url);
+      return (_fallbackMetadata(domain), url);
+    } catch (e) {
+      // Any other error (network, parsing, etc.) - return fallback with original URL
+      debugPrint('❌ [METADATA] Error fetching metadata: $e');
+      final domain = _extractDomain(url);
+      return (_fallbackMetadata(domain), url);
     }
   }
 

@@ -29,7 +29,17 @@ class MockHttpClient extends Mock implements http.Client {}
 /// Mock HTTP Response for testing
 class MockResponse extends Mock implements http.Response {}
 
+/// Fake HTTP Request for fallback registration
+class FakeRequest extends Fake implements http.BaseRequest {}
+
 void main() {
+  // Register fallback values before all tests
+  // This is required by mocktail when using any() with custom types
+  setUpAll(() {
+    registerFallbackValue(FakeRequest());
+    registerFallbackValue(Uri());
+  });
+
   group('MetadataService', () {
     late MetadataService service;
     late MockHttpClient mockClient;
@@ -297,6 +307,181 @@ void main() {
         result.thumbnailUrl,
         'https://example.com/images/thumbnail.png',
       );
+    });
+
+    group('fetchMetadataWithFinalUrl', () {
+    /// Test #1: Returns original URL when no redirect occurs
+    test('returns original URL when no redirect', () async {
+      // Arrange
+      const url = 'https://example.com';
+      const htmlContent = '''
+        <html>
+          <head>
+            <title>Example Page</title>
+            <meta property="og:description" content="Test description" />
+          </head>
+        </html>
+      ''';
+
+      when(() => mockClient.send(any())).thenAnswer(
+        (_) async {
+          final response = http.StreamedResponse(
+            Stream.value(htmlContent.codeUnits),
+            200,
+            request: http.Request('GET', Uri.parse(url)),
+          );
+          return response;
+        },
+      );
+
+      // Act
+      final (metadata, finalUrl) = await service.fetchMetadataWithFinalUrl(url);
+
+      // Assert: URL should be unchanged
+      expect(finalUrl, url);
+      expect(metadata.title, 'Example Page');
+      expect(metadata.domain, 'example.com');
+    });
+
+    /// Test #2: Returns final URL after redirect
+    test('returns final URL after redirect', () async {
+      // Arrange: Shortened URL redirects to final destination
+      const shortUrl = 'https://share.google/abc123';
+      const finalUrl = 'https://apple.com/vision-pro';
+      const htmlContent = '''
+        <html>
+          <head>
+            <title>Apple Vision Pro</title>
+            <meta property="og:title" content="Vision Pro - Apple" />
+            <meta property="og:description" content="Experience the future" />
+          </head>
+        </html>
+      ''';
+
+      when(() => mockClient.send(any())).thenAnswer(
+        (_) async {
+          final response = http.StreamedResponse(
+            Stream.value(htmlContent.codeUnits),
+            200,
+            request: http.Request('GET', Uri.parse(finalUrl)), // Simulates redirect
+          );
+          return response;
+        },
+      );
+
+      // Act
+      final (metadata, resultUrl) = await service.fetchMetadataWithFinalUrl(shortUrl);
+
+      // Assert: Should return expanded URL, not short URL
+      expect(resultUrl, finalUrl);
+      expect(metadata.title, 'Vision Pro - Apple');
+      expect(metadata.domain, 'apple.com'); // Domain from FINAL URL
+    });
+
+    /// Test #3: Handles redirect chain (multiple redirects)
+    test('returns final URL after redirect chain', () async {
+      // Arrange: bit.ly → intermediate → final destination
+      const shortUrl = 'https://bit.ly/xyz';
+      const finalUrl = 'https://figma.com/design';
+      const htmlContent = '''
+        <html>
+          <head>
+            <title>Figma Design</title>
+          </head>
+        </html>
+      ''';
+
+      when(() => mockClient.send(any())).thenAnswer(
+        (_) async {
+          final response = http.StreamedResponse(
+            Stream.value(htmlContent.codeUnits),
+            200,
+            request: http.Request('GET', Uri.parse(finalUrl)),
+          );
+          return response;
+        },
+      );
+
+      // Act
+      final (metadata, resultUrl) = await service.fetchMetadataWithFinalUrl(shortUrl);
+
+      // Assert: Should return FINAL url after all redirects
+      expect(resultUrl, finalUrl);
+      expect(metadata.domain, 'figma.com');
+    });
+
+    /// Test #4: Returns original URL on error
+    test('returns original URL on network error', () async {
+      // Arrange
+      const url = 'https://example.com';
+
+      when(() => mockClient.send(any())).thenThrow(
+        Exception('Network error'),
+      );
+
+      // Act
+      final (metadata, finalUrl) = await service.fetchMetadataWithFinalUrl(url);
+
+      // Assert: Should return original URL with fallback metadata
+      expect(finalUrl, url);
+      expect(metadata.title, 'example.com'); // Fallback to domain
+      expect(metadata.domain, 'example.com');
+    });
+
+    /// Test #5: Returns original URL on timeout
+    test('returns original URL on timeout', () async {
+      // Arrange
+      const url = 'https://example.com';
+
+      when(() => mockClient.send(any())).thenAnswer(
+        (_) => Future.delayed(
+          const Duration(seconds: 10),
+          () => http.StreamedResponse(
+            Stream.value([]),
+            200,
+          ),
+        ),
+      );
+
+      // Act
+      final (metadata, finalUrl) = await service.fetchMetadataWithFinalUrl(url);
+
+      // Assert: Should return original URL with fallback
+      expect(finalUrl, url);
+      expect(metadata.title, 'example.com');
+    });
+
+    /// Test #6: Handles real-world URL shorteners
+    test('handles t.co shortened URL', () async {
+      // Arrange: Twitter's t.co shortener
+      const shortUrl = 'https://t.co/abc123';
+      const finalUrl = 'https://developer.apple.com/visionos';
+      const htmlContent = '''
+        <html>
+          <head>
+            <title>visionOS - Apple Developer</title>
+          </head>
+        </html>
+      ''';
+
+      when(() => mockClient.send(any())).thenAnswer(
+        (_) async {
+          final response = http.StreamedResponse(
+            Stream.value(htmlContent.codeUnits),
+            200,
+            request: http.Request('GET', Uri.parse(finalUrl)),
+          );
+          return response;
+        },
+      );
+
+      // Act
+      final (metadata, resultUrl) = await service.fetchMetadataWithFinalUrl(shortUrl);
+
+      // Assert
+      expect(resultUrl, finalUrl);
+      expect(metadata.domain, 'developer.apple.com');
+    });
     });
   });
 }
