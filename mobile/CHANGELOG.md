@@ -576,6 +576,139 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+#### Skeleton Loading Appearance - Custom Clean Gray Placeholders (2025-11-18 05:00)
+- **Problem**: Skeleton loading cards displayed green colors and circles that looked "very ugly" and didn't match app design
+- **Root Cause**: Skeletonizer package theme configuration wasn't working - default colors kept appearing regardless of ShimmerEffect settings
+- **Solution**: Removed Skeletonizer package dependency entirely and built custom skeleton cards from scratch
+  - Simple gray Container widgets with clean placeholders
+  - Matches LinkCard layout exactly (rounded corners, border, image area, title, note)
+  - Three shades of gray for visual hierarchy:
+    - Very light gray `#F5F5F5` for image placeholder
+    - Light gray `#E0E0E0` for title placeholders
+    - Lighter gray `#EEEEEE` for note placeholder
+  - No shimmer animation (clean and simple)
+- **Custom Implementation**:
+  ```dart
+  Widget _buildSkeletonCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Color(0xFFEEEEEE), width: 1),
+      ),
+      child: Column(
+        children: [
+          // Image placeholder (120px, very light gray)
+          Container(height: 120, color: Color(0xFFF5F5F5)),
+
+          Padding(
+            padding: EdgeInsets.all(12),
+            child: Column(
+              children: [
+                // Title placeholders (2 lines, light gray)
+                Container(height: 16, color: Color(0xFFE0E0E0)),
+                Container(height: 16, width: 100, color: Color(0xFFE0E0E0)),
+
+                // Note placeholder (1 line, lighter gray)
+                Container(height: 14, color: Color(0xFFEEEEEE)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  ```
+- **Files Modified**:
+  - `lib/features/home/screens/home_screen.dart`:
+    - Removed Skeletonizer import and dependencies (skeletonizer, Link model, LinkWithTags)
+    - Replaced `_buildLoadingState()` with custom GridView of skeleton cards
+    - Added `_buildSkeletonCard()` method with clean gray placeholders
+  - `test/features/spaces/providers/space_search_provider_test.dart` - Added missing `getLinksWithTagsPaginated()` stub to MockSpaceSearchLinkService
+- **Why Custom Solution**:
+  - Skeletonizer package theme configuration unreliable (ShimmerEffect settings ignored)
+  - Custom implementation gives full control over appearance
+  - Simpler code (no external package quirks)
+  - Matches app design exactly
+  - Better performance (no shimmer animation overhead)
+- **Result**: ✅ Clean, professional gray skeleton loading with perfect layout matching and no ugly green colors
+
+#### Space Detail Screen - Added Skeleton Loading for Consistency (2025-11-18 05:15)
+- **Problem**: Space Detail screen showed old loading spinner (CircularProgressIndicator) while Home screen had modern skeleton cards, creating inconsistent UX
+- **Root Cause**: When implementing custom skeleton for Home screen, Space Detail screen was overlooked
+- **Solution**: Added same custom skeleton loading to Space Detail screen
+  - Copied `_buildLoadingState()` and `_buildSkeletonCard()` methods from Home screen
+  - Adjusted spacing to match Space Detail's grid layout (16px padding instead of 8px)
+  - Same clean gray placeholders (3 shades: #F5F5F5, #E0E0E0, #EEEEEE)
+  - Same card structure (image, title lines, note)
+- **Implementation**:
+  ```dart
+  // Before: Simple spinner
+  loading: () => const Center(
+    child: CircularProgressIndicator(color: Color(0xff075a52)),
+  ),
+
+  // After: Skeleton cards matching Home screen
+  loading: () => _buildLoadingState(),
+  ```
+- **Files Modified**:
+  - `lib/features/spaces/screens/space_detail_screen.dart`:
+    - Replaced loading spinner with `_buildLoadingState()` call
+    - Added `_buildLoadingState()` method (GridView with 6 skeleton cards)
+    - Added `_buildSkeletonCard()` method (gray placeholder matching LinkCard)
+- **Result**: ✅ Consistent skeleton loading UX across both Home and Space Detail screens - professional appearance everywhere
+
+#### Skeleton Card Spacing & Overflow Warnings - Matched Home Screen UX (2025-11-18 05:30)
+- **Problem 1**: Space Detail screen had 16px spacing between cards while Home screen had 8px spacing, creating inconsistent visual density
+- **Problem 2**: Skeleton cards showed yellow/black "BOTTOM OVERFLOWED BY 2.0 PIXELS" debug warnings
+- **Root Cause**:
+  - **Spacing**: When implementing skeleton for Space Detail, used 16px spacing instead of matching Home screen's 8px
+  - **Overflow**: Skeleton card content height (208px) was 2px too tall for grid-calculated card height on some screen sizes
+- **Solution**:
+  - **Spacing Fix**: Changed Space Detail screen spacing to match Home screen exactly:
+    - `crossAxisSpacing: 16` → `8` (horizontal gap between cards)
+    - `mainAxisSpacing: 16` → `8` (vertical gap between rows)
+    - `padding: EdgeInsets.symmetric(horizontal: 16)` → `EdgeInsets.fromLTRB(8, 0, 8, 16)`
+  - **Overflow Fix**: Reduced image placeholder height by 2px in skeleton cards:
+    - Changed `height: 120` → `118` (least noticeable change, prevents overflow)
+- **Changes Made**:
+  ```dart
+  // Space Detail - Real Grid (lines 284-290)
+  GridView.builder(
+    padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),  // Was: symmetric(horizontal: 16)
+    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisSpacing: 8,  // Was: 16
+      mainAxisSpacing: 8,   // Was: 16
+    ),
+  )
+
+  // Space Detail - Skeleton Grid (lines 359-364)
+  GridView.builder(
+    padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),  // Was: symmetric(horizontal: 16)
+    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisSpacing: 8,  // Was: 16
+      mainAxisSpacing: 8,   // Was: 16
+    ),
+  )
+
+  // Skeleton Card Image (both screens, lines 395 & 382)
+  Container(
+    height: 118,  // Was: 120 (reduced by 2px)
+    decoration: BoxDecoration(color: Color(0xFFF5F5F5)),
+  )
+  ```
+- **Files Modified**:
+  - `lib/features/spaces/screens/space_detail_screen.dart`:
+    - Lines 284-290: Updated real grid spacing to 8px
+    - Lines 359-364: Updated skeleton grid spacing to 8px
+    - Line 395: Reduced skeleton image height to 118px
+  - `lib/features/home/screens/home_screen.dart`:
+    - Line 382: Reduced skeleton image height to 118px
+- **Result**:
+  - ✅ Consistent 8px spacing across Home and Space Detail screens
+  - ✅ No yellow/black overflow warnings - clean skeleton rendering
+  - ✅ Visual density matches throughout the app
+
 #### Share Sheet Not Opening on Cold Start - Race Condition (2025-11-18 03:30)
 - **Problem**: When sharing a URL from another app while Anchor is closed (cold start), the app would open and load links successfully, but the AddLinkFlowScreen sheet wouldn't appear. However, when the app was already running (warm start), sharing worked perfectly.
 - **Root Cause**: Race condition between deep link processing and HomeScreen listener setup

@@ -2,7 +2,6 @@ import 'dart:async'; // For Timer (debouncing)
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:skeletonizer/skeletonizer.dart'; // Skeleton loading screens
 import '../../../design_system/design_system.dart';
 import '../../../shared/widgets/search_bar_widget.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -10,8 +9,6 @@ import '../../links/providers/link_provider.dart';
 import '../../links/providers/search_provider.dart'; // NEW: Search functionality
 import '../../links/widgets/link_card.dart';
 import '../../links/screens/add_link_flow_screen.dart';
-import '../../links/models/link_model.dart'; // For skeleton data
-import '../../links/services/link_service.dart'; // For LinkWithTags
 import '../../../core/services/deep_link_service.dart';
 import '../../../core/services/deep_link_state.dart';
 
@@ -337,53 +334,101 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  /// Build loading state with skeleton cards
+  /// Build loading state with custom skeleton cards
   ///
-  /// Shows modern shimmer skeleton cards while fetching links from database.
+  /// Shows simple gray skeleton cards while fetching links from database.
   /// This creates a better UX than a simple spinner - users see the layout
   /// they're about to get, which makes the app feel faster.
   ///
-  /// Uses Skeletonizer package which automatically turns real widgets into
-  /// shimmering skeletons - no need to duplicate the LinkCard layout!
+  /// Custom implementation with clean gray placeholders (no external package issues).
   Widget _buildLoadingState() {
-    // Create fake link data for skeleton cards
-    final skeletonLinks = List.generate(
-      6, // Show 6 skeleton cards
-      (index) => LinkWithTags(
-        link: Link(
-          id: 'skeleton-$index',
-          url: 'https://example.com',
-          normalizedUrl: 'https://example.com',
-          title: 'Loading Link Title Placeholder...',
-          description: 'Loading description text here that shows while data is being fetched from the database...',
-          thumbnailUrl: null, // No thumbnail for skeleton
-          domain: 'example.com',
-          note: 'Loading note text here...',
-          userId: 'skeleton-user',
-          spaceId: null,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-          openedAt: null,
-        ),
-        tags: [], // No tags for skeleton
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2, // Match real grid layout
+        childAspectRatio: 0.75, // Match real card ratio
+        crossAxisSpacing: 8, // Match real spacing
+        mainAxisSpacing: 8, // Match real spacing
       ),
+      itemCount: 6, // Show 6 skeleton cards
+      itemBuilder: (context, index) {
+        return _buildSkeletonCard();
+      },
     );
+  }
 
-    return Skeletonizer(
-      enabled: true, // Enable skeleton effect
-      child: GridView.builder(
-        padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2, // Match real grid layout
-          childAspectRatio: 0.75, // Match real card ratio
-          crossAxisSpacing: 8, // Match real spacing
-          mainAxisSpacing: 8, // Match real spacing
+  /// Build a single skeleton card
+  ///
+  /// Clean gray placeholder that matches LinkCard layout:
+  /// - Rounded corners (12px)
+  /// - White background with border
+  /// - Gray rectangles for image, title, note
+  /// - No shimmer animation (simple and clean)
+  Widget _buildSkeletonCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFFEEEEEE),
+          width: 1,
         ),
-        itemCount: skeletonLinks.length,
-        itemBuilder: (context, index) {
-          // Skeletonizer automatically turns LinkCard into a skeleton!
-          return LinkCard(linkWithTags: skeletonLinks[index]);
-        },
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Image placeholder (gray rectangle at top)
+          Container(
+            height: 118, // Reduced from 120 to prevent overflow
+            decoration: const BoxDecoration(
+              color: Color(0xFFF5F5F5), // Very light gray
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+            ),
+          ),
+
+          // Content area
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title placeholder (2 lines)
+                Container(
+                  height: 16,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE0E0E0), // Light gray
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  height: 16,
+                  width: 100,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE0E0E0),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // Note placeholder (1 line)
+                Container(
+                  height: 14,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEEEEEE), // Lighter gray
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
