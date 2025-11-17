@@ -210,9 +210,12 @@ class DeepLinkService extends StateNotifier<DeepLinkState> {
 
       // Emit state change to notify listeners (HomeScreen)
       // HomeScreen will listen to this state and show AddLinkFlowScreen
+      logger.d('🔗 [DEEP_LINK] 🔄 Changing state to DeepLinkUrlPending');
+      logger.d('  - Previous state: ${state.runtimeType}');
       state = DeepLinkUrlPending(sharedUrl);
+      logger.d('  - New state: ${state.runtimeType}');
 
-      logger.d('🔗 [DEEP_LINK] Shared URL state emitted, HomeScreen will process it');
+      logger.d('🔗 [DEEP_LINK] Shared URL state emitted, HomeScreen should process it');
     } else {
       logger.d('🔗 [DEEP_LINK] ❌ Unknown Anchor deep link host: ${uri.host}');
     }
