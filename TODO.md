@@ -1,6 +1,6 @@
 # TODO & Project Roadmap
 
-**Last Updated:** 2025-11-17 16:30
+**Last Updated:** 2025-11-17 17:00
 
 This file tracks active tasks, planned features, known issues, and future ideas for the Anchor App.
 
@@ -18,14 +18,17 @@ This file tracks active tasks, planned features, known issues, and future ideas 
 ### High Priority Tasks (2025-11-17)
 
 🚧 **Fix Remaining Test Failures** (In Progress) 🟡 LOW RISK
-- **Current Status**: 213 passing, 1 skipped, 19 failing
-- **Progress**: 25 tests fixed from original 44 failures (56.8% complete)
+- **Current Status**: 219 passing ✅, 1 skipped ⏭️, 18 failing ❌
+- **Progress**: 26 tests fixed from original 44 failures (59.1% complete) 📈
   - ✅ Link Model tests: 8/8 fixed (missing normalized_url, description, etc.)
   - ✅ Link Service tests: 2/2 fixed (getLinksWithTags tests)
   - ✅ Test compilation errors: 17 fixed (Supabase mocking, provider overrides)
-  - 🐛 Space Detail Screen tests: 6 compilation errors (provider override syntax)
-  - 🐛 Remaining: ~13 runtime test failures (various files)
-- **Current Blocker**: space_detail_screen_test.dart has compilation errors (overrideWith not available for family providers)
+  - ✅ Space Detail Screen tests: 6/6 fixed (2025-11-17 17:00) - provider override syntax
+  - 🐛 Remaining: 18 runtime test failures (need investigation)
+- **Latest Fix (2025-11-17 17:00)**: Fixed space_detail_screen_test.dart compilation errors
+  - Changed provider overrides from instance to family: `linksBySpaceProvider.overrideWith()`
+  - Updated mock to extend actual `LinksBySpaceNotifier` class
+  - All 6 space detail screen tests now passing
 - **Priority:** HIGH (TDD compliance)
 - **Impact:** Restores full test coverage and verification
 
@@ -66,26 +69,36 @@ This file tracks active tasks, planned features, known issues, and future ideas 
 
 ## 🐛 Known Issues
 
-### Test Failures - 19 Remaining (2025-11-17 15:30)
-- **Current Status**: 213 passing ✅ | 1 skipped ⏭️ | 19 failing ❌
+### Test Failures - 18 Remaining (2025-11-17 17:00)
+- **Current Status**: 219 passing ✅ | 1 skipped ⏭️ | 18 failing ❌
 - **Original**: 44 test failures
-- **Progress**: 25 fixed, 19 remaining (56.8% complete) 📈
+- **Progress**: 26 fixed, 18 remaining (59.1% complete) 📈
 - **Fixed**:
   - ✅ Link Model tests (8/8) - Added missing fields to test data
   - ✅ Link Service `getLinksWithTags()` tests (2/2) - Added missing fields
   - ✅ Test compilation errors (17/17) - Fixed Supabase mocking and provider overrides
+  - ✅ Space Detail Screen tests (6/6) - Fixed provider override syntax (2025-11-17 17:00)
 - **Current Blockers**:
-  - 🐛 **Space Detail Screen tests**: 6 compilation errors
-    - **Error**: "overrideWith not defined for FamilyAsyncNotifierProviderImpl"
-    - **Root Cause**: Incorrect provider override syntax for family providers
-    - **Location**: test/features/spaces/screens/space_detail_screen_test.dart
-  - 🐛 **Runtime failures**: ~13 tests with business logic issues
+  - 🐛 **Runtime failures**: 18 tests with business logic issues (need investigation)
 - **Impact**: Partial TDD compliance, most features verified
 - **Priority**: HIGH (TDD compliance required)
 
 ---
 
 ## ✅ Recently Completed (Last 7 Days)
+
+### 2025-11-17 Evening: Space Detail Screen Test Fixes 🧪
+
+**Space Detail Screen Tests - Provider Override Fix (17:00)** ✅ 🟡 LOW RISK
+- ✅ Fixed 6 compilation errors in space_detail_screen_test.dart
+- ✅ Changed provider overrides from instance to family: `linksBySpaceProvider.overrideWith()`
+- ✅ Updated MockLinksBySpaceNotifier to extend actual LinksBySpaceNotifier class
+- ✅ Fixed "loading indicator" test to cleanup pending timer
+- ✅ Reduced mock delay from 1 second to 100ms for faster tests
+- **Root Cause**: Incorrect Riverpod family provider override syntax
+- **Impact**: All 6 space detail screen tests now passing, TDD workflow restored
+- **Test Progress**: 213 → 219 passing, 19 → 18 failing (59.1% complete)
+- **Files Changed**: `mobile/test/features/spaces/screens/space_detail_screen_test.dart`
 
 ### 2025-11-17 Afternoon: README.md Critical Alignment 📚
 

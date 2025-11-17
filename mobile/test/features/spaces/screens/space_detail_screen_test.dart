@@ -22,7 +22,7 @@ import 'package:mobile/features/links/providers/links_by_space_provider.dart';
 import 'package:mobile/features/tags/models/tag_model.dart';
 
 /// Mock Notifier for testing - returns predefined data
-class MockLinksBySpaceNotifier extends FamilyAsyncNotifier<List<LinkWithTags>, String> {
+class MockLinksBySpaceNotifier extends LinksBySpaceNotifier {
   final List<LinkWithTags> mockData;
   final Object? mockError;
   final Duration? mockDelay;
@@ -77,7 +77,7 @@ void main() {
         createTestWidget(
           SpaceDetailScreen(space: testSpace),
           overrides: [
-            linksBySpaceProvider(testSpace.id).overrideWith(
+            linksBySpaceProvider.overrideWith(
               () => MockLinksBySpaceNotifier(mockData: []),
             ),
           ],
@@ -99,7 +99,7 @@ void main() {
         createTestWidget(
           SpaceDetailScreen(space: testSpace),
           overrides: [
-            linksBySpaceProvider(testSpace.id).overrideWith(
+            linksBySpaceProvider.overrideWith(
               () => MockLinksBySpaceNotifier(mockData: []),
             ),
           ],
@@ -169,7 +169,7 @@ void main() {
         createTestWidget(
           SpaceDetailScreen(space: testSpace),
           overrides: [
-            linksBySpaceProvider(testSpace.id).overrideWith(
+            linksBySpaceProvider.overrideWith(
               () => MockLinksBySpaceNotifier(mockData: mockLinks),
             ),
           ],
@@ -194,10 +194,10 @@ void main() {
         createTestWidget(
           SpaceDetailScreen(space: testSpace),
           overrides: [
-            linksBySpaceProvider(testSpace.id).overrideWith(
+            linksBySpaceProvider.overrideWith(
               () => MockLinksBySpaceNotifier(
                 mockData: [],
-                mockDelay: const Duration(seconds: 1),
+                mockDelay: const Duration(milliseconds: 100),
               ),
             ),
           ],
@@ -209,6 +209,9 @@ void main() {
 
       // Assert: Loading indicator should be visible
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      // Cleanup: Wait for the delay to complete so no pending timers
+      await tester.pumpAndSettle();
     });
 
     /// Test #5: Shows error state on failure
@@ -218,7 +221,7 @@ void main() {
         createTestWidget(
           SpaceDetailScreen(space: testSpace),
           overrides: [
-            linksBySpaceProvider(testSpace.id).overrideWith(
+            linksBySpaceProvider.overrideWith(
               () => MockLinksBySpaceNotifier(
                 mockError: 'Failed to fetch links',
               ),
@@ -241,7 +244,7 @@ void main() {
         createTestWidget(
           SpaceDetailScreen(space: testSpace),
           overrides: [
-            linksBySpaceProvider(testSpace.id).overrideWith(
+            linksBySpaceProvider.overrideWith(
               () => MockLinksBySpaceNotifier(mockData: []),
             ),
           ],

@@ -38,6 +38,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+#### Space Detail Screen Tests - Provider Override Compilation Errors (2025-11-17 17:00)
+- **Problem**: 6 tests in space_detail_screen_test.dart had compilation errors blocking TDD workflow
+  - Error: "The method 'overrideWith' isn't defined for the type 'FamilyAsyncNotifierProviderImpl'"
+  - Tests could not run at all (compilation failed)
+  - Blocked testing of SpaceDetailScreen UI rendering
+- **Root Cause**:
+  - Incorrect Riverpod provider override syntax for family providers
+  - Code was calling `linksBySpaceProvider(spaceId).overrideWith()` (instance override)
+  - Should override the family provider itself: `linksBySpaceProvider.overrideWith()`
+  - Mock class extended `FamilyAsyncNotifier` instead of actual `LinksBySpaceNotifier`
+- **Solution**:
+  - Changed all 6 provider overrides from `linksBySpaceProvider(testSpace.id).overrideWith()` → `linksBySpaceProvider.overrideWith()`
+  - Updated `MockLinksBySpaceNotifier` to extend `LinksBySpaceNotifier` (not base class)
+  - Fixed "loading indicator" test to cleanup pending timer with `pumpAndSettle()`
+  - Reduced mock delay from 1 second to 100ms for faster tests
+- **Files Changed**:
+  - `mobile/test/features/spaces/screens/space_detail_screen_test.dart` - Fixed 6 tests
+- **Test Results**:
+  - ✅ Before: 213 passing, 1 skipped, 19 failing (6 compilation errors)
+  - ✅ After: 219 passing, 1 skipped, 18 failing (all 6 space tests passing)
+  - ✅ Progress: Fixed 6 compilation errors, reduced failures from 19 → 18
+- **Result**: ✅ Space detail screen tests now compile and pass, TDD workflow restored for this component
+- **Impact**: Can now test SpaceDetailScreen UI rendering, state management, and user interactions
+
 #### URL Shortener Metadata Extraction - No Metadata from Shortened URLs (2025-11-17 08:30)
 - **Problem**: When users saved shortened URLs (like `https://share.google/sQLfRCNWwYgcd4ljq`), no metadata was displayed
   - User reported: "when I saved this url I dont saw any meta data"
