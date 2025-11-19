@@ -118,6 +118,11 @@ class _AddDetailsScreenState extends ConsumerState<AddDetailsScreen>
     final addLinkNotifier = ref.read(addLinkProvider.notifier);
     final spacesAsync = ref.watch(spacesProvider);
 
+    // Calculate available height for tab content
+    // Screen height - handle(28px) - tabs(48px) - done button(96px) - padding
+    final screenHeight = MediaQuery.of(context).size.height;
+    final tabContentHeight = screenHeight * 0.95 - 28 - 48 - 96;
+
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -137,10 +142,10 @@ class _AddDetailsScreenState extends ConsumerState<AddDetailsScreen>
             topRight: Radius.circular(24),
           ),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: ListView(
+          controller: widget.scrollController,
           children: [
-            // Drag handle
+            // Drag handle - NOW DRAGGABLE!
             const SizedBox(height: 12),
             Container(
               width: 40,
@@ -152,7 +157,7 @@ class _AddDetailsScreenState extends ConsumerState<AddDetailsScreen>
             ),
             const SizedBox(height: 16),
 
-            // Tab Bar
+            // Tab Bar - NOW DRAGGABLE!
             TabBar(
               controller: _tabController,
               indicatorColor: AnchorColors.anchorTeal,
@@ -178,12 +183,12 @@ class _AddDetailsScreenState extends ConsumerState<AddDetailsScreen>
               ],
             ),
 
-            // Tab Content
-            // Using Flexible instead of Expanded to avoid layout conflicts
-            // with the modal bottom sheet's DraggableScrollableSheet
-            Flexible(
+            // Tab Content with fixed height
+            SizedBox(
+              height: tabContentHeight,
               child: TabBarView(
                 controller: _tabController,
+                // Keep default physics for horizontal tab swiping
                 children: [
                   // Tab 1: Tags
                   _buildTagTab(addLinkNotifier),

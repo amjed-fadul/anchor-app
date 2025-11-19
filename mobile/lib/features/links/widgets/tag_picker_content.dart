@@ -126,12 +126,15 @@ class _TagPickerContentState extends ConsumerState<TagPickerContent> {
       children: [
         // Search field
         _buildSearchField(),
-        const SizedBox(height: 16),
 
         // Selected tags as dismissible chips
         if (_selectedTagIds.isNotEmpty) ...[
+          const SizedBox(height: 16),
           _buildSelectedTagsChips(),
           const SizedBox(height: 16),
+        ] else ...[
+          // Smaller spacing when no tags selected
+          const SizedBox(height: 8),
         ],
 
         // Tag list or empty state
@@ -238,8 +241,10 @@ class _TagPickerContentState extends ConsumerState<TagPickerContent> {
             tag.name.toLowerCase() == _searchQuery.trim().toLowerCase());
 
     return ListView.separated(
-      controller: widget.scrollController,
+      // Don't use scrollController here - parent ListView handles dragging
+      // This ListView only handles its own content scrolling
       shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(), // Disable scroll - parent handles it
       padding: const EdgeInsets.symmetric(horizontal: 20),
       itemCount: filteredTags.length + (showCreateSuggestion ? 1 : 0),
       separatorBuilder: (context, index) => const Divider(
