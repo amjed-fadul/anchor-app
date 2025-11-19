@@ -82,6 +82,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Changed `ListView` → `Column` (lines 144-145)
   - Replaced `ConstrainedBox(maxHeight: 50%)` → `Expanded()` (lines 187-202)
   - **Result**: Content now fills available space naturally without forcing fixed heights - **NO MORE WHITE SPACE** ✅
+- **Swipe-to-Expand Fix (16:10)**: Column broke swipe-to-expand functionality (no scrollController). Wrapped in CustomScrollView:
+  - Changed `Column` → `CustomScrollView(controller: scrollController) + SliverFillRemaining` (lines 144-212)
+  - Removed `scrollController` from TagPickerContent (line 305) - now scrolls independently
+  - **Result**: Swipe-to-expand/collapse restored + no white space maintained ✅
 
 #### Tag Sorting Inconsistency - Tags Appear in Different Order (2025-11-19 15:00)
 - **Problem**: Tags appeared in different order across different contexts - when adding tags to new links vs editing existing links, users saw different tag sequences. Partial/junk tags appeared at top of list, making it hard to find real tags.
