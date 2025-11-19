@@ -12,6 +12,72 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+#### AddDetailsScreen Layout Issues - Tag List Not Scrollable + White Space (2025-11-19 15:45)
+- **Problem**: Two major layout issues in AddDetailsScreen when adding tags/notes/spaces to new links:
+  1. **Tag list not scrollable** - Only showed ~4 tags, then massive white space. Users couldn't scroll to see remaining tags.
+  2. **White box covering half the page** - Huge empty white space below content in all three tabs (Tag, Note, Space), wasting screen real estate.
+- **Root Cause**: Overly rigid fixed height calculation and disabled scrolling physics:
+  ```dart
+  // BUGGY CODE (❌):
+  final tabContentHeight = (screenHeight * 0.6) - 28 - 48 - 96;  // Always 339px
+
+  SizedBox(
+    height: tabContentHeight,  // Rigid! Doesn't adapt to content
+    child: TabBarView(...),
+  )
+
+  // In TagPickerContent:
+  ListView.separated(
+    physics: widget.scrollController != null
+        ? const NeverScrollableScrollPhysics()  // Disabled scrolling!
+        : null,
+  )
+  ```
+  **Why This Failed**:
+  - Fixed calculation (339px) didn't adapt to screen size or content amount
+  - Tag list scrolling disabled when scrollController present
+  - 4 tags fit in 339px, rest hidden - user couldn't access them
+  - Empty white space when content smaller than 339px
+- **User Impact**:
+  - **Can't see all tags** - only 4 tags visible out of 30+, rest completely inaccessible
+  - **Wasted screen space** - ~50% of screen showing empty white area
+  - **Broken UX** - looked unfinished/buggy across all three tabs
+- **Solution**: Replaced fixed height with flexible constraints + always enable scrolling:
+  1. **Removed fixed height calculation** (deleted line 124):
+     - Deleted `tabContentHeight = (screenHeight * 0.6) - 28 - 48 - 96`
+  2. **Replaced SizedBox with ConstrainedBox** (line 188-192):
+     ```dart
+     // NEW CODE (✅):
+     ConstrainedBox(
+       constraints: BoxConstraints(
+         minHeight: 200,  // Minimum space
+         maxHeight: MediaQuery.of(context).size.height * 0.5,  // Max 50% screen
+       ),
+       child: TabBarView(...),
+     )
+     ```
+  3. **Always enabled scrolling in tag ListView** (line 243-247 in TagPickerContent):
+     ```dart
+     // NEW CODE (✅):
+     ListView.separated(
+       shrinkWrap: true,
+       physics: const AlwaysScrollableScrollPhysics(),  // Always scrollable!
+     )
+     ```
+- **Files Changed**:
+  - `lib/features/links/screens/add_details_screen.dart`:
+    - Deleted line 124 (tabContentHeight calculation)
+    - Changed line 188-192: `SizedBox(height: fixed)` → `ConstrainedBox(constraints: flexible)`
+  - `lib/features/links/widgets/tag_picker_content.dart`:
+    - Changed line 244-246: Removed conditional physics, always enable scrolling
+- **Benefits**:
+  - ✅ **Tag list fully scrollable** - works for 4 tags or 400 tags
+  - ✅ **Flexible height** - adapts between 200px minimum and 50% screen maximum
+  - ✅ **No white space waste** - content fills naturally up to max constraint
+  - ✅ **Responsive** - adapts to different screen sizes
+  - ✅ **Always scrollable** - no nested scroll conflicts
+- **Result**: ✅ Tag list now scrolls smoothly to show all tags, no white space waste, flexible responsive layout
+
 #### Tag Sorting Inconsistency - Tags Appear in Different Order (2025-11-19 15:00)
 - **Problem**: Tags appeared in different order across different contexts - when adding tags to new links vs editing existing links, users saw different tag sequences. Partial/junk tags appeared at top of list, making it hard to find real tags.
 - **Root Cause**: Database query sorted tags by `created_at DESC` (newest first) instead of alphabetically:

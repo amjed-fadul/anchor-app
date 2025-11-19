@@ -118,11 +118,6 @@ class _AddDetailsScreenState extends ConsumerState<AddDetailsScreen>
     final addLinkNotifier = ref.read(addLinkProvider.notifier);
     final spacesAsync = ref.watch(spacesProvider);
 
-    // Calculate height for TabBarView content
-    // Use MediaQuery to get available space: screen height * sheet size - fixed elements
-    final screenHeight = MediaQuery.of(context).size.height;
-    final tabContentHeight = (screenHeight * 0.6) - 28 - 48 - 96; // 60% sheet - handle - tabs - button
-
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -189,9 +184,12 @@ class _AddDetailsScreenState extends ConsumerState<AddDetailsScreen>
                     ],
                   ),
 
-                  // Tab Content with calculated height
-                  SizedBox(
-                    height: tabContentHeight,
+                  // Tab Content with flexible height constraints
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: 200,
+                      maxHeight: MediaQuery.of(context).size.height * 0.5,
+                    ),
                     child: TabBarView(
                       controller: _tabController,
                       physics: const NeverScrollableScrollPhysics(),
