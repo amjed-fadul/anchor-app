@@ -150,18 +150,12 @@ class _AddLinkFlowScreenState extends ConsumerState<AddLinkFlowScreen> {
   void _handleAddDetails() {
     ref.read(addLinkProvider.notifier).startAddingDetails();
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.6, // Start at 60% of screen (half-screen)
-        minChildSize: 0.6, // Can't go smaller than half-screen
-        maxChildSize: 0.95, // Can expand to nearly full-screen
-        snap: true, // Snap to half or full positions
-        builder: (context, scrollController) => AddDetailsScreen(
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true, // Slide up from bottom with close button
+        builder: (context) => AddDetailsScreen(
           initialSpaceId: widget.initialSpaceId, // Pre-select space
-          scrollController: scrollController, // Enable swipe-to-expand/collapse
           onDone: () {
             Navigator.pop(context); // Close modal
             _handleDone(); // Close entire flow

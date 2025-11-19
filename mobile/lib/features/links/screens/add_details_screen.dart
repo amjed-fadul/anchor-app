@@ -34,18 +34,10 @@ class AddDetailsScreen extends ConsumerStatefulWidget {
   /// The link will be automatically assigned to this space.
   final String? initialSpaceId;
 
-  /// Optional: Scroll controller from parent DraggableScrollableSheet
-  ///
-  /// When provided, enables swipe-to-expand/collapse functionality.
-  /// The parent DraggableScrollableSheet passes this to enable smooth scrolling
-  /// and dragging behavior.
-  final ScrollController? scrollController;
-
   const AddDetailsScreen({
     super.key,
     required this.onDone,
     this.initialSpaceId,
-    this.scrollController,
   });
 
   @override
@@ -118,144 +110,101 @@ class _AddDetailsScreenState extends ConsumerState<AddDetailsScreen>
     final addLinkNotifier = ref.read(addLinkProvider.notifier);
     final spacesAsync = ref.watch(spacesProvider);
 
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFFA8FF78),
-            Color(0xFF78AFFF),
-          ],
-        ),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Add Details'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
       ),
-      child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
+      body: Column(
+        children: [
+          // Tab Bar
+          TabBar(
+            controller: _tabController,
+            indicatorColor: AnchorColors.anchorTeal,
+            labelColor: AnchorColors.anchorTeal,
+            unselectedLabelColor: Colors.grey[600],
+            labelStyle: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+            tabs: [
+              Tab(
+                icon: _buildTabIcon('assets/images/tags.svg', 0),
+                text: 'Tag',
+              ),
+              Tab(
+                icon: _buildTabIcon('assets/images/note.svg', 1),
+                text: 'Note',
+              ),
+              Tab(
+                icon: _buildTabIcon('assets/images/Spaces icon.svg', 2),
+                text: 'Space',
+              ),
+            ],
           ),
-        ),
-        child: Column(
-          children: [
-            // Scrollable content (handle, tabs, tab content)
-            Expanded(
-              child: CustomScrollView(
-                controller: widget.scrollController,
-                physics: const ClampingScrollPhysics(),
-                slivers: [
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Column(
-                      children: [
-                        // Drag handle
-                        const SizedBox(height: 12),
-                        Center(
-                          child: Container(
-                            width: 40,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
 
-                        // Tab Bar
-                        TabBar(
-                          controller: _tabController,
-                          indicatorColor: AnchorColors.anchorTeal,
-                          labelColor: AnchorColors.anchorTeal,
-                          unselectedLabelColor: Colors.grey[600],
-                          labelStyle: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          tabs: [
-                            Tab(
-                              icon: _buildTabIcon('assets/images/tags.svg', 0),
-                              text: 'Tag',
-                            ),
-                            Tab(
-                              icon: _buildTabIcon('assets/images/note.svg', 1),
-                              text: 'Note',
-                            ),
-                            Tab(
-                              icon: _buildTabIcon('assets/images/Spaces icon.svg', 2),
-                              text: 'Space',
-                            ),
-                          ],
-                        ),
+          // Tab Content fills remaining space
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                // Tab 1: Tags
+                _buildTagTab(addLinkNotifier),
 
-                        // Tab Content fills remaining space (no fixed height)
-                        Expanded(
-                          child: TabBarView(
-                            controller: _tabController,
-                            physics: const NeverScrollableScrollPhysics(),
-                            children: [
-                              // Tab 1: Tags
-                              _buildTagTab(addLinkNotifier),
+                // Tab 2: Note
+                _buildNoteTab(addLinkNotifier),
 
-                              // Tab 2: Note
-                              _buildNoteTab(addLinkNotifier),
-
-                              // Tab 3: Space
-                              _buildSpaceTab(spacesAsync, addLinkState, addLinkNotifier),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                // Tab 3: Space
+                _buildSpaceTab(spacesAsync, addLinkState, addLinkNotifier),
+              ],
             ),
+          ),
 
-            // Fixed Done Button at bottom
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: addLinkState.isSaving
-                      ? null
-                      : () async {
-                          await addLinkNotifier.saveDetails();
-                          widget.onDone();
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AnchorColors.anchorTeal,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: Colors.grey[300],
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+          // Fixed Done Button at bottom
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: addLinkState.isSaving
+                    ? null
+                    : () async {
+                        await addLinkNotifier.saveDetails();
+                        widget.onDone();
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AnchorColors.anchorTeal,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: Colors.grey[300],
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: addLinkState.isSaving
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Text(
-                          'Done',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
                 ),
+                child: addLinkState.isSaving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        'Done',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

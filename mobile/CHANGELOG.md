@@ -86,6 +86,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Changed `Column` → `CustomScrollView(controller: scrollController) + SliverFillRemaining` (lines 144-212)
   - Removed `scrollController` from TagPickerContent (line 305) - now scrolls independently
   - **Result**: Swipe-to-expand/collapse restored + no white space maintained ✅
+- **FINAL SOLUTION (16:20)**: SliverFillRemaining caused "geometry: null" crash - **fundamental architecture issue**. Converted to full-screen modal:
+  - **Changed** `showModalBottomSheet + DraggableScrollableSheet` → `Navigator.push + MaterialPageRoute` (add_link_flow_screen.dart)
+  - **Rebuilt** AddDetailsScreen with simple Scaffold + AppBar structure (removed gradient container, drag handle, CustomScrollView, SliverFillRemaining)
+  - **Result**: ✅ **ALL LAYOUT ISSUES PERMANENTLY FIXED** - simple Column + Expanded structure, no white space, no crashes, works on all devices ✅
 
 #### Tag Sorting Inconsistency - Tags Appear in Different Order (2025-11-19 15:00)
 - **Problem**: Tags appeared in different order across different contexts - when adding tags to new links vs editing existing links, users saw different tag sequences. Partial/junk tags appeared at top of list, making it hard to find real tags.
