@@ -241,8 +241,13 @@ class _TagPickerContentState extends ConsumerState<TagPickerContent> {
             tag.name.toLowerCase() == _searchQuery.trim().toLowerCase());
 
     return ListView.separated(
-      // Always enable scrolling - tag list scrolls independently
+      // Conditional scrolling:
+      // - If scrollController provided (AddDetailsScreen): Parent scrolls, disable child
+      // - If no scrollController (TagPickerSheet): This list scrolls itself
       shrinkWrap: true,
+      physics: widget.scrollController != null
+          ? const NeverScrollableScrollPhysics() // Parent handles scroll
+          : null, // Default scrolling behavior
       padding: const EdgeInsets.symmetric(horizontal: 20),
       itemCount: filteredTags.length + (showCreateSuggestion ? 1 : 0),
       separatorBuilder: (context, index) => const Divider(

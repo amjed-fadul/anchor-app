@@ -118,6 +118,11 @@ class _AddDetailsScreenState extends ConsumerState<AddDetailsScreen>
     final addLinkNotifier = ref.read(addLinkProvider.notifier);
     final spacesAsync = ref.watch(spacesProvider);
 
+    // Calculate height for TabBarView content
+    // Use MediaQuery to get available space: screen height * sheet size - fixed elements
+    final screenHeight = MediaQuery.of(context).size.height;
+    final tabContentHeight = (screenHeight * 0.6) - 28 - 48 - 96; // 60% sheet - handle - tabs - button
+
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -184,8 +189,9 @@ class _AddDetailsScreenState extends ConsumerState<AddDetailsScreen>
                     ],
                   ),
 
-                  // Tab Content (flexible height based on content)
-                  Flexible(
+                  // Tab Content with calculated height
+                  SizedBox(
+                    height: tabContentHeight,
                     child: TabBarView(
                       controller: _tabController,
                       physics: const NeverScrollableScrollPhysics(),
@@ -294,6 +300,7 @@ class _AddDetailsScreenState extends ConsumerState<AddDetailsScreen>
       data: (availableTags) => TagPickerContent(
         availableTags: availableTags,
         selectedTagIds: addLinkState.selectedTagIds,
+        scrollController: widget.scrollController,
         onTagsChanged: (selectedTagIds) {
           // Update addLinkProvider when tags change
           notifier.updateTags(selectedTagIds);
