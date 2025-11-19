@@ -182,6 +182,27 @@ class MockSpaceSearchLinkService implements LinkService {
 
   @override
   Future<void> detachTag(String linkId, String tagId) async {}
+
+  @override
+  Future<List<Link>> getLinksWithIncompleteMetadata(
+    String userId, {
+    int limit = 10,
+  }) async {
+    return [];
+  }
+
+  @override
+  Future<Link> updateLinkMetadata({
+    required String linkId,
+    String? title,
+    String? description,
+    String? thumbnailUrl,
+    String? domain,
+    required bool metadataComplete,
+    required int metadataFetchAttempts,
+  }) async {
+    throw UnimplementedError();
+  }
 }
 
 /// Mock User for testing

@@ -87,6 +87,10 @@ class LinkService {
     List<String>? tagIds,
   }) async {
     try {
+      // Determine if metadata was successfully fetched
+      // If title is null or equals domain, metadata fetch failed or returned fallback
+      final metadataComplete = title != null && title != domain;
+
       // Step 1: Insert the link (with retry logic)
       final linkData = {
         'user_id': userId,
@@ -98,6 +102,10 @@ class LinkService {
         'domain': domain,
         'note': note,
         'space_id': spaceId,
+        // Metadata tracking fields
+        'metadata_fetch_attempts': 1, // First attempt
+        'last_metadata_attempt_at': DateTime.now().toIso8601String(),
+        'metadata_complete': metadataComplete,
       };
 
       // Insert link with timeout + retry
@@ -681,6 +689,157 @@ class LinkService {
     } catch (e) {
       // Re-throw with context
       throw Exception('Failed to fetch links for space: $e');
+    }
+  }
+
+  /// getLinksWithIncompleteMetadata - Fetch links that need metadata retry
+  ///
+  /// This method fetches links where:
+  /// - metadata_complete = FALSE (metadata fetch failed or hasn't completed)
+  /// - metadata_fetch_attempts < 3 (haven't exhausted all retry attempts)
+  /// - Ordered by last_metadata_attempt_at ASC (retry oldest attempts first)
+  ///
+  /// Parameters:
+  /// - userId: ID of the user whose links to fetch
+  /// - limit: Maximum number of links to return (default 10, for batch processing)
+  ///
+  /// Returns:
+  /// List of Link objects that need metadata retry
+  ///
+  /// Use Case:
+  /// Called by MetadataRetryService when app comes to foreground to retry
+  /// failed metadata fetches in the background.
+  ///
+  /// Example:
+  /// ```dart
+  /// final incompleteLinks = await linkService.getLinksWithIncompleteMetadata(userId);
+  /// for (final link in incompleteLinks) {
+  ///   // Retry metadata fetch
+  /// }
+  /// ```
+  Future<List<Link>> getLinksWithIncompleteMetadata(
+    String userId, {
+    int limit = 10,
+  }) async {
+    try {
+      debugPrint('🔵 [LinkService] Fetching links with incomplete metadata (limit: $limit)');
+
+      // Query links that need retry (with retry logic for network resilience)
+      List<dynamic>? response;
+      for (int attempt = 1; attempt <= 2; attempt++) {
+        try {
+          response = await _supabase
+              .from('links')
+              .select('*')
+              .eq('user_id', userId) // Security: Only this user's links
+              .eq('metadata_complete', false) // Only incomplete metadata
+              .lt('metadata_fetch_attempts', 3) // Haven't exhausted retries
+              .order('last_metadata_attempt_at', ascending: true) // Oldest first
+              .limit(limit)
+              .timeout(const Duration(seconds: 10));
+          break; // Success!
+        } catch (e) {
+          if (attempt == 2) rethrow;
+          await Future.delayed(const Duration(milliseconds: 500));
+        }
+      }
+
+      // Convert response to Link objects
+      final List<Link> results = response!.map((linkData) {
+        return Link.fromJson(linkData);
+      }).toList();
+
+      debugPrint('🟢 [LinkService] Found ${results.length} links with incomplete metadata');
+      return results;
+    } catch (e) {
+      debugPrint('🔴 [LinkService] Failed to fetch links with incomplete metadata: $e');
+      throw Exception('Failed to fetch links with incomplete metadata: $e');
+    }
+  }
+
+  /// updateLinkMetadata - Update only metadata-related fields of a link
+  ///
+  /// This method updates ONLY the metadata fields, not user-editable fields like note.
+  /// Used by MetadataRetryService to update link after successful metadata retry.
+  ///
+  /// Updates:
+  /// - title, description, thumbnail_url, domain (metadata fields)
+  /// - metadata_complete (success status)
+  /// - metadata_fetch_attempts (increment counter)
+  /// - last_metadata_attempt_at (timestamp)
+  /// - updated_at (automatic timestamp)
+  ///
+  /// Parameters:
+  /// - linkId: ID of the link to update
+  /// - title: New title (nullable)
+  /// - description: New description (nullable)
+  /// - thumbnailUrl: New thumbnail URL (nullable)
+  /// - domain: New domain (nullable)
+  /// - metadataComplete: Whether metadata fetch succeeded
+  /// - metadataFetchAttempts: New attempt count
+  ///
+  /// Returns:
+  /// Updated Link object
+  ///
+  /// Example:
+  /// ```dart
+  /// final updatedLink = await linkService.updateLinkMetadata(
+  ///   linkId: link.id,
+  ///   title: 'New Title',
+  ///   metadataComplete: true,
+  ///   metadataFetchAttempts: link.metadataFetchAttempts + 1,
+  /// );
+  /// ```
+  Future<Link> updateLinkMetadata({
+    required String linkId,
+    String? title,
+    String? description,
+    String? thumbnailUrl,
+    String? domain,
+    required bool metadataComplete,
+    required int metadataFetchAttempts,
+  }) async {
+    try {
+      debugPrint('🔵 [LinkService] Updating metadata for link $linkId (attempt #$metadataFetchAttempts)');
+
+      // Prepare update data (with retry logic)
+      final updateData = {
+        'title': title,
+        'description': description,
+        'thumbnail_url': thumbnailUrl,
+        'domain': domain,
+        'metadata_complete': metadataComplete,
+        'metadata_fetch_attempts': metadataFetchAttempts,
+        'last_metadata_attempt_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+
+      List<dynamic>? response;
+      for (int attempt = 1; attempt <= 2; attempt++) {
+        try {
+          response = await _supabase
+              .from('links')
+              .update(updateData)
+              .eq('id', linkId)
+              .select()
+              .timeout(const Duration(seconds: 10));
+          break; // Success!
+        } catch (e) {
+          if (attempt == 2) rethrow;
+          await Future.delayed(const Duration(milliseconds: 500));
+        }
+      }
+
+      if (response == null || response.isEmpty) {
+        throw Exception('Link not found or update failed');
+      }
+
+      final updatedLink = Link.fromJson(response.first);
+      debugPrint('🟢 [LinkService] Metadata updated successfully for link $linkId');
+      return updatedLink;
+    } catch (e) {
+      debugPrint('🔴 [LinkService] Failed to update link metadata: $e');
+      throw Exception('Failed to update link metadata: $e');
     }
   }
 }

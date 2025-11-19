@@ -4,6 +4,7 @@ import 'design_system/design_system.dart';
 import 'core/config/supabase_config.dart';
 import 'core/router/app_router.dart';
 import 'core/services/deep_link_service.dart';
+import 'core/services/app_lifecycle_service.dart';
 
 /// App entry point
 ///
@@ -47,6 +48,10 @@ class AnchorApp extends ConsumerWidget {
     // Initialize deep link service early to process password reset links
     // This must happen before router initializes
     ref.read(deepLinkServiceProvider);
+
+    // Initialize app lifecycle service to handle background metadata retries
+    // This listens to app foreground/background events and triggers metadata retry
+    ref.read(appLifecycleServiceProvider).initialize();
 
     // Get the router from our provider
     final router = ref.watch(routerProvider);

@@ -66,10 +66,22 @@ class Link {
   /// When this link was last modified
   final DateTime updatedAt;
 
+  /// Number of times metadata fetch has been attempted (max 3)
+  /// Used for background retry logic - stops retrying after 3 attempts
+  final int metadataFetchAttempts;
+
+  /// Timestamp of last metadata fetch attempt (nullable)
+  /// Used to prevent spamming retries - only retry if > 5 minutes ago
+  final DateTime? lastMetadataAttemptAt;
+
+  /// TRUE if metadata was successfully fetched, FALSE if fetch failed or pending retry
+  /// Quick way to query links that need metadata retry
+  final bool metadataComplete;
+
   /// Constructor
   ///
   /// We use `required` for non-nullable fields to ensure they're always provided.
-  /// Nullable fields (spaceId, title, description, thumbnailUrl, domain, note, openedAt) are optional.
+  /// Nullable fields (spaceId, title, description, thumbnailUrl, domain, note, openedAt, lastMetadataAttemptAt) are optional.
   Link({
     required this.id,
     required this.userId,
@@ -84,6 +96,9 @@ class Link {
     this.openedAt,
     required this.createdAt,
     required this.updatedAt,
+    this.metadataFetchAttempts = 0,
+    this.lastMetadataAttemptAt,
+    this.metadataComplete = false,
   });
 
   /// fromJson - Convert Supabase JSON to Link object
@@ -116,6 +131,11 @@ class Link {
           : null,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
+      metadataFetchAttempts: (json['metadata_fetch_attempts'] as int?) ?? 0,
+      lastMetadataAttemptAt: json['last_metadata_attempt_at'] != null
+          ? DateTime.parse(json['last_metadata_attempt_at'] as String)
+          : null,
+      metadataComplete: (json['metadata_complete'] as bool?) ?? false,
     );
   }
 
@@ -144,6 +164,9 @@ class Link {
       'opened_at': openedAt?.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
+      'metadata_fetch_attempts': metadataFetchAttempts,
+      'last_metadata_attempt_at': lastMetadataAttemptAt?.toIso8601String(),
+      'metadata_complete': metadataComplete,
     };
   }
 
@@ -185,6 +208,9 @@ class Link {
     Object? openedAt = _undefined,
     DateTime? createdAt,
     DateTime? updatedAt,
+    int? metadataFetchAttempts,
+    Object? lastMetadataAttemptAt = _undefined,
+    bool? metadataComplete,
   }) {
     return Link(
       id: id ?? this.id,
@@ -200,6 +226,9 @@ class Link {
       openedAt: openedAt == _undefined ? this.openedAt : openedAt as DateTime?,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      metadataFetchAttempts: metadataFetchAttempts ?? this.metadataFetchAttempts,
+      lastMetadataAttemptAt: lastMetadataAttemptAt == _undefined ? this.lastMetadataAttemptAt : lastMetadataAttemptAt as DateTime?,
+      metadataComplete: metadataComplete ?? this.metadataComplete,
     );
   }
 
