@@ -158,32 +158,45 @@ class MetadataService {
 
       debugPrint('📡 [METADATA] Sending request...');
 
-      // Send request and get streamed response
-      final streamedResponse = await client.send(request).timeout(timeout);
+      // CRITICAL FIX: Wrap ENTIRE operation (send + stream read) in timeout
+      // Previous bug: Timeout only applied to client.send(), not stream.bytesToString()
+      // This caused metadata extraction to exceed timeout when reading large response bodies
+      final (responseBody, finalUrl, statusCode) = await Future(() async {
+        // Send request and get streamed response
+        final streamedResponse = await client.send(request);
 
-      // Get final URL from response (this contains the URL after all redirects)
-      final finalUrl = streamedResponse.request?.url.toString() ?? url;
+        // Get final URL from response (this contains the URL after all redirects)
+        final finalUrl = streamedResponse.request?.url.toString() ?? url;
 
-      debugPrint('📡 [METADATA] Response status: ${streamedResponse.statusCode}');
-      debugPrint('📡 [METADATA] Final URL: $finalUrl');
+        debugPrint('📡 [METADATA] Response status: ${streamedResponse.statusCode}');
+        debugPrint('📡 [METADATA] Final URL: $finalUrl');
 
-      // Check if URL was redirected
-      if (finalUrl != url) {
-        debugPrint('🔀 [METADATA] URL was redirected!');
-        debugPrint('   Original: $url');
-        debugPrint('   Final:    $finalUrl');
-      }
+        // Check if URL was redirected
+        if (finalUrl != url) {
+          debugPrint('🔀 [METADATA] URL was redirected!');
+          debugPrint('   Original: $url');
+          debugPrint('   Final:    $finalUrl');
+        }
 
-      // Check if request was successful
-      if (streamedResponse.statusCode != 200) {
-        // HTTP error (404, 500, etc.) - return fallback with original URL
-        debugPrint(
-            '⚠️ [METADATA] HTTP error ${streamedResponse.statusCode}, using fallback');
+        // Check if request was successful
+        if (streamedResponse.statusCode != 200) {
+          // HTTP error (404, 500, etc.) - return empty body with error status
+          debugPrint(
+              '⚠️ [METADATA] HTTP error ${streamedResponse.statusCode}, using fallback');
+          return ('', finalUrl, streamedResponse.statusCode);
+        }
+
+        // Read response body from stream (THIS is where the timeout bug was!)
+        // Large HTML bodies can take longer than expected to download
+        final responseBody = await streamedResponse.stream.bytesToString();
+
+        return (responseBody, finalUrl, streamedResponse.statusCode);
+      }).timeout(timeout); // ← TIMEOUT NOW COVERS ENTIRE OPERATION!
+
+      // Handle HTTP error status codes (returned from above)
+      if (statusCode != 200) {
         return (_fallbackMetadata(domain), url);
       }
-
-      // Read response body from stream
-      final responseBody = await streamedResponse.stream.bytesToString();
 
       // Parse HTML
       debugPrint('📡 [METADATA] Parsing HTML from final destination...');

@@ -482,6 +482,64 @@ void main() {
       expect(resultUrl, finalUrl);
       expect(metadata.domain, 'developer.apple.com');
     });
+
+    /// Test #7: Timeout applies to ENTIRE operation including stream read (tests the actual bug!)
+    ///
+    /// This test specifically targets the timeout race condition bug where:
+    /// - HTTP handshake completes quickly (100ms)
+    /// - BUT stream.bytesToString() takes too long (10s)
+    /// - Timeout should fire during stream read, not just during HTTP handshake
+    ///
+    /// Real-World Scenario:
+    /// User saves Facebook link with poor network:
+    /// - Connection established quickly (headers sent)
+    /// - But downloading the 5MB HTML body takes 11 seconds
+    /// - Current bug: Timeout only applies to connection, not body download
+    /// - Expected: Entire operation should timeout at 10s
+    test('timeout applies to stream read, not just HTTP handshake', () async {
+      // Arrange: Simulate fast handshake but slow stream read
+      const url = 'https://facebook.com/reel/123';
+      const htmlContent = '''
+        <html>
+          <head>
+            <title>Facebook Reel</title>
+            <meta property="og:title" content="Cool Video" />
+          </head>
+        </html>
+      ''';
+
+      when(() => mockClient.send(any())).thenAnswer(
+        (_) async {
+          // Simulate fast HTTP handshake (100ms)
+          await Future.delayed(const Duration(milliseconds: 100));
+
+          // Return stream that takes 10 seconds to read
+          // This simulates slow body download (the actual bug!)
+          final slowStream = Stream.fromFuture(
+            Future.delayed(
+              const Duration(seconds: 10), // Exceeds 5s timeout
+              () => htmlContent.codeUnits,
+            ),
+          );
+
+          return http.StreamedResponse(
+            slowStream,
+            200,
+            request: http.Request('GET', Uri.parse(url)),
+          );
+        },
+      );
+
+      // Act: Should timeout after 5 seconds (during stream read)
+      final (metadata, finalUrl) = await service.fetchMetadataWithFinalUrl(url);
+
+      // Assert: Should return fallback due to timeout
+      expect(finalUrl, url); // Original URL returned on timeout
+      expect(metadata.title, 'facebook.com'); // Fallback to domain
+      expect(metadata.domain, 'facebook.com');
+      expect(metadata.description, null);
+      expect(metadata.thumbnailUrl, null);
+    });
     });
   });
 }

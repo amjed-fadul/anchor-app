@@ -194,6 +194,7 @@ class MockSpaceSearchLinkService implements LinkService {
   @override
   Future<Link> updateLinkMetadata({
     required String linkId,
+    String? url,
     String? title,
     String? description,
     String? thumbnailUrl,

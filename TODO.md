@@ -1,6 +1,6 @@
 # TODO & Project Roadmap
 
-**Last Updated:** 2025-11-18 05:55
+**Last Updated:** 2025-11-19 21:00
 
 This file tracks active tasks, planned features, known issues, and future ideas for the Anchor App.
 
@@ -128,6 +128,59 @@ This file tracks active tasks, planned features, known issues, and future ideas 
 ---
 
 ## ✅ Recently Completed (Last 7 Days)
+
+### 2025-11-19 Evening: Metadata Timeout & Retry Fixes 🐛 ⭐
+
+**Metadata Timeout & Retry Cooldown Bugs Fixed (21:00)** ✅ 🟡 LOW RISK
+- **What**: Fixed critical timeout race condition and 5-minute retry delay that prevented metadata from loading
+- **Status**: ✅ Complete - Both bugs fixed, all tests passing (256/271 tests)
+- **Problem Solved**:
+  - **Bug #1 - Timeout Race Condition**: Metadata fetch could exceed timeout when downloading large response bodies
+    - User saved Facebook link → timeout fired at 10s but body download completed at 11s → link saved as "Untitled"
+    - Logs showed successful metadata extraction but it happened AFTER timeout
+  - **Bug #2 - 5-Minute Cooldown**: User had to wait 5 minutes for metadata retry after reopening app
+    - User wanted immediate retry (1 second) when opening app, not 5-minute delay
+    - Poor UX: Link saved without metadata → close app → reopen → still no metadata for 5 minutes!
+- **Root Cause**:
+  - **Timeout Bug**: `.timeout()` only applied to `client.send()`, NOT to `stream.bytesToString()`
+    - HTTP handshake fast (100ms), but body download could take 11+ seconds
+    - Timeout didn't cover the slow part!
+  - **Cooldown Bug**: Same constant used for both global and per-link intervals
+    - Global: "How often to check for incomplete links?" (wanted: 1s, had: 5min)
+    - Per-link: "How often to retry same link?" (wanted: 1min, had: 5min)
+- **Solution Implemented**:
+  1. **Timeout Fix**: Wrapped ENTIRE operation (send + stream read + checks) in single `.timeout()`
+  2. **Cooldown Fix**: Split into two constants:
+     - `_minGlobalRetryInterval = 1 second` (fast recovery)
+     - `_minPerLinkRetryInterval = 1 minute` (protection against hammering)
+- **Technical Changes**:
+  ```dart
+  // BEFORE (❌ Timeout bug):
+  final streamedResponse = await client.send(request).timeout(timeout);
+  final responseBody = await streamedResponse.stream.bytesToString(); // NO TIMEOUT!
+
+  // AFTER (✅ Fixed):
+  final (responseBody, finalUrl, statusCode) = await Future(() async {
+    final streamedResponse = await client.send(request);
+    final responseBody = await streamedResponse.stream.bytesToString();
+    return (responseBody, finalUrl, statusCode);
+  }).timeout(timeout); // TIMEOUT COVERS EVERYTHING!
+  ```
+- **Testing**:
+  - ✅ Added Test #7: "timeout applies to stream read, not just HTTP handshake"
+  - ✅ Test simulates fast handshake + slow stream read → expects timeout
+  - ✅ Before fix: Test took 12s (bug confirmed) ❌
+  - ✅ After fix: Test took 6s (timeout works!) ✅
+  - ✅ All 17 metadata service tests passing
+  - ✅ Full suite: 256 passing, 15 skipped
+- **Files Modified**:
+  - `lib/shared/services/metadata_service.dart` (timeout fix)
+  - `lib/shared/services/metadata_retry_service.dart` (cooldown split)
+  - `test/shared/services/metadata_service_test.dart` (new test)
+  - `test/features/spaces/providers/space_search_provider_test.dart` (mock fix)
+  - `CHANGELOG.md` (detailed entry added)
+- **Impact**: ⭐ HIGH - Fixes critical bug preventing metadata from loading + dramatically improves retry UX
+- **User Benefit**: Metadata retries in 1 second instead of 5 minutes (300x faster!)
 
 ### 2025-11-18 Early Morning: Pagination Timeout Fix & Infinite Scroll 🚀 ⭐
 

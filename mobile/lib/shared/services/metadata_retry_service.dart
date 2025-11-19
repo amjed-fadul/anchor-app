@@ -36,8 +36,15 @@ class MetadataRetryService {
   /// Last time we ran a retry batch (to prevent spamming)
   DateTime? _lastRetryTime;
 
-  /// Minimum duration between retry batches (5 minutes)
-  static const Duration _minRetryInterval = Duration(minutes: 5);
+  /// Minimum duration between global retry batches (1 second)
+  /// This controls how often we check for incomplete links when app comes to foreground.
+  /// Short interval = fast recovery when user reopens app.
+  static const Duration _minGlobalRetryInterval = Duration(seconds: 1);
+
+  /// Minimum duration between retry attempts for the SAME link (1 minute)
+  /// This prevents hammering individual slow/broken links.
+  /// Longer interval per link = protection against repeatedly hitting failing URLs.
+  static const Duration _minPerLinkRetryInterval = Duration(minutes: 1);
 
   /// Maximum number of links to retry per batch (to avoid hammering network)
   static const int _maxBatchSize = 10;
@@ -72,9 +79,9 @@ class MetadataRetryService {
       // Step 1: Debounce - Check if enough time has passed since last retry
       if (_lastRetryTime != null) {
         final timeSinceLastRetry = DateTime.now().difference(_lastRetryTime!);
-        if (timeSinceLastRetry < _minRetryInterval) {
+        if (timeSinceLastRetry < _minGlobalRetryInterval) {
           debugPrint(
-            '⏭️ [MetadataRetry] Skipping retry - only ${timeSinceLastRetry.inMinutes} minutes since last retry (minimum: 5 minutes)',
+            '⏭️ [MetadataRetry] Skipping global retry - only ${timeSinceLastRetry.inSeconds} seconds since last retry (minimum: ${_minGlobalRetryInterval.inSeconds} seconds)',
           );
           return 0;
         }
@@ -119,7 +126,7 @@ class MetadataRetryService {
   /// _retryLinkMetadata - Retry metadata fetch for a single link (private method)
   ///
   /// This method:
-  /// 1. Checks if link should be retried (last attempt > 5 minutes ago)
+  /// 1. Checks if link should be retried (last attempt > 1 minute ago)
   /// 2. Fetches metadata using MetadataService
   /// 3. Updates link in database with new metadata
   /// 4. Increments attempt counter
@@ -133,9 +140,9 @@ class MetadataRetryService {
     // Check if we should retry this link (debounce per-link)
     if (link.lastMetadataAttemptAt != null) {
       final timeSinceLastAttempt = DateTime.now().difference(link.lastMetadataAttemptAt!);
-      if (timeSinceLastAttempt < _minRetryInterval) {
+      if (timeSinceLastAttempt < _minPerLinkRetryInterval) {
         debugPrint(
-          '⏭️ [MetadataRetry] Skipping link ${link.id} - only ${timeSinceLastAttempt.inMinutes} minutes since last attempt',
+          '⏭️ [MetadataRetry] Skipping link ${link.id} - only ${timeSinceLastAttempt.inMinutes} minutes since last attempt (minimum: ${_minPerLinkRetryInterval.inMinutes} minutes)',
         );
         return;
       }

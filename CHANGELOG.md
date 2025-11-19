@@ -38,6 +38,47 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+#### Metadata Timeout & Retry Cooldown Bugs (2025-11-19 21:00)
+- **Problem**:
+  1. **Timeout Race Condition**: Metadata fetch could exceed 10s timeout when downloading large response bodies
+  2. **5-Minute Cooldown Too Slow**: Users had to wait 5 minutes for metadata retry after app foreground, poor UX
+- **Root Cause**:
+  1. **Timeout Bug**: `.timeout()` only applied to `client.send()` (HTTP handshake), NOT to `stream.bytesToString()` (body download)
+     - Facebook link example: Handshake at 100ms, body download at 11s → timeout at 10s but operation completed at 11s
+     - User observed: Link saved as "Untitled" despite logs showing successful metadata extraction
+  2. **Cooldown Bug**: Same `_minRetryInterval` constant (5 minutes) used for both:
+     - Global batch retry interval (how often to check for incomplete links)
+     - Per-link retry interval (how often to retry individual links)
+     - User wanted immediate retry (1 second) when opening app, not 5-minute wait
+- **Solution**:
+  1. **Timeout Fix**: Wrapped ENTIRE async operation in timeout scope
+     - Created single `Future` containing: `client.send()` + `stream.bytesToString()` + status checks
+     - Applied `.timeout()` to the complete Future (not just HTTP handshake)
+     - Ensures 10s timeout covers full operation: connection + body download + parsing
+  2. **Cooldown Fix**: Split constant into two separate values:
+     - `_minGlobalRetryInterval = 1 second` (fast recovery when user opens app)
+     - `_minPerLinkRetryInterval = 1 minute` (protection against hammering slow/broken links)
+     - Updated debug messages to show correct units (seconds vs minutes)
+- **Files Changed**:
+  - `lib/shared/services/metadata_service.dart` (lines 161-194) - Timeout fix
+  - `lib/shared/services/metadata_retry_service.dart` (lines 39-47, 82-84, 143-145) - Cooldown fix
+  - `test/shared/services/metadata_service_test.dart` (added Test #7) - New timeout test
+  - `test/features/spaces/providers/space_search_provider_test.dart` (line 197) - Added url parameter to mock
+- **Testing**:
+  - ✅ Created Test #7: "timeout applies to stream read, not just HTTP handshake"
+  - ✅ Test simulates: Fast handshake (100ms) + slow stream read (10s) → expects timeout at 5s
+  - ✅ Before fix: Test took 12 seconds (waited for full stream read) ❌
+  - ✅ After fix: Test took 6 seconds (timed out correctly) ✅
+  - ✅ All 17 metadata service tests passing
+  - ✅ Full test suite: 256 passing, 15 skipped
+- **Result**:
+  ✅ Metadata fetch guaranteed to complete within 10s (or return fallback)
+  ✅ Retry happens 1s after app foreground (300x faster than before!)
+  ✅ Individual links protected by 1-minute cooldown (no hammering slow/broken URLs)
+  ✅ Improved UX: Users see metadata retries almost immediately when reopening app
+- **Impact**: ⭐ HIGH - Fixes critical timeout race condition and dramatically improves retry responsiveness
+- **Real-World Example**: User saves Facebook link with poor network → metadata fails → user reopens app 10 seconds later → metadata retries immediately (not 5 minutes later)
+
 #### Test Suite Restoration - 95.8% Coverage Achieved (2025-11-17 19:30)
 - **Problem**: 44 test failures blocking TDD workflow and development confidence
   - Original status: 193 passing, 1 skipped, 44 failing (81.4% coverage)
