@@ -129,15 +129,12 @@ class _TagPickerContentState extends ConsumerState<TagPickerContent> {
 
         // Selected tags as dismissible chips
         if (_selectedTagIds.isNotEmpty) ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           _buildSelectedTagsChips(),
-          const SizedBox(height: 16),
-        ] else ...[
-          // Smaller spacing when no tags selected
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
         ],
 
-        // Tag list or empty state
+        // Tag list or empty state (no extra spacing when no tags selected)
         Expanded(
           child: widget.availableTags.isEmpty
               ? _buildEmptyState()
