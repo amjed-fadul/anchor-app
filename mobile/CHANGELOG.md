@@ -12,6 +12,72 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+#### AddDetailsScreen Layout Issues - Tag List Not Scrollable + White Space (2025-11-19 15:30)
+- **Problem**: Two major layout issues in AddDetailsScreen when adding tags/notes/spaces to new links:
+  1. **Tag list not scrollable** - Only showed ~4 tags, then massive white space. Users couldn't scroll to see remaining tags.
+  2. **White box covering half the page** - Huge empty white space below content in all three tabs (Tag, Note, Space), wasting screen real estate.
+- **Root Cause**: Fixed height calculation created rigid layout that violated responsive design principles:
+  ```dart
+  // BUGGY CODE (❌):
+  final tabContentHeight = (screenHeight * 0.6) - 28 - 48 - 96;  // Fixed 339px
+
+  SizedBox(
+    height: tabContentHeight,  // Rigid container!
+    child: TabBarView(...),
+  )
+
+  // In TagPickerContent:
+  ListView.separated(
+    physics: widget.scrollController != null
+        ? const NeverScrollableScrollPhysics()  // Disabled scrolling!
+        : null,
+  )
+  ```
+  **Why This Failed**:
+  - Fixed pixel calculation (`339px`) created rigid container regardless of content
+  - Nested scroll conflict: parent ListView disabled, child ListView also disabled
+  - Content trapped in fixed height box - couldn't scroll, left white space
+  - Violated CLAUDE.md responsive design rules (never use fixed heights for variable content)
+- **User Impact**:
+  - **Can't see all tags** - only 4 tags visible, rest inaccessible
+  - **Wasted screen space** - ~50% of screen showing empty white area
+  - **Broken UX** - looked unfinished/buggy in all three tabs
+  - **Not responsive** - would break on different screen sizes
+- **Solution**: Removed fixed height, enabled content-driven flexible sizing:
+  1. **Deleted fixed height calculation** (line 124 in AddDetailsScreen):
+     - Removed `tabContentHeight = (screenHeight * 0.6) - 28 - 48 - 96`
+  2. **Replaced `SizedBox` with `Flexible`** (line 193-209 in AddDetailsScreen):
+     ```dart
+     // NEW CODE (✅):
+     Flexible(  // Let content drive size
+       child: TabBarView(...),
+     )
+     ```
+  3. **Removed scrollController from TagPickerContent** (line 303 in AddDetailsScreen):
+     - Let tag list scroll independently (no parent coordination needed)
+  4. **Always enabled scrolling in ListView** (line 243-250 in TagPickerContent):
+     ```dart
+     // NEW CODE (✅):
+     ListView.separated(
+       shrinkWrap: true,  // Removed physics constraint
+       // Default scrolling behavior - always works!
+     )
+     ```
+- **Files Changed**:
+  - `lib/features/links/screens/add_details_screen.dart`:
+    - Deleted line 124 (tabContentHeight calculation)
+    - Changed line 193: `SizedBox(height: tabContentHeight)` → `Flexible()`
+    - Removed line 303: `scrollController: widget.scrollController` parameter
+  - `lib/features/links/widgets/tag_picker_content.dart`:
+    - Changed line 243-250: Removed conditional physics, always enable scrolling
+- **Benefits**:
+  - ✅ **Tag list scrollable** - works for 4 tags or 400 tags
+  - ✅ **No white space** - content fills available space naturally
+  - ✅ **Responsive design** - adapts to all screen sizes (follows CLAUDE.md principles)
+  - ✅ **Simpler code** - no complex scroll coordination or fixed calculations
+  - ✅ **Content-driven** - layout adapts to actual content needs
+- **Result**: ✅ Tag list now scrolls smoothly for any number of tags, no white space waste, proper responsive layout that works on all devices
+
 #### Tag Sorting Inconsistency - Tags Appear in Different Order (2025-11-19 15:00)
 - **Problem**: Tags appeared in different order across different contexts - when adding tags to new links vs editing existing links, users saw different tag sequences. Partial/junk tags appeared at top of list, making it hard to find real tags.
 - **Root Cause**: Database query sorted tags by `created_at DESC` (newest first) instead of alphabetically:
