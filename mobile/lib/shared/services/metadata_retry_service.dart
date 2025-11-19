@@ -157,8 +157,17 @@ class MetadataRetryService {
           .timeout(const Duration(seconds: 10));
 
       // Check if metadata fetch succeeded (has meaningful data)
-      // If title equals domain, it means we got fallback metadata only
-      final hasMetadata = metadata.title != metadata.domain;
+      // Compare normalized versions to account for www prefix
+      final normalizedTitle = metadata.title.toLowerCase().replaceFirst('www.', '');
+      final normalizedDomain = metadata.domain.toLowerCase().replaceFirst('www.', '');
+      final titleIsDomain = normalizedTitle == normalizedDomain;
+
+      // Metadata is real if:
+      // 1. Title is NOT just the domain, OR
+      // 2. We have description or thumbnail
+      final hasMetadata = !titleIsDomain ||
+                          metadata.description != null ||
+                          metadata.thumbnailUrl != null;
 
       debugPrint(
         hasMetadata

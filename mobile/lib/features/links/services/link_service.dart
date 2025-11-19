@@ -88,8 +88,17 @@ class LinkService {
   }) async {
     try {
       // Determine if metadata was successfully fetched
-      // If title is null or equals domain, metadata fetch failed or returned fallback
-      final metadataComplete = title != null && title != domain;
+      // Real metadata = title is NOT just the domain (with or without www prefix)
+      // Fallback metadata = title equals domain or "www.domain"
+      final normalizedTitle = (title ?? '').toLowerCase().replaceFirst('www.', '');
+      final normalizedDomain = (domain ?? '').toLowerCase().replaceFirst('www.', '');
+      final titleIsDomain = normalizedTitle.isEmpty || normalizedTitle == normalizedDomain;
+
+      // Metadata is complete if:
+      // 1. Title exists AND is NOT just the domain, OR
+      // 2. We have description or thumbnail (real metadata would have at least one)
+      final metadataComplete = title != null &&
+                               (!titleIsDomain || description != null || thumbnailUrl != null);
 
       // Step 1: Insert the link (with retry logic)
       final linkData = {
