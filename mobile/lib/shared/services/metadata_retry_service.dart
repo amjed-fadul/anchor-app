@@ -160,8 +160,10 @@ class MetadataRetryService {
       );
 
       // Update link with new metadata
+      // Also update URL if it redirected to a different destination
       await _linkService.updateLinkMetadata(
         linkId: link.id,
+        url: finalUrl != link.url ? finalUrl : null,
         title: metadata.title,
         description: metadata.description,
         thumbnailUrl: metadata.thumbnailUrl,

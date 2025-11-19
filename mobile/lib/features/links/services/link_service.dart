@@ -792,6 +792,7 @@ class LinkService {
   /// ```
   Future<Link> updateLinkMetadata({
     required String linkId,
+    String? url,
     String? title,
     String? description,
     String? thumbnailUrl,
@@ -804,6 +805,7 @@ class LinkService {
 
       // Prepare update data (with retry logic)
       final updateData = {
+        if (url != null) 'url': url,
         'title': title,
         'description': description,
         'thumbnail_url': thumbnailUrl,
