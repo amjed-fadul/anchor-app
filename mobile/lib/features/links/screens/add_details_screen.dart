@@ -141,8 +141,7 @@ class _AddDetailsScreenState extends ConsumerState<AddDetailsScreen>
           children: [
             // Scrollable content (handle, tabs, tab content)
             Expanded(
-              child: ListView(
-                controller: widget.scrollController,
+              child: Column(
                 children: [
                   // Drag handle
                   const SizedBox(height: 12),
@@ -184,12 +183,8 @@ class _AddDetailsScreenState extends ConsumerState<AddDetailsScreen>
                     ],
                   ),
 
-                  // Tab Content with flexible height constraints
-                  ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: 200,
-                      maxHeight: MediaQuery.of(context).size.height * 0.5,
-                    ),
+                  // Tab Content fills remaining space (no fixed height)
+                  Expanded(
                     child: TabBarView(
                       controller: _tabController,
                       physics: const NeverScrollableScrollPhysics(),

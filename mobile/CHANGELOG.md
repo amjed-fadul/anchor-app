@@ -78,6 +78,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - ✅ **Always scrollable** - no nested scroll conflicts
 - **Result**: ✅ Tag list now scrolls smoothly to show all tags, no white space waste, flexible responsive layout
 - **Follow-up Fix (15:50)**: Added bottom padding to prevent last tag from being cut off at edge of scroll container
+- **Final Fix (16:00)**: ConstrainedBox still created white space by forcing 50% screen height. Replaced entire structure:
+  - Changed `ListView` → `Column` (lines 144-145)
+  - Replaced `ConstrainedBox(maxHeight: 50%)` → `Expanded()` (lines 187-202)
+  - **Result**: Content now fills available space naturally without forcing fixed heights - **NO MORE WHITE SPACE** ✅
 
 #### Tag Sorting Inconsistency - Tags Appear in Different Order (2025-11-19 15:00)
 - **Problem**: Tags appeared in different order across different contexts - when adding tags to new links vs editing existing links, users saw different tag sequences. Partial/junk tags appeared at top of list, making it hard to find real tags.
