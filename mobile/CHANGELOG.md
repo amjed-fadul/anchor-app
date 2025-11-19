@@ -12,6 +12,128 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+#### Tag Creation Bug - Partial Tags Created on Every Keystroke (2025-11-19 10:30)
+- **Problem**: When adding tags to new links via AddDetailsScreen, typing "designsystem" created multiple partial tags in database: "d", "de", "des", "desi", etc.
+- **Root Cause**: TextField `onChanged` callback fired on EVERY keystroke and created tags immediately:
+  ```dart
+  // BUGGY CODE (❌):
+  TextField(
+    controller: _tagController,
+    onChanged: _handleTagInput, // Fires for "d", "de", "des"...
+  )
+
+  Future<void> _handleTagInput(String input) async {
+    for (final name in tagNames) {
+      // Creates tag on EVERY character typed!
+      final tag = await tagService.getOrCreateTag(userId: user.id, name: name);
+    }
+  }
+  ```
+- **User Impact**:
+  - Database polluted with hundreds of partial tag fragments
+  - Tag list became unusable with variations like "vieravibecoding", "vieravibecodin", "vieravibecodi", etc.
+  - Separate tag creation flows caused confusion (worked fine when editing existing links)
+- **Discovery**: Found two completely different tag input implementations:
+  - AddDetailsScreen: Buggy TextField approach (created tags on every keystroke) ❌
+  - TagPickerSheet: Working approach with search + "Create tag" button (used when editing existing links) ✅
+- **Solution**: Unified tag input flows by creating reusable `TagPickerContent` component:
+  1. **Created `tag_picker_content.dart`** - Extracted core tag picker UI from TagPickerSheet
+     - Search field with filter
+     - Selected tags as dismissible chips
+     - Tag list with checkboxes
+     - "Create [tagname]" button (only creates when clicked)
+     - Real-time updates via callback
+  2. **Refactored AddDetailsScreen** - Embedded TagPickerContent directly in Tag tab
+     - Removed buggy TextField and `_handleTagInput()` method entirely
+     - Tag picker now visible immediately (no extra button click required)
+     - Made sheet swipeable/expandable by accepting scrollController from parent
+  3. **Simplified TagPickerSheet** - Now thin wrapper around TagPickerContent
+     - Provides modal styling (container, grabber, title, Done button)
+     - Reuses same TagPickerContent component
+     - Reduced code from ~550 lines to ~186 lines (66% reduction!)
+  4. **Made AddDetailsScreen swipeable** - User can now:
+     - Starts at half-screen (60% of display)
+     - Swipe up on handle to expand to full-screen (95%)
+     - Swipe down to return to half-screen
+     - Swipe down further to close sheet
+- **Files Modified**:
+  - **NEW**: `lib/features/links/widgets/tag_picker_content.dart` (reusable component)
+  - `lib/features/links/screens/add_details_screen.dart`:
+    - Added `scrollController` parameter for swipe-to-expand
+    - Replaced `_buildTagTab()` to embed TagPickerContent
+    - Removed: `_showTagPicker()`, `_buildLoadingSheet()`, `_buildErrorSheet()`, `_buildSelectedTagsChips()`
+  - `lib/features/links/widgets/tag_picker_sheet.dart`:
+    - Simplified to use TagPickerContent internally
+    - Reduced from ~550 lines to ~186 lines
+  - `lib/features/links/screens/add_link_flow_screen.dart`:
+    - Updated DraggableScrollableSheet sizing: `initialChildSize: 0.6` (half-screen)
+    - Passes `scrollController` to AddDetailsScreen
+    - Added `snap: true` for smooth expand/collapse
+- **Benefits**:
+  - ✅ No more partial tags - tags only created when user clicks "Create [tagname]" button
+  - ✅ Single tag input flow - same UX everywhere (no confusion)
+  - ✅ Code reuse - TagPickerContent used in both AddDetailsScreen and TagPickerSheet
+  - ✅ Better UX - Tag picker visible immediately in Tag tab (no extra button)
+  - ✅ Swipeable sheet - Expands to full-screen for long tag lists
+  - ✅ Less code - Eliminated ~364 lines of duplicated code
+- **Result**: ✅ Tags created correctly only when user confirms, unified UX across app, swipeable sheet for better tag browsing
+
+#### Action Sheet Lag - 2-3 Second Delay After User Actions (2025-11-19 09:00)
+- **Problem**: After deleting links, adding tags, or changing spaces via action sheet, UI froze for 2-3 seconds before updating
+- **Root Cause**: Code waited for database operation AND full list refetch before updating UI:
+  ```dart
+  // SLOW APPROACH (❌):
+  await linkService.deleteLink(linkId);              // 2000ms database
+  await ref.read(linksWithTagsProvider.notifier).refresh(); // 1130ms refetch
+  // UI frozen for 3+ seconds!
+  ```
+- **User Impact**:
+  - Deleted links stayed visible for 2-3 seconds (confusing feedback)
+  - Tag/space changes felt sluggish
+  - App appeared frozen/unresponsive
+- **Testing Data** (from Android device logs):
+  - Database update: ~1978ms (2 seconds)
+  - Provider refresh: ~1130ms (1 second)
+  - **Total lag: 3108ms (3+ seconds)** ❌
+- **Solution**: Implemented optimistic updates in `link_provider.dart`:
+  ```dart
+  // NEW APPROACH (✅):
+  Future<void> optimisticallyDeleteLink(String linkId) async {
+    // STEP 1: Update UI immediately (0ms)
+    final updatedLinks = currentLinks.where(
+      (linkWithTags) => linkWithTags.link.id != linkId,
+    ).toList();
+    state = AsyncValue.data(updatedLinks);
+
+    // STEP 2: Sync to database in background
+    try {
+      await linkService.deleteLink(linkId);
+    } catch (e) {
+      // STEP 3: Rollback on error
+      state = AsyncValue.data([...updatedLinks, linkToDelete]);
+      rethrow;
+    }
+  }
+  ```
+- **How Optimistic Updates Work**:
+  1. **Instant UI update** - Remove link from display immediately (feels instant!)
+  2. **Background sync** - Database update happens asynchronously
+  3. **Rollback on error** - If database fails, restore link to UI and show error
+- **Files Modified**:
+  - `lib/features/links/providers/link_provider.dart`:
+    - Added `optimisticallyDeleteLink()` method
+    - Added `optimisticallyUpdateLink()` method for tag/space changes
+  - `lib/features/links/widgets/link_card.dart`:
+    - Updated delete action to use `optimisticallyDeleteLink()`
+    - Updated tag picker callback to use `optimisticallyUpdateLink()`
+    - Updated space change callback to use `optimisticallyUpdateLink()`
+- **Performance Impact**:
+  - **Before**: 3+ seconds frozen UI ❌
+  - **After**: Instant UI response (0ms perceived lag) ✅
+  - Database sync happens in background (user doesn't wait)
+- **User Feedback**: "yes it's better now" (confirmed on Android device)
+- **Result**: ✅ All action sheet operations feel instant - delete/tag/space changes update UI immediately while syncing to database in background
+
 #### Pagination Timeout - Infinite Scroll Now Working (2025-11-18 05:50)
 - **Problem**: App failed to load links when using pagination, showing "TimeoutException after 0:00:10.000000: Future not completed"
 - **Root Cause**: `getLinksWithTagsPaginated()` method had aggressive retry logic causing compound timeouts:

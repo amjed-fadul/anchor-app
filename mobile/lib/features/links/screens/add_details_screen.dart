@@ -21,9 +21,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:mobile/design_system/design_system.dart';
 import 'package:mobile/features/links/providers/add_link_provider.dart';
+import 'package:mobile/features/links/widgets/tag_picker_content.dart';
 import 'package:mobile/features/spaces/providers/space_provider.dart';
-import 'package:mobile/features/tags/services/tag_service.dart';
-import 'package:mobile/features/auth/providers/auth_provider.dart';
+import 'package:mobile/features/tags/providers/tag_provider.dart';
 
 class AddDetailsScreen extends ConsumerStatefulWidget {
   final VoidCallback onDone;
@@ -34,10 +34,18 @@ class AddDetailsScreen extends ConsumerStatefulWidget {
   /// The link will be automatically assigned to this space.
   final String? initialSpaceId;
 
+  /// Optional: Scroll controller from parent DraggableScrollableSheet
+  ///
+  /// When provided, enables swipe-to-expand/collapse functionality.
+  /// The parent DraggableScrollableSheet passes this to enable smooth scrolling
+  /// and dragging behavior.
+  final ScrollController? scrollController;
+
   const AddDetailsScreen({
     super.key,
     required this.onDone,
     this.initialSpaceId,
+    this.scrollController,
   });
 
   @override
@@ -48,8 +56,6 @@ class _AddDetailsScreenState extends ConsumerState<AddDetailsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _noteController = TextEditingController();
-  final TextEditingController _tagController = TextEditingController();
-  bool _isCreatingTags = false;
 
   @override
   void initState() {
@@ -83,7 +89,6 @@ class _AddDetailsScreenState extends ConsumerState<AddDetailsScreen>
   void dispose() {
     _tabController.dispose();
     _noteController.dispose();
-    _tagController.dispose();
     super.dispose();
   }
 
@@ -105,47 +110,6 @@ class _AddDetailsScreenState extends ConsumerState<AddDetailsScreen>
         BlendMode.srcIn, // This tints the SVG with the specified color
       ),
     );
-  }
-
-  /// Parse tag input and create/get tags
-  Future<void> _handleTagInput(String input) async {
-    if (input.trim().isEmpty) {
-      ref.read(addLinkProvider.notifier).updateTags([]);
-      return;
-    }
-
-    setState(() => _isCreatingTags = true);
-
-    try {
-      final user = ref.read(currentUserProvider);
-      if (user == null) return;
-
-      final tagService = ref.read(tagServiceProvider);
-
-      // Split by comma or newline
-      final tagNames = input
-          .split(RegExp(r'[,\n]'))
-          .map((e) => e.trim())
-          .where((e) => e.isNotEmpty)
-          .toList();
-
-      // Create or get tags
-      final tagIds = <String>[];
-      for (final name in tagNames) {
-        final tag = await tagService.getOrCreateTag(
-          userId: user.id,
-          name: name,
-        );
-        tagIds.add(tag.id);
-      }
-
-      // Update state with tag IDs
-      ref.read(addLinkProvider.notifier).updateTags(tagIds);
-    } catch (e) {
-      debugPrint('🔴 [AddDetailsScreen] Error creating tags: $e');
-    } finally {
-      setState(() => _isCreatingTags = false);
-    }
   }
 
   @override
@@ -281,66 +245,52 @@ class _AddDetailsScreenState extends ConsumerState<AddDetailsScreen>
   }
 
   Widget _buildTagTab(AddLinkNotifier notifier) {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'ADD TAGS',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-            ),
+    final addLinkState = ref.watch(addLinkProvider);
+    final tagsAsync = ref.watch(tagsProvider);
+
+    return tagsAsync.when(
+      // Show loading spinner while fetching tags
+      loading: () => const Center(
+        child: CircularProgressIndicator(
+          color: AnchorColors.anchorTeal,
+        ),
+      ),
+
+      // Show error message if fetching fails
+      error: (error, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 48,
+                color: Colors.red,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Error loading tags: $error',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[700],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _tagController,
-            autofocus: true,
-            onChanged: _handleTagInput,
-            decoration: InputDecoration(
-              hintText: '| Start typing tags ....',
-              hintStyle: TextStyle(color: Colors.grey[400]),
-              filled: true,
-              fillColor: Colors.grey[50],
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: AnchorColors.anchorTeal, width: 2),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: AnchorColors.anchorTeal, width: 2),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: AnchorColors.anchorTeal, width: 2),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 16,
-              ),
-              suffixIcon: _isCreatingTags
-                  ? const Padding(
-                      padding: EdgeInsets.all(12),
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    )
-                  : null,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Separate tags with commas or press Enter',
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 12,
-            ),
-          ),
-        ],
+        ),
+      ),
+
+      // Show TagPickerContent with all available tags
+      data: (availableTags) => TagPickerContent(
+        availableTags: availableTags,
+        selectedTagIds: addLinkState.selectedTagIds,
+        scrollController: widget.scrollController,
+        onTagsChanged: (selectedTagIds) {
+          // Update addLinkProvider when tags change
+          notifier.updateTags(selectedTagIds);
+        },
       ),
     );
   }

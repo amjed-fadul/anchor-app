@@ -116,6 +116,126 @@ class LinksNotifier extends AsyncNotifier<List<LinkWithTags>> {
     // Wait for the new data to load
     await future;
   }
+
+  /// optimisticallyDeleteLink - Remove link from UI immediately, then delete from DB
+  ///
+  /// This provides instant feedback to the user while the database operation
+  /// happens in the background. If the deletion fails, we restore the link.
+  ///
+  /// Usage:
+  /// ```dart
+  /// await ref.read(linksWithTagsProvider.notifier).optimisticallyDeleteLink(linkId);
+  /// ```
+  Future<void> optimisticallyDeleteLink(String linkId) async {
+    debugPrint('🔵 [LinksNotifier] optimisticallyDeleteLink START - linkId: $linkId');
+    final startTime = DateTime.now();
+
+    // Get current state
+    final currentLinks = state.value ?? [];
+
+    // Find the link to delete (we'll need it for rollback if deletion fails)
+    final linkToDelete = currentLinks.firstWhere(
+      (linkWithTags) => linkWithTags.link.id == linkId,
+    );
+
+    // STEP 1: Remove link from UI immediately (optimistic update)
+    final updatedLinks = currentLinks.where(
+      (linkWithTags) => linkWithTags.link.id != linkId,
+    ).toList();
+
+    state = AsyncValue.data(updatedLinks);
+    debugPrint('🟢 [LinksNotifier] Link removed from UI immediately');
+
+    // STEP 2: Delete from database in background
+    try {
+      final linkService = ref.read(linkServiceProvider);
+      debugPrint('🔵 [LinksNotifier] Deleting from database...');
+      await linkService.deleteLink(linkId);
+
+      final totalTime = DateTime.now().difference(startTime).inMilliseconds;
+      debugPrint('🟢 [LinksNotifier] Database deletion complete in ${totalTime}ms');
+    } catch (e) {
+      debugPrint('🔴 [LinksNotifier] Database deletion failed: $e');
+
+      // STEP 3: Rollback - restore the link to UI
+      state = AsyncValue.data([...updatedLinks, linkToDelete]);
+      debugPrint('🔴 [LinksNotifier] Rolled back - link restored to UI');
+
+      // Re-throw so the UI can show an error
+      rethrow;
+    }
+  }
+
+  /// optimisticallyUpdateLink - Update link in UI immediately, then update in DB
+  ///
+  /// This provides instant feedback for tag updates, space changes, etc.
+  /// If the update fails, we restore the original link.
+  ///
+  /// Usage:
+  /// ```dart
+  /// await ref.read(linksWithTagsProvider.notifier).optimisticallyUpdateLink(
+  ///   linkId: 'abc',
+  ///   updatedLink: updatedLinkWithTags,
+  /// );
+  /// ```
+  Future<void> optimisticallyUpdateLink({
+    required String linkId,
+    required LinkWithTags updatedLink,
+  }) async {
+    debugPrint('🔵 [LinksNotifier] optimisticallyUpdateLink START - linkId: $linkId');
+    final startTime = DateTime.now();
+
+    // Get current state
+    final currentLinks = state.value ?? [];
+
+    // Find the original link (for rollback if update fails)
+    final originalLink = currentLinks.firstWhere(
+      (linkWithTags) => linkWithTags.link.id == linkId,
+    );
+
+    // STEP 1: Update link in UI immediately (optimistic update)
+    final updatedLinks = currentLinks.map((linkWithTags) {
+      if (linkWithTags.link.id == linkId) {
+        return updatedLink;
+      }
+      return linkWithTags;
+    }).toList();
+
+    state = AsyncValue.data(updatedLinks);
+    debugPrint('🟢 [LinksNotifier] Link updated in UI immediately');
+
+    // STEP 2: Update in database in background
+    try {
+      final linkService = ref.read(linkServiceProvider);
+      debugPrint('🔵 [LinksNotifier] Updating in database...');
+
+      await linkService.updateLink(
+        linkId: linkId,
+        note: updatedLink.link.note,
+        spaceId: updatedLink.link.spaceId,
+        tagIds: updatedLink.tags.map((tag) => tag.id).toList(),
+      );
+
+      final totalTime = DateTime.now().difference(startTime).inMilliseconds;
+      debugPrint('🟢 [LinksNotifier] Database update complete in ${totalTime}ms');
+    } catch (e) {
+      debugPrint('🔴 [LinksNotifier] Database update failed: $e');
+
+      // STEP 3: Rollback - restore original link to UI
+      final rolledBackLinks = updatedLinks.map((linkWithTags) {
+        if (linkWithTags.link.id == linkId) {
+          return originalLink;
+        }
+        return linkWithTags;
+      }).toList();
+
+      state = AsyncValue.data(rolledBackLinks);
+      debugPrint('🔴 [LinksNotifier] Rolled back - original link restored to UI');
+
+      // Re-throw so the UI can show an error
+      rethrow;
+    }
+  }
 }
 
 /// Provider for paginated links (for home screen)

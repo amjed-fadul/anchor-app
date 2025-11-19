@@ -237,32 +237,36 @@ class LinkCard extends ConsumerWidget {
 
           // If user confirmed, delete the link
           if (confirmed == true && parentContext.mounted) {
+            debugPrint('🔵 [LinkCard] Delete confirmed, starting optimistic deletion...');
+            final startTime = DateTime.now();
+
+            // Show success message immediately (optimistic)
+            if (parentContext.mounted) {
+              ScaffoldMessenger.of(parentContext).showSnackBar(
+                const SnackBar(
+                  content: Text('Link deleted'),
+                  backgroundColor: Color(0xff075a52), // Anchor teal
+                  duration: Duration(seconds: 2),
+                ),
+              );
+              debugPrint('🟢 [LinkCard] Success snackbar shown immediately');
+            }
+
+            // Optimistically delete from UI and database in background
             try {
-
-              // Get link service
-              final linkService = ref.read(linkServiceProvider);
-
-              // Delete the link
-              await linkService.deleteLink(linkWithTags.link.id);
-
-              // Refresh the home screen links provider
-              await ref.read(linksWithTagsProvider.notifier).refresh();
+              // This removes the link from UI immediately, then deletes from DB
+              await ref.read(linksWithTagsProvider.notifier).optimisticallyDeleteLink(
+                linkWithTags.link.id,
+              );
 
               // Also refresh the space detail screen if link was in a space
               if (linkWithTags.link.spaceId != null) {
+                debugPrint('🔵 [LinkCard] Invalidating linksBySpaceProvider for space ${linkWithTags.link.spaceId}');
                 ref.invalidate(linksBySpaceProvider(linkWithTags.link.spaceId!));
               }
 
-              // Show success message
-              if (parentContext.mounted) {
-                ScaffoldMessenger.of(parentContext).showSnackBar(
-                  const SnackBar(
-                    content: Text('Link deleted'),
-                    backgroundColor: Color(0xff075a52), // Anchor teal
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-              }
+              final totalTime = DateTime.now().difference(startTime).inMilliseconds;
+              debugPrint('🟢 [LinkCard] Total deletion flow completed in ${totalTime}ms');
             } catch (e) {
               debugPrint('🔴 [LinkCard] Error deleting link: $e');
 
@@ -317,39 +321,55 @@ class LinkCard extends ConsumerWidget {
                 selectedTagIds:
                     linkWithTags.tags.map((tag) => tag.id).toList(),
                 onDone: (selectedTagIds) async {
-                  // Update link's tags via LinkService
-                  try {
-                    // Get the link service
-                    final linkService = consumerRef.read(linkServiceProvider);
+                  debugPrint('🔵 [LinkCard] Tag update started...');
+                  final startTime = DateTime.now();
 
-                    // Update the link with new tags (preserve existing note and space assignment)
-                    await linkService.updateLink(
-                      linkId: linkWithTags.link.id,
-                      note: linkWithTags.link.note, // Preserve existing note
-                      spaceId: linkWithTags.link.spaceId, // Preserve space assignment
-                      tagIds: selectedTagIds,
+                  // Show success feedback immediately (optimistic)
+                  if (consumerContext.mounted) {
+                    ScaffoldMessenger.of(consumerContext).showSnackBar(
+                      const SnackBar(
+                        content: Text('Tags updated successfully'),
+                        backgroundColor: Color(0xff075a52), // Anchor teal
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                    debugPrint('🟢 [LinkCard] Success snackbar shown immediately');
+                  }
+
+                  // Update link's tags optimistically
+                  try {
+                    // Get all tags to build updated LinkWithTags
+                    final tagsAsync = consumerRef.read(tagsProvider);
+                    final allTags = tagsAsync.value ?? [];
+
+                    // Build updated tags list
+                    final updatedTags = allTags
+                        .where((tag) => selectedTagIds.contains(tag.id))
+                        .toList();
+
+                    // Create updated LinkWithTags
+                    final updatedLink = LinkWithTags(
+                      link: linkWithTags.link,
+                      tags: updatedTags,
                     );
 
-                    // Refresh the links provider to show updated tags
+                    // This updates the link in UI immediately, then updates DB
                     await consumerRef
                         .read(linksWithTagsProvider.notifier)
-                        .refresh();
+                        .optimisticallyUpdateLink(
+                          linkId: linkWithTags.link.id,
+                          updatedLink: updatedLink,
+                        );
 
                     // Also refresh the space detail screen if link is in a space
                     if (linkWithTags.link.spaceId != null) {
-                      consumerRef.invalidate(linksBySpaceProvider(linkWithTags.link.spaceId!));
+                      debugPrint('🔵 [LinkCard] Invalidating linksBySpaceProvider');
+                      consumerRef.invalidate(
+                          linksBySpaceProvider(linkWithTags.link.spaceId!));
                     }
 
-                    // Show success feedback
-                    if (consumerContext.mounted) {
-                      ScaffoldMessenger.of(consumerContext).showSnackBar(
-                        const SnackBar(
-                          content: Text('Tags updated successfully'),
-                          backgroundColor: Color(0xff075a52), // Anchor teal
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    }
+                    final totalTime = DateTime.now().difference(startTime).inMilliseconds;
+                    debugPrint('🟢 [LinkCard] Total tag update flow completed in ${totalTime}ms');
                   } catch (e) {
                     debugPrint('🔴 [LinkCard] Error updating tags: $e');
 
@@ -641,36 +661,21 @@ class LinkCard extends ConsumerWidget {
                   }
 
                   try {
-                    // Get the link service
-                    final linkService = consumerRef.read(linkServiceProvider);
-
-                    // Update the link with new space (preserve existing note and tags)
-                    await linkService.updateLink(
-                      linkId: linkWithTags.link.id,
-                      note: linkWithTags.link.note, // Preserve existing note
-                      spaceId: selectedSpaceId, // Assign to selected space
-                      tagIds: linkWithTags.tags
-                          .map((tag) => tag.id)
-                          .toList(), // Preserve tags
-                    );
+                    debugPrint('🔵 [LinkCard] Add to space started...');
+                    final startTime = DateTime.now();
 
                     // Close the sheet
                     if (sheetContext.mounted) {
                       Navigator.pop(sheetContext);
                     }
 
-                    // Refresh the links provider to show updated space assignment
-                    await consumerRef
-                        .read(linksWithTagsProvider.notifier)
-                        .refresh();
+                    // Try to get space name for better feedback
+                    final spaceName = spaces
+                        .firstWhere((s) => s.id == selectedSpaceId)
+                        .name;
 
-                    // Show success feedback
+                    // Show success feedback immediately (optimistic)
                     if (context.mounted) {
-                      // Try to get space name for better feedback
-                      final spaceName = spaces
-                          .firstWhere((s) => s.id == selectedSpaceId)
-                          .name;
-
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Added to "$spaceName"'),
@@ -678,7 +683,25 @@ class LinkCard extends ConsumerWidget {
                           duration: const Duration(seconds: 2),
                         ),
                       );
+                      debugPrint('🟢 [LinkCard] Success snackbar shown immediately');
                     }
+
+                    // Create updated link with new space
+                    final updatedLink = LinkWithTags(
+                      link: linkWithTags.link.copyWith(spaceId: selectedSpaceId),
+                      tags: linkWithTags.tags,
+                    );
+
+                    // This updates the link in UI immediately, then updates DB
+                    await consumerRef
+                        .read(linksWithTagsProvider.notifier)
+                        .optimisticallyUpdateLink(
+                          linkId: linkWithTags.link.id,
+                          updatedLink: updatedLink,
+                        );
+
+                    final totalTime = DateTime.now().difference(startTime).inMilliseconds;
+                    debugPrint('🟢 [LinkCard] Total add to space flow completed in ${totalTime}ms');
                   } catch (e) {
                     debugPrint('🔴 [LinkCard] Error adding link to space: $e');
 
@@ -748,41 +771,47 @@ class LinkCard extends ConsumerWidget {
 
     // If user confirmed, remove link from space
     if (confirmed == true && context.mounted) {
+      debugPrint('🔵 [LinkCard] Remove from space started...');
+      final startTime = DateTime.now();
+
+      // Store the original space ID for provider invalidation
+      final originalSpaceId = linkWithTags.link.spaceId;
+
+      // Show success message immediately (optimistic)
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Removed from "$spaceName"'),
+            backgroundColor: const Color(0xff075a52), // Anchor teal
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        debugPrint('🟢 [LinkCard] Success snackbar shown immediately');
+      }
+
       try {
-        // Store the original space ID for provider invalidation
-        final originalSpaceId = linkWithTags.link.spaceId;
-
-        // Get link service
-        final linkService = ref.read(linkServiceProvider);
-
-        // Update the link to remove space assignment (preserve existing note and tags)
-        await linkService.updateLink(
-          linkId: linkWithTags.link.id,
-          note: linkWithTags.link.note, // Preserve existing note
-          spaceId: null, // Remove from space
-          tagIds: linkWithTags.tags
-              .map((tag) => tag.id)
-              .toList(), // Preserve tags
+        // Create updated link with no space
+        final updatedLink = LinkWithTags(
+          link: linkWithTags.link.copyWith(spaceId: null),
+          tags: linkWithTags.tags,
         );
 
-        // Refresh the home screen links provider
-        await ref.read(linksWithTagsProvider.notifier).refresh();
+        // This updates the link in UI immediately, then updates DB
+        await ref
+            .read(linksWithTagsProvider.notifier)
+            .optimisticallyUpdateLink(
+              linkId: linkWithTags.link.id,
+              updatedLink: updatedLink,
+            );
 
         // Also refresh the space detail screen if link was in a space
         if (originalSpaceId != null) {
+          debugPrint('🔵 [LinkCard] Invalidating linksBySpaceProvider');
           ref.invalidate(linksBySpaceProvider(originalSpaceId));
         }
 
-        // Show success message
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Removed from "$spaceName"'),
-              backgroundColor: const Color(0xff075a52), // Anchor teal
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        }
+        final totalTime = DateTime.now().difference(startTime).inMilliseconds;
+        debugPrint('🟢 [LinkCard] Total remove from space flow completed in ${totalTime}ms');
       } catch (e) {
         debugPrint('🔴 [LinkCard] Error removing link from space: $e');
 
