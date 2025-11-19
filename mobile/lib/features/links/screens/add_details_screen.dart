@@ -118,10 +118,10 @@ class _AddDetailsScreenState extends ConsumerState<AddDetailsScreen>
     final addLinkNotifier = ref.read(addLinkProvider.notifier);
     final spacesAsync = ref.watch(spacesProvider);
 
-    // Calculate available height for tab content
-    // Screen height - handle(28px) - tabs(48px) - done button(96px) - padding
+    // Calculate height for TabBarView content
+    // Use MediaQuery to get available space: screen height * sheet size - fixed elements
     final screenHeight = MediaQuery.of(context).size.height;
-    final tabContentHeight = screenHeight * 0.95 - 28 - 48 - 96;
+    final tabContentHeight = (screenHeight * 0.6) - 28 - 48 - 96; // 60% sheet - handle - tabs - button
 
     return Container(
       decoration: const BoxDecoration(
@@ -142,69 +142,76 @@ class _AddDetailsScreenState extends ConsumerState<AddDetailsScreen>
             topRight: Radius.circular(24),
           ),
         ),
-        child: ListView(
-          controller: widget.scrollController,
+        child: Column(
           children: [
-            // Drag handle - NOW DRAGGABLE!
-            const SizedBox(height: 12),
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Tab Bar - NOW DRAGGABLE!
-            TabBar(
-              controller: _tabController,
-              indicatorColor: AnchorColors.anchorTeal,
-              labelColor: AnchorColors.anchorTeal,
-              unselectedLabelColor: Colors.grey[600],
-              labelStyle: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-              tabs: [
-                Tab(
-                  icon: _buildTabIcon('assets/images/tags.svg', 0),
-                  text: 'Tag',
-                ),
-                Tab(
-                  icon: _buildTabIcon('assets/images/note.svg', 1),
-                  text: 'Note',
-                ),
-                Tab(
-                  icon: _buildTabIcon('assets/images/Spaces icon.svg', 2),
-                  text: 'Space',
-                ),
-              ],
-            ),
-
-            // Tab Content with fixed height
-            SizedBox(
-              height: tabContentHeight,
-              child: TabBarView(
-                controller: _tabController,
-                // Keep default physics for horizontal tab swiping
+            // Scrollable content (handle, tabs, tab content)
+            Expanded(
+              child: ListView(
+                controller: widget.scrollController,
                 children: [
-                  // Tab 1: Tags
-                  _buildTagTab(addLinkNotifier),
+                  // Drag handle
+                  const SizedBox(height: 12),
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
 
-                  // Tab 2: Note
-                  _buildNoteTab(addLinkNotifier),
+                  // Tab Bar
+                  TabBar(
+                    controller: _tabController,
+                    indicatorColor: AnchorColors.anchorTeal,
+                    labelColor: AnchorColors.anchorTeal,
+                    unselectedLabelColor: Colors.grey[600],
+                    labelStyle: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    tabs: [
+                      Tab(
+                        icon: _buildTabIcon('assets/images/tags.svg', 0),
+                        text: 'Tag',
+                      ),
+                      Tab(
+                        icon: _buildTabIcon('assets/images/note.svg', 1),
+                        text: 'Note',
+                      ),
+                      Tab(
+                        icon: _buildTabIcon('assets/images/Spaces icon.svg', 2),
+                        text: 'Space',
+                      ),
+                    ],
+                  ),
 
-                  // Tab 3: Space
-                  _buildSpaceTab(spacesAsync, addLinkState, addLinkNotifier),
+                  // Tab Content with calculated height
+                  SizedBox(
+                    height: tabContentHeight,
+                    child: TabBarView(
+                      controller: _tabController,
+                      physics: const NeverScrollableScrollPhysics(),
+                      children: [
+                        // Tab 1: Tags
+                        _buildTagTab(addLinkNotifier),
+
+                        // Tab 2: Note
+                        _buildNoteTab(addLinkNotifier),
+
+                        // Tab 3: Space
+                        _buildSpaceTab(spacesAsync, addLinkState, addLinkNotifier),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
 
-            // Done Button
+            // Fixed Done Button at bottom
             Padding(
               padding: const EdgeInsets.all(20),
               child: SizedBox(

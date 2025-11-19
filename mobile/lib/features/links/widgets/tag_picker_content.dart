@@ -121,26 +121,29 @@ class _TagPickerContentState extends ConsumerState<TagPickerContent> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Search field
-        _buildSearchField(),
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Search field
+          _buildSearchField(),
 
-        // Selected tags as dismissible chips
-        if (_selectedTagIds.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          _buildSelectedTagsChips(),
-          const SizedBox(height: 12),
+          // Selected tags as dismissible chips
+          if (_selectedTagIds.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _buildSelectedTagsChips(),
+            const SizedBox(height: 12),
+          ],
+
+          // Tag list or empty state (no extra spacing when no tags selected)
+          Expanded(
+            child: widget.availableTags.isEmpty
+                ? _buildEmptyState()
+                : _buildTagList(),
+          ),
         ],
-
-        // Tag list or empty state (no extra spacing when no tags selected)
-        Expanded(
-          child: widget.availableTags.isEmpty
-              ? _buildEmptyState()
-              : _buildTagList(),
-        ),
-      ],
+      ),
     );
   }
 
