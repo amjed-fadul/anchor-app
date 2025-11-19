@@ -12,6 +12,43 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+#### Tag Sorting Inconsistency - Tags Appear in Different Order (2025-11-19 15:00)
+- **Problem**: Tags appeared in different order across different contexts - when adding tags to new links vs editing existing links, users saw different tag sequences. Partial/junk tags appeared at top of list, making it hard to find real tags.
+- **Root Cause**: Database query sorted tags by `created_at DESC` (newest first) instead of alphabetically:
+  ```dart
+  // BUGGY CODE (❌):
+  response = await _supabase
+      .from('tags')
+      .select()
+      .eq('user_id', userId)
+      .order('created_at', ascending: false)  // Newest first
+      .timeout(const Duration(seconds: 10));
+  ```
+  - Since partial tags were created recently (from previous keystroke bug), they appeared first
+  - Order seemed random/inconsistent to users
+  - Difficult to find specific tags quickly
+- **User Impact**:
+  - Confusing UX - same tag list looked different in different screens
+  - Hard to find tags - no predictable ordering
+  - Partial tags cluttered top of list (e.g., "vieravibecodi", "vieravibecod", "vieravibec")
+- **Solution**: Changed sorting from creation date to alphabetical order:
+  ```dart
+  // NEW CODE (✅):
+  response = await _supabase
+      .from('tags')
+      .select()
+      .eq('user_id', userId)
+      .order('name', ascending: true)  // A→Z alphabetical
+      .timeout(const Duration(seconds: 10));
+  ```
+- **Files Changed**:
+  - `lib/features/tags/services/tag_service.dart` (line 115)
+- **Benefits**:
+  - ✅ Consistent tag order across all screens
+  - ✅ Predictable A→Z sorting (easy to find tags)
+  - ✅ Professional UX matching user expectations
+- **Result**: ✅ Tags now appear in consistent alphabetical order everywhere, making them easy to find and navigate
+
 #### Tag Creation Bug - Partial Tags Created on Every Keystroke (2025-11-19 10:30)
 - **Problem**: When adding tags to new links via AddDetailsScreen, typing "designsystem" created multiple partial tags in database: "d", "de", "des", "desi", etc.
 - **Root Cause**: TextField `onChanged` callback fired on EVERY keystroke and created tags immediately:

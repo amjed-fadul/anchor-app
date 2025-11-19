@@ -107,12 +107,12 @@ class TagService {
         try {
           debugPrint('🔵 [TagService] getUserTags attempt $attempt/2');
 
-          // Query tags table (matches SpaceService.getSpaces pattern)
+          // Query tags table sorted alphabetically (A→Z)
           response = await _supabase
               .from('tags')
               .select()
               .eq('user_id', userId)
-              .order('created_at', ascending: false)
+              .order('name', ascending: true)
               .timeout(const Duration(seconds: 10));
 
           debugPrint('🟢 [TagService] Successfully fetched tags');
