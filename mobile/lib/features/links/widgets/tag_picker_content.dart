@@ -244,7 +244,7 @@ class _TagPickerContentState extends ConsumerState<TagPickerContent> {
       // Always enable scrolling - tag list scrolls independently
       shrinkWrap: true,
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
       itemCount: filteredTags.length + (showCreateSuggestion ? 1 : 0),
       separatorBuilder: (context, index) => const Divider(
         height: 1,
