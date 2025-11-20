@@ -135,8 +135,10 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       // unwanted navigation after we go to /login
       await authService.signOut();
 
-      // Wait for auth state to propagate through streams
-      await Future.delayed(const Duration(milliseconds: 100));
+      // Wait for auth state to propagate through streams (300ms)
+      // Increased from 100ms to ensure recoverySentAt is fully cleared
+      // This prevents router redirect loop
+      await Future.delayed(const Duration(milliseconds: 300));
 
       if (!mounted) {
         return;
@@ -171,6 +173,10 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             final navigator = context;
 
             await ref.read(authServiceProvider).signOut();
+
+            // Wait for auth state to propagate through streams (300ms)
+            // This ensures recoverySentAt is cleared before navigation
+            await Future.delayed(const Duration(milliseconds: 300));
 
             if (mounted) {
               navigator.go('/login');
