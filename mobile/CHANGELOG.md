@@ -12,6 +12,86 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+#### Authentication Error Messages - Raw Technical Exceptions Shown to Users (2025-11-20 14:30)
+- **Problem**: Auth screens displayed raw Supabase exceptions to users, showing technical error messages like "AuthApiException(message: Invalid login credentials, statusCode: 400, code: invalid_credentials)" instead of user-friendly messages
+- **Root Cause**:
+  1. Auth screens called `e.toString()` directly on exceptions, exposing raw Supabase error objects
+  2. No centralized error message sanitization
+  3. Duplicate error UI code (30+ lines) in all 4 auth screens instead of using existing ErrorMessage widget
+- **User Impact**:
+  - Confusing technical jargon frustrated users (saw statusCode, code:, Exception)
+  - Users didn't know what went wrong or how to fix it
+  - Inconsistent error messages across the app
+  - Poor user experience during failed auth attempts
+- **Solution**: Created centralized error message sanitizer + replaced duplicate UI code
+  1. **Created ErrorMessageHelper utility** (`error_message_helper.dart`):
+     - Maps Supabase error codes to user-friendly messages
+     - Handles AuthException objects AND string representations
+     - Parses error codes (invalid_credentials, email_exists, weak_password, etc.)
+     - Provides specific, actionable error messages
+     - Falls back to generic message for unknown errors
+  2. **Updated all 4 auth screens** to use sanitizer:
+     - Replaced `e.toString().replaceAll('Exception: ', '')` with `ErrorMessageHelper.getReadableMessage(e)`
+     - Replaced 30+ lines of duplicate error UI code with `ErrorMessage` widget (already existed!)
+     - Removed 120+ lines of duplicate code total (30 lines × 4 screens)
+  3. **Added comprehensive tests** (25 test cases):
+     - AuthException objects (7 tests)
+     - AuthException strings (7 tests)
+     - Network errors (4 tests)
+     - Generic exceptions (5 tests)
+     - Quality checks (2 tests)
+- **Files Changed**:
+  - **NEW**: `lib/shared/utils/error_message_helper.dart` - Error sanitizer utility
+  - **MODIFIED**: `lib/features/auth/screens/login_screen.dart`
+    - Added imports for ErrorMessageHelper and ErrorMessage widget
+    - Line 107: Changed error handling to use sanitizer
+    - Lines 228-230: Replaced 30 lines of error UI with ErrorMessage widget
+  - **MODIFIED**: `lib/features/auth/screens/signup_email_screen.dart`
+    - Added imports for ErrorMessageHelper and ErrorMessage widget
+    - Line 121: Changed error handling to use sanitizer
+    - Lines 381-383: Replaced 30 lines of error UI with ErrorMessage widget
+  - **MODIFIED**: `lib/features/auth/screens/forgot_password_screen.dart`
+    - Added imports for ErrorMessageHelper and ErrorMessage widget
+    - Line 102: Changed error handling to use sanitizer
+    - Lines 185-187: Replaced 30 lines of error UI with ErrorMessage widget
+  - **MODIFIED**: `lib/features/auth/screens/reset_password_screen.dart`
+    - Added imports for ErrorMessageHelper and ErrorMessage widget
+    - Line 159: Changed error handling to use sanitizer
+    - Lines 330-332: Replaced 30 lines of error UI with ErrorMessage widget
+  - **NEW**: `test/shared/utils/error_message_helper_test.dart` - 25 comprehensive test cases
+- **Error Message Mappings**:
+  - `invalid_credentials` → "Invalid email or password. Please try again."
+  - `email_exists` → "This email is already registered. Try logging in instead."
+  - `weak_password` → "Password must be at least 6 characters long."
+  - `user_not_found` → "No account found with this email address."
+  - `session_expired` → "This link has expired. Please request a new one."
+  - `rate_limit_exceeded` → "Too many attempts. Please wait a moment and try again."
+  - `email_not_confirmed` → "Please verify your email address before signing in."
+  - Network errors → "Connection error. Please check your internet and try again."
+  - Generic fallback → "Something went wrong. Please try again."
+- **Technical Details**:
+  - ErrorMessageHelper handles both AuthException objects AND their string representations
+  - Uses regex to extract error codes from AuthApiException strings
+  - Checks for specific keywords when error code isn't available
+  - Preserves user-friendly messages, replaces technical ones
+  - All error messages are actionable (tell user what to do)
+  - No technical jargon in final messages (no "Exception", "statusCode", "code:")
+- **Code Quality**:
+  - Removed 120+ lines of duplicate code
+  - Centralized error message logic (single source of truth)
+  - Reused existing ErrorMessage widget (DRY principle)
+  - 25 comprehensive tests ensure all error types are handled
+  - All tests passing ✅
+- **Result**:
+  ✅ Users see clear, actionable error messages
+  ✅ No more technical jargon or confusing exceptions
+  ✅ Consistent error handling across all auth screens
+  ✅ 120+ lines of duplicate code removed
+  ✅ Centralized error message management
+  ✅ Easy to add new error message mappings
+  ✅ Comprehensive test coverage (25 tests)
+  ✅ Better UX during failed auth attempts
+
 #### Password Reset Flow - Back Button Redirect Loop (2025-11-20 12:00)
 - **Problem**: After clicking back button on Reset Password screen, user was stuck in infinite redirect loop
 - **Root Cause**: `signOut()` HTTP request completes BEFORE the auth state stream emits. Router reads stale/cached session data with `recoverySentAt` still set, causing redirect back to reset password screen.

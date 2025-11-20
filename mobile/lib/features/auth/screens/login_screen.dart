@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../design_system/design_system.dart';
+import '../../../shared/utils/error_message_helper.dart';
 import '../../../shared/utils/validators.dart';
+import '../../../shared/widgets/error_view.dart';
 import '../providers/auth_provider.dart';
 
 /// Login screen
@@ -102,7 +104,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       // Handle login errors
       setState(() {
         _isLoading = false;
-        _errorMessage = e.toString().replaceAll('Exception: ', '');
+        _errorMessage = ErrorMessageHelper.getReadableMessage(e);
       });
     }
   }
@@ -225,34 +227,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 // Error message display
                 if (_errorMessage != null) ...[
                   const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AnchorColors.error.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: AnchorColors.error.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          color: AnchorColors.error,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _errorMessage!,
-                            style: AnchorTypography.bodySmall.copyWith(
-                              color: AnchorColors.error,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  ErrorMessage(message: _errorMessage!),
                 ],
 
                 const SizedBox(height: 24),
