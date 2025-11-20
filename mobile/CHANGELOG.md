@@ -12,6 +12,23 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+#### Signup Form - Replace Material Icons with SVG Icons (2025-11-20 09:15)
+- **What Changed**: Replaced all Material icons in signup form with custom SVG icons for brand consistency
+- **User Impact**: Signup form now uses consistent custom iconography matching the rest of the app
+- **Icons Replaced**:
+  - User Name field: `Icons.person_outline` → `user.svg`
+  - Email field: `Icons.email_outlined` → `mail-02.svg`
+  - Password field: `Icons.lock_outline` → `square-lock-01.svg`
+  - Confirm Password field: `Icons.lock_outline` → `square-lock-01.svg`
+- **Files Changed**:
+  - **MODIFIED**: `lib/features/auth/screens/signup_email_screen.dart` (replaced all Material icons with SvgPicture.asset)
+  - **NEW**: `assets/images/square-lock-01.svg` (lock icon for password fields)
+- **Technical Details**:
+  - All SVG icons use ColorFilter with `Colors.grey[600]` for consistent grey appearance
+  - Size: 20x20 pixels
+  - BlendMode: srcIn for proper color application
+- **Result**: ✅ Consistent brand iconography across signup, profile, and settings screens
+
 #### Profile & Settings UX Improvements (2025-11-20 09:00)
 - **What Changed**: Fixed display name not updating in home screen + improved profile page UX
 - **User Impact**:

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../design_system/design_system.dart';
 import '../../../shared/utils/validators.dart';
@@ -261,10 +262,14 @@ class _SignupEmailScreenState extends ConsumerState<SignupEmailScreen> {
                   controller: _nameController,
                   label: 'User Name',
                   hintText: 'Enter your name',
-                  prefixIcon: Icon(
-                    Icons.person_outline,
-                    color: Colors.grey[600],
-                    size: 20,
+                  prefixIcon: SvgPicture.asset(
+                    'assets/images/user.svg',
+                    width: 20,
+                    height: 20,
+                    colorFilter: ColorFilter.mode(
+                      Colors.grey[600]!,
+                      BlendMode.srcIn,
+                    ),
                   ),
                   keyboardType: TextInputType.name,
                   textInputAction: TextInputAction.next,
@@ -287,10 +292,14 @@ class _SignupEmailScreenState extends ConsumerState<SignupEmailScreen> {
                   controller: _emailController,
                   label: 'Email',
                   hintText: 'your@email.com',
-                  prefixIcon: Icon(
-                    Icons.email_outlined,
-                    color: Colors.grey[600],
-                    size: 20,
+                  prefixIcon: SvgPicture.asset(
+                    'assets/images/mail-02.svg',
+                    width: 20,
+                    height: 20,
+                    colorFilter: ColorFilter.mode(
+                      Colors.grey[600]!,
+                      BlendMode.srcIn,
+                    ),
                   ),
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
@@ -313,10 +322,14 @@ class _SignupEmailScreenState extends ConsumerState<SignupEmailScreen> {
                   controller: _passwordController,
                   label: 'Password',
                   hintText: 'At least 6 characters',
-                  prefixIcon: Icon(
-                    Icons.lock_outline,
-                    color: Colors.grey[600],
-                    size: 20,
+                  prefixIcon: SvgPicture.asset(
+                    'assets/images/square-lock-01.svg',
+                    width: 20,
+                    height: 20,
+                    colorFilter: ColorFilter.mode(
+                      Colors.grey[600]!,
+                      BlendMode.srcIn,
+                    ),
                   ),
                   isPassword: true,
                   textInputAction: TextInputAction.next,
@@ -339,10 +352,14 @@ class _SignupEmailScreenState extends ConsumerState<SignupEmailScreen> {
                   controller: _confirmPasswordController,
                   label: 'Confirm Password',
                   hintText: 'Re-enter your password',
-                  prefixIcon: Icon(
-                    Icons.lock_outline,
-                    color: Colors.grey[600],
-                    size: 20,
+                  prefixIcon: SvgPicture.asset(
+                    'assets/images/square-lock-01.svg',
+                    width: 20,
+                    height: 20,
+                    colorFilter: ColorFilter.mode(
+                      Colors.grey[600]!,
+                      BlendMode.srcIn,
+                    ),
                   ),
                   isPassword: true,
                   textInputAction: TextInputAction.done,
