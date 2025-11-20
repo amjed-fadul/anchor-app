@@ -26,6 +26,7 @@ class _SignupEmailScreenState extends ConsumerState<SignupEmailScreen> {
   final _formKey = GlobalKey<FormState>();
 
   // Controllers for text fields
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -40,6 +41,7 @@ class _SignupEmailScreenState extends ConsumerState<SignupEmailScreen> {
   String? _errorMessage;
 
   // Field-specific error messages
+  String? _nameError;
   String? _emailError;
   String? _passwordError;
   String? _confirmPasswordError;
@@ -47,6 +49,7 @@ class _SignupEmailScreenState extends ConsumerState<SignupEmailScreen> {
   @override
   void dispose() {
     // Clean up controllers when widget is disposed
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -56,6 +59,7 @@ class _SignupEmailScreenState extends ConsumerState<SignupEmailScreen> {
   /// Validate all fields
   bool _validateFields() {
     setState(() {
+      _nameError = Validators.required(_nameController.text, 'User Name');
       _emailError = Validators.email(_emailController.text);
       _passwordError = Validators.password(_passwordController.text);
       _confirmPasswordError = Validators.confirmPassword(
@@ -64,7 +68,8 @@ class _SignupEmailScreenState extends ConsumerState<SignupEmailScreen> {
       );
     });
 
-    return _emailError == null &&
+    return _nameError == null &&
+        _emailError == null &&
         _passwordError == null &&
         _confirmPasswordError == null;
   }
@@ -94,6 +99,7 @@ class _SignupEmailScreenState extends ConsumerState<SignupEmailScreen> {
       await authService.signUp(
         email: _emailController.text.trim(),
         password: _passwordController.text,
+        displayName: _nameController.text.trim(),
       );
 
       // SUCCESS: Supabase has sent confirmation email
@@ -250,12 +256,44 @@ class _SignupEmailScreenState extends ConsumerState<SignupEmailScreen> {
 
                   const SizedBox(height: 32),
 
+                // User Name field (FIRST)
+                AnchorTextField(
+                  controller: _nameController,
+                  label: 'User Name',
+                  hintText: 'Enter your name',
+                  prefixIcon: Icon(
+                    Icons.person_outline,
+                    color: Colors.grey[600],
+                    size: 20,
+                  ),
+                  keyboardType: TextInputType.name,
+                  textInputAction: TextInputAction.next,
+                  errorText: _nameError,
+                  enabled: !_isLoading,
+                  onChanged: (value) {
+                    // Clear error when user starts typing
+                    if (_nameError != null) {
+                      setState(() {
+                        _nameError = null;
+                      });
+                    }
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
                 // Email field
                 AnchorTextField(
                   controller: _emailController,
                   label: 'Email',
                   hintText: 'your@email.com',
+                  prefixIcon: Icon(
+                    Icons.email_outlined,
+                    color: Colors.grey[600],
+                    size: 20,
+                  ),
                   keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
                   errorText: _emailError,
                   enabled: !_isLoading,
                   onChanged: (value) {
@@ -275,7 +313,13 @@ class _SignupEmailScreenState extends ConsumerState<SignupEmailScreen> {
                   controller: _passwordController,
                   label: 'Password',
                   hintText: 'At least 6 characters',
+                  prefixIcon: Icon(
+                    Icons.lock_outline,
+                    color: Colors.grey[600],
+                    size: 20,
+                  ),
                   isPassword: true,
+                  textInputAction: TextInputAction.next,
                   errorText: _passwordError,
                   enabled: !_isLoading,
                   onChanged: (value) {
@@ -295,7 +339,13 @@ class _SignupEmailScreenState extends ConsumerState<SignupEmailScreen> {
                   controller: _confirmPasswordController,
                   label: 'Confirm Password',
                   hintText: 'Re-enter your password',
+                  prefixIcon: Icon(
+                    Icons.lock_outline,
+                    color: Colors.grey[600],
+                    size: 20,
+                  ),
                   isPassword: true,
+                  textInputAction: TextInputAction.done,
                   errorText: _confirmPasswordError,
                   enabled: !_isLoading,
                   onChanged: (value) {

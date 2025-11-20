@@ -12,6 +12,51 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+#### Signup Flow - User Name Field Required (2025-11-20 08:15)
+- **What Changed**: Added required User Name field to signup form, stored in user metadata during account creation
+- **User Impact**: Users now provide their name during signup instead of having to add it later in profile settings
+- **Features Implemented**:
+  1. **New User Name Field**:
+     - Positioned FIRST in signup form (User Name → Email → Password → Confirm Password)
+     - Required field (cannot be empty)
+     - Uses AnchorTextField with label-on-top pattern
+     - Grey user icon (`Icons.person_outline`)
+     - Validation via `Validators.required()`
+     - Keyboard action: "Next" (flows to email field)
+  2. **Enhanced All Fields with Icons**:
+     - User Name: `Icons.person_outline`
+     - Email: `Icons.email_outlined`
+     - Password: `Icons.lock_outline`
+     - Confirm Password: `Icons.lock_outline`
+     - All icons: grey (`Colors.grey[600]`), size 20
+  3. **Auth Service Enhancement**:
+     - Added `displayName` parameter to `signUp()` method
+     - Display name trimmed and stored in user metadata: `data: {'display_name': displayName.trim()}`
+     - Metadata automatically synced to Supabase auth.users table
+  4. **Comprehensive Test Coverage** (TDD):
+     - Added 5 new unit tests for `signUp()` method:
+       - ✅ Successfully creates account with display name
+       - ✅ Trims whitespace from display name
+       - ✅ Handles email already exists error
+       - ✅ Handles weak password error
+       - ✅ Handles network errors
+     - All 16 auth service tests passing
+- **Files Changed**:
+  - **MODIFIED**: `lib/features/auth/services/auth_service.dart` (+displayName parameter)
+  - **MODIFIED**: `lib/features/auth/screens/signup_email_screen.dart` (+User Name field, icons)
+  - **MODIFIED**: `test/features/auth/services/auth_service_test.dart` (+5 test cases)
+- **Technical Details**:
+  - Display name stored in `user.userMetadata['display_name']`
+  - Profile screen already reads this metadata (no changes needed)
+  - Existing users without display_name fallback to email prefix
+  - No database migration needed (metadata is optional)
+- **Field Order**:
+  1. User Name (NEW - required)
+  2. Email
+  3. Password
+  4. Confirm Password
+- **Result**: ✅ Seamless signup experience with user personalization from the start
+
 #### Profile Editing - Full Screen with Account Deletion (2025-11-20 07:45)
 - **What Changed**: Complete redesign of profile editing from bottom sheet to full-screen page with account deletion feature
 - **User Impact**: Users can now edit their profile in a dedicated screen and permanently delete their account

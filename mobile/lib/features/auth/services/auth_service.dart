@@ -31,13 +31,14 @@ class AuthService {
   /// - client: Optional SupabaseClient for testing. Uses global singleton if not provided.
   AuthService([SupabaseClient? client]) : _supabase = client ?? supabase;
 
-  /// Sign up a new user with email and password
+  /// Sign up a new user with email, password, and display name
   ///
   /// Returns the authenticated user if successful.
   /// Throws an AuthException if signup fails.
   ///
   /// After successful signup:
   /// - User is automatically logged in
+  /// - Display name is stored in user metadata
   /// - Default spaces are created via database trigger
   /// - Session is stored locally
   ///
@@ -47,6 +48,7 @@ class AuthService {
   ///   final user = await authService.signUp(
   ///     email: 'user@example.com',
   ///     password: 'password123',
+  ///     displayName: 'John Doe',
   ///   );
   ///   print('Welcome ${user.email}!');
   /// } catch (e) {
@@ -56,11 +58,15 @@ class AuthService {
   Future<User> signUp({
     required String email,
     required String password,
+    required String displayName,
   }) async {
     try {
       final response = await _supabase.auth.signUp(
         email: email,
         password: password,
+        data: {
+          'display_name': displayName.trim(),
+        },
       );
 
       // Check if user was created

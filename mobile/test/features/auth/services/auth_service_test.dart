@@ -442,6 +442,185 @@ void main() {
       ).called(1);
     });
   });
+
+  /// ==========================================
+  /// TEST GROUP: signUp() Method
+  /// ==========================================
+  ///
+  /// This method creates new user accounts with email, password, and display name.
+  /// It's the entry point for the signup flow!
+  ///
+  /// User fills signup form → this method is called → Supabase creates account
+  /// → User metadata stored (display_name)
+  group('signUp', () {
+    late MockSupabaseClient mockSupabaseClient;
+    late MockGoTrueClient mockAuth;
+    late AuthService authService;
+
+    setUp(() {
+      mockSupabaseClient = MockSupabaseClient();
+      mockAuth = MockGoTrueClient();
+      when(() => mockSupabaseClient.auth).thenReturn(mockAuth);
+      authService = AuthService(mockSupabaseClient);
+    });
+
+    /// Test #1: Success - Account Created with Display Name
+    ///
+    /// This is the happy path: user signs up with email, password, and name.
+    /// We verify the display name is stored in user metadata.
+    test('successfully creates account with email, password, and display name', () async {
+      // ARRANGE: Mock successful signup
+      final mockUser = createMockUser(email: 'newuser@example.com');
+      final mockResponse = AuthResponse(
+        user: mockUser,
+        session: null,
+      );
+
+      when(
+        () => mockAuth.signUp(
+          email: any(named: 'email'),
+          password: any(named: 'password'),
+          data: any(named: 'data'),
+        ),
+      ).thenAnswer((_) async => mockResponse);
+
+      // ACT: Call signUp with display name
+      final user = await authService.signUp(
+        email: 'newuser@example.com',
+        password: 'password123',
+        displayName: 'John Doe',
+      );
+
+      // ASSERT: Verify user was created
+      expect(user, isNotNull);
+      expect(user.email, 'newuser@example.com');
+
+      // Verify Supabase was called with display_name in metadata
+      verify(
+        () => mockAuth.signUp(
+          email: 'newuser@example.com',
+          password: 'password123',
+          data: {'display_name': 'John Doe'},
+        ),
+      ).called(1);
+    });
+
+    /// Test #2: Success - Display Name Trimmed
+    ///
+    /// User might enter name with extra spaces. We should handle that.
+    test('trims whitespace from display name before storing', () async {
+      // ARRANGE
+      final mockUser = createMockUser(email: 'test@example.com');
+      final mockResponse = AuthResponse(
+        user: mockUser,
+        session: null,
+      );
+
+      when(
+        () => mockAuth.signUp(
+          email: any(named: 'email'),
+          password: any(named: 'password'),
+          data: any(named: 'data'),
+        ),
+      ).thenAnswer((_) async => mockResponse);
+
+      // ACT: Sign up with name that has spaces
+      await authService.signUp(
+        email: 'test@example.com',
+        password: 'password123',
+        displayName: '  John Doe  ',
+      );
+
+      // ASSERT: Verify spaces were trimmed
+      verify(
+        () => mockAuth.signUp(
+          email: any(named: 'email'),
+          password: any(named: 'password'),
+          data: {'display_name': 'John Doe'}, // Trimmed!
+        ),
+      ).called(1);
+    });
+
+    /// Test #3: Failure - Email Already Exists
+    ///
+    /// What happens if user tries to sign up with an email that's already registered?
+    test('throws AuthException when email already exists', () async {
+      // ARRANGE: Simulate email already registered
+      final authException = createMockAuthException(
+        message: 'User already registered',
+        statusCode: '400',
+      );
+
+      when(
+        () => mockAuth.signUp(
+          email: any(named: 'email'),
+          password: any(named: 'password'),
+          data: any(named: 'data'),
+        ),
+      ).thenThrow(authException);
+
+      // ACT & ASSERT
+      await expectLater(
+        () => authService.signUp(
+          email: 'existing@example.com',
+          password: 'password123',
+          displayName: 'John Doe',
+        ),
+        throwsA(isA<AuthException>()),
+      );
+    });
+
+    /// Test #4: Failure - Weak Password
+    ///
+    /// Supabase might reject passwords that are too weak.
+    test('throws AuthException when password is too weak', () async {
+      // ARRANGE
+      final authException = createMockAuthException(
+        message: 'Password is too weak',
+        statusCode: '400',
+      );
+
+      when(
+        () => mockAuth.signUp(
+          email: any(named: 'email'),
+          password: any(named: 'password'),
+          data: any(named: 'data'),
+        ),
+      ).thenThrow(authException);
+
+      // ACT & ASSERT
+      await expectLater(
+        () => authService.signUp(
+          email: 'test@example.com',
+          password: '123',
+          displayName: 'John Doe',
+        ),
+        throwsA(isA<AuthException>()),
+      );
+    });
+
+    /// Test #5: Failure - Network Error
+    test('throws Exception when network fails during signup', () async {
+      // ARRANGE
+      when(
+        () => mockAuth.signUp(
+          email: any(named: 'email'),
+          password: any(named: 'password'),
+          data: any(named: 'data'),
+        ),
+      ).thenThrow(Exception('Network error'));
+
+      // ACT & ASSERT
+      await expectLater(
+        () => authService.signUp(
+          email: 'test@example.com',
+          password: 'password123',
+          displayName: 'John Doe',
+        ),
+        throwsException,
+      );
+    });
+  });
 }
 
 /// 🎓 Learning Summary: What We Learned From These Tests
