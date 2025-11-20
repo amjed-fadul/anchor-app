@@ -10,6 +10,51 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+#### Profile Editing - Full Screen with Account Deletion (2025-11-20 07:45)
+- **What Changed**: Complete redesign of profile editing from bottom sheet to full-screen page with account deletion feature
+- **User Impact**: Users can now edit their profile in a dedicated screen and permanently delete their account
+- **Features Implemented**:
+  1. **Full-Screen Profile Page** (`profile_screen.dart`):
+     - Replaced bottom sheet dialog with full-screen Scaffold
+     - Email field (read-only, grey background, envelope icon)
+     - User Name field (editable, grey background, user icon)
+     - Save button at bottom (teal, full-width)
+     - Delete account button (red text on pink background)
+     - Confirmation dialog for account deletion
+  2. **AnchorTextField Enhancements**:
+     - Added `prefixIcon` parameter (display icons inside fields)
+     - Added `readOnly` parameter (grey background for non-editable fields)
+     - Added `backgroundColor` parameter (custom field colors)
+     - Added `textInputAction` parameter (keyboard action buttons)
+  3. **Account Deletion Backend**:
+     - Added `deleteAccount()` method to AuthService
+     - Created Supabase Edge Function (`delete-account/index.ts`)
+     - Uses Supabase Admin API to delete user from auth.users
+     - CASCADE DELETE automatically removes all user data (spaces, links, tags)
+  4. **Settings Page Updates**:
+     - Changed all icons from black to grey (`Colors.grey[600]`)
+     - Updated User Profile navigation from bottom sheet to full screen
+     - Fixed back button navigation (changed `context.go` to `context.push`)
+  5. **Router Update**:
+     - Added `/settings/profile` route
+- **Files Changed**:
+  - **NEW**: `lib/features/settings/screens/profile_screen.dart` (345 lines)
+  - **NEW**: `supabase/functions/delete-account/index.ts` (140 lines)
+  - **MODIFIED**: `lib/design_system/widgets/anchor_text_field.dart` (+5 parameters)
+  - **MODIFIED**: `lib/features/auth/services/auth_service.dart` (+deleteAccount method)
+  - **MODIFIED**: `lib/features/settings/screens/settings_screen.dart` (grey icons, navigation)
+  - **MODIFIED**: `lib/core/router/app_router.dart` (+profile route)
+  - **MODIFIED**: `lib/features/home/screens/home_screen.dart` (fixed back button)
+  - **DELETED**: `lib/features/settings/widgets/edit_profile_dialog.dart` (old bottom sheet)
+- **Technical Details**:
+  - Edge Function verifies JWT token, extracts user ID
+  - Uses `supabase.auth.admin.deleteUser()` to remove user from auth.users
+  - Database CASCADE DELETE removes all related data automatically (already configured)
+  - No migration needed - foreign keys already have ON DELETE CASCADE
+- **Result**: ✅ Full-screen profile editing with consistent design, account deletion ready for deployment
+
 ### Fixed
 
 #### AddDetailsScreen Layout Issues - Tag List Not Scrollable + White Space (2025-11-19 15:45)

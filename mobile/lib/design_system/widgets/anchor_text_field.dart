@@ -36,6 +36,9 @@ class AnchorTextField extends StatefulWidget {
   /// Keyboard type for the input
   final TextInputType? keyboardType;
 
+  /// Text input action (done, next, etc.)
+  final TextInputAction? textInputAction;
+
   /// Text editing controller
   final TextEditingController? controller;
 
@@ -54,6 +57,15 @@ class AnchorTextField extends StatefulWidget {
   /// Auto-validate mode
   final AutovalidateMode? autovalidateMode;
 
+  /// Prefix icon to display at the start of the field
+  final Widget? prefixIcon;
+
+  /// Whether the field is read-only (user cannot edit)
+  final bool readOnly;
+
+  /// Background color for the field (defaults to white, can be grey for readonly)
+  final Color? backgroundColor;
+
   const AnchorTextField({
     super.key,
     required this.label,
@@ -61,12 +73,16 @@ class AnchorTextField extends StatefulWidget {
     this.errorText,
     this.isPassword = false,
     this.keyboardType,
+    this.textInputAction,
     this.controller,
     this.onChanged,
     this.onSubmitted,
     this.enabled = true,
     this.maxLines = 1,
     this.autovalidateMode,
+    this.prefixIcon,
+    this.readOnly = false,
+    this.backgroundColor,
   });
 
   @override
@@ -114,8 +130,10 @@ class _AnchorTextFieldState extends State<AnchorTextField> {
         TextFormField(
           controller: widget.controller,
           enabled: widget.enabled,
+          readOnly: widget.readOnly,
           obscureText: _obscureText,
           keyboardType: widget.keyboardType,
+          textInputAction: widget.textInputAction,
           maxLines: widget.maxLines,
           autovalidateMode: widget.autovalidateMode,
           onChanged: widget.onChanged,
@@ -131,6 +149,20 @@ class _AnchorTextFieldState extends State<AnchorTextField> {
             hintStyle: AnchorTypography.bodyMedium.copyWith(
               color: AnchorColors.gray400,
             ),
+
+            // Prefix icon (at the start of the field)
+            prefixIcon: widget.prefixIcon != null
+                ? Padding(
+                    padding: const EdgeInsets.only(left: 12, right: 8),
+                    child: widget.prefixIcon,
+                  )
+                : null,
+            prefixIconConstraints: widget.prefixIcon != null
+                ? const BoxConstraints(
+                    minWidth: 24,
+                    minHeight: 24,
+                  )
+                : null,
 
             // Suffix icon (eye icon for password fields)
             suffixIcon: widget.isPassword
@@ -203,7 +235,10 @@ class _AnchorTextFieldState extends State<AnchorTextField> {
 
             // Fill color (background of the field)
             filled: true,
-            fillColor: widget.enabled ? AnchorColors.white : AnchorColors.gray50,
+            fillColor: widget.backgroundColor ??
+                (widget.enabled && !widget.readOnly
+                    ? AnchorColors.white
+                    : AnchorColors.gray100),
           ),
         ),
       ],

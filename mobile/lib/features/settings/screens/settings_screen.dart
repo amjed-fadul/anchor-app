@@ -20,7 +20,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../../design_system/design_system.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../widgets/edit_profile_dialog.dart';
 import 'webview_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -81,7 +80,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               _buildListTile(
                 iconPath: 'assets/images/user.svg',
                 title: 'User Profile',
-                onTap: _showEditProfileDialog,
+                onTap: () => context.push('/settings/profile'),
               ),
 
               // Dark mode
@@ -225,13 +224,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 width: 24,
                 height: 24,
                 colorFilter: ColorFilter.mode(
-                  iconColor ?? Colors.black,
+                  iconColor ?? Colors.grey[600]!,
                   BlendMode.srcIn,
                 ),
               )
             : Icon(
                 materialIcon ?? Icons.settings,
-                color: iconColor ?? Colors.black,
+                color: iconColor ?? Colors.grey[600]!,
                 size: 24,
               ),
         title: Text(
@@ -310,22 +309,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ),
     );
-  }
-
-  /// Show edit profile dialog
-  void _showEditProfileDialog() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => const EditProfileDialog(),
-    ).then((result) {
-      // If profile was updated, show success message
-      if (result == true && mounted) {
-        // Refresh user data if needed
-        ref.invalidate(currentUserProvider);
-      }
-    });
   }
 
   /// Launch external URL

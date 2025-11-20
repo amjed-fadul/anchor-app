@@ -229,6 +229,62 @@ class AuthService {
     }
   }
 
+  /// Delete the current user's account
+  ///
+  /// This permanently deletes the user account and all associated data.
+  /// The deletion happens in two steps:
+  /// 1. Call Edge Function to delete user from auth.users (using admin API)
+  /// 2. Database CASCADE DELETE automatically removes all user data:
+  ///    - All spaces
+  ///    - All links
+  ///    - All tags
+  ///    - All link_tags relationships
+  ///
+  /// IMPORTANT: This action cannot be undone!
+  ///
+  /// Example:
+  /// ```dart
+  /// try {
+  ///   await authService.deleteAccount();
+  ///   // Account deleted! User is now logged out.
+  /// } catch (e) {
+  ///   print('Delete failed: $e');
+  /// }
+  /// ```
+  Future<void> deleteAccount() async {
+    try {
+      // Get current user's JWT token for authentication
+      final session = _supabase.auth.currentSession;
+      if (session == null) {
+        throw AuthException('No active session');
+      }
+
+      // Call Edge Function to delete user from auth.users
+      // The Edge Function uses Supabase Admin API to delete the user
+      // (Client SDK doesn't allow deleting your own account)
+      final response = await _supabase.functions.invoke(
+        'delete-account',
+        headers: {
+          'Authorization': 'Bearer ${session.accessToken}',
+        },
+      );
+
+      // Check if deletion was successful
+      if (response.status != 200) {
+        throw AuthException(
+          'Failed to delete account: ${response.data}',
+        );
+      }
+
+      // Sign out locally (session is now invalid)
+      await signOut();
+    } on AuthException {
+      rethrow;
+    } catch (e) {
+      throw AuthException('Unexpected error during account deletion: $e');
+    }
+  }
+
   /// Get the currently logged in user
   ///
   /// Returns the User object if logged in, null otherwise.

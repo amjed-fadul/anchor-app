@@ -11,6 +11,7 @@ import '../../features/auth/screens/forgot_password_screen.dart';
 import '../../features/auth/screens/reset_password_screen.dart';
 import '../../shared/widgets/main_scaffold.dart';
 import '../../features/settings/screens/settings_screen.dart';
+import '../../features/settings/screens/profile_screen.dart';
 import '../../features/spaces/screens/space_detail_screen.dart';
 import '../../features/spaces/models/space_model.dart';
 import '../../features/auth/providers/auth_provider.dart';
@@ -286,6 +287,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'settings',
         pageBuilder: (context, state) => const MaterialPage(
           child: SettingsScreen(),
+        ),
+      ),
+
+      // Profile screen (requires authentication)
+      GoRoute(
+        path: '/settings/profile',
+        name: 'profile',
+        pageBuilder: (context, state) => const MaterialPage(
+          child: ProfileScreen(),
         ),
       ),
 
