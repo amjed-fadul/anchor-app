@@ -155,6 +155,112 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+#### Signup Server Error - Default Spaces Trigger Lacks Error Handling (2025-11-20 14:45)
+- **Problem**: Users getting "Server error. Please try again" when attempting to create new accounts
+  - Signup process completely blocked
+  - No helpful error message to users
+  - No way to recover without database-level intervention
+- **Root Cause**: Database trigger `create_default_spaces_for_user()` lacks error handling
+  - Trigger runs after user creation in `auth.users` table
+  - Attempts to create "Unread" and "Reference" default spaces
+  - ANY constraint violation causes entire signup to fail
+  - No `ON CONFLICT` clause → duplicate spaces cause failure
+  - No `EXCEPTION` block → errors propagate up and fail user creation
+  - Result: User sees generic "Server error" with no context
+- **Solution**: Created migration 009 to add comprehensive error handling
+  - **Added `ON CONFLICT (user_id, LOWER(name)) DO NOTHING`**:
+    - Makes trigger idempotent (safe to run multiple times)
+    - Prevents failures if spaces already exist
+    - Handles edge cases like manual space creation
+  - **Added `EXCEPTION` block with `RAISE WARNING`**:
+    - Logs actual error message for debugging
+    - Continues user creation even if spaces fail
+    - User signup succeeds regardless of space creation outcome
+  - **Added `SECURITY DEFINER` flag**:
+    - Ensures trigger bypasses RLS policies
+    - Function runs with owner privileges, not user's
+    - Required for system-level operations during signup
+  - **Added `SET search_path = public`**:
+    - Prevents search path attacks
+    - Ensures function uses correct schema
+    - Security best practice for `SECURITY DEFINER` functions
+  - **Re-granted permissions**:
+    - `GRANT EXECUTE` to `authenticated` role
+    - `GRANT EXECUTE` to `service_role`
+    - Ensures proper access control after function recreation
+- **Files Changed**:
+  - `supabase/migrations/009_fix_default_spaces_trigger.sql` (new file, 55 lines)
+  - `CHANGELOG.md` (this entry)
+- **How to Apply**:
+  1. Go to Supabase Dashboard → SQL Editor
+  2. Open file: `supabase/migrations/009_fix_default_spaces_trigger.sql`
+  3. Copy entire SQL content
+  4. Paste into SQL Editor
+  5. Click "Run" to execute migration
+  6. Verify: Check "Functions" tab → `create_default_spaces_for_user()` should have updated code
+- **Testing After Migration**:
+  1. Attempt to create new account with email that hasn't been used
+  2. Should succeed and create user + default spaces
+  3. Attempt to create account with email that already exists
+  4. Should fail with proper "This email is already registered" message (not "Server error")
+  5. Check Supabase → Database → Spaces table
+  6. Verify "Unread" and "Reference" spaces exist for new user
+- **Result**:
+  ✅ Signup will succeed even if space creation fails
+  ✅ Error handling prevents generic "Server error" messages
+  ✅ Trigger is idempotent (safe to run multiple times)
+  ✅ Proper logging for debugging if issues occur
+  ✅ Users can successfully create accounts
+- **Impact**: 🔴 CRITICAL - Unblocks user signup, essential for beta launch
+- **Technical Details**:
+  - Trigger execution: `AFTER INSERT ON auth.users FOR EACH ROW`
+  - Timing: Runs immediately after Supabase creates user in auth.users
+  - Order: Runs after `handle_new_user()` trigger (which creates public.users record)
+  - Fallback: If both spaces fail, user still created but without defaults
+  - Recovery: Users can manually create spaces from UI if trigger fails completely
+- **Before Migration (❌ Broken)**:
+  ```sql
+  CREATE OR REPLACE FUNCTION create_default_spaces_for_user()
+  RETURNS TRIGGER AS $$
+  BEGIN
+    INSERT INTO spaces (user_id, name, color, is_default)
+    VALUES (NEW.id, 'Unread', '#9333EA', true);
+    -- ❌ No error handling - any issue fails entire signup
+    INSERT INTO spaces (user_id, name, color, is_default)
+    VALUES (NEW.id, 'Reference', '#DC2626', true);
+    RETURN NEW;
+  END;
+  $$ LANGUAGE plpgsql;
+  ```
+- **After Migration (✅ Fixed)**:
+  ```sql
+  CREATE OR REPLACE FUNCTION create_default_spaces_for_user()
+  RETURNS TRIGGER
+  SECURITY DEFINER
+  SET search_path = public
+  AS $$
+  BEGIN
+    INSERT INTO spaces (user_id, name, color, is_default)
+    VALUES (NEW.id, 'Unread', '#9333EA', true)
+    ON CONFLICT (user_id, LOWER(name)) DO NOTHING;  -- ✅ Idempotent
+
+    INSERT INTO spaces (user_id, name, color, is_default)
+    VALUES (NEW.id, 'Reference', '#DC2626', true)
+    ON CONFLICT (user_id, LOWER(name)) DO NOTHING;  -- ✅ Idempotent
+
+    RETURN NEW;
+  EXCEPTION
+    WHEN OTHERS THEN
+      RAISE WARNING 'Failed to create default spaces for user %: %', NEW.id, SQLERRM;
+      RETURN NEW;  -- ✅ Continue signup even if spaces fail
+  END;
+  $$ LANGUAGE plpgsql;
+  ```
+- **Related Work**: This fix builds on earlier error message improvements (Authentication Error Messages - 2025-11-20 14:30)
+  - ErrorMessageHelper now shows "Server error. Please try again" for 500/503 status codes
+  - After this migration, users should see specific Supabase error messages instead of generic server errors
+  - Combined, these changes provide clear feedback for all authentication and signup scenarios
+
 #### Metadata Timeout & Retry Cooldown Bugs (2025-11-19 21:00)
 - **Problem**:
   1. **Timeout Race Condition**: Metadata fetch could exceed 10s timeout when downloading large response bodies
