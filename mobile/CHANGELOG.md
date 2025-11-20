@@ -18,18 +18,20 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **User Impact**:
   - Click back → redirected to HOME (unexpected)
   - Navigate to login manually → sign in → redirected BACK to reset password (loop!)
+  - Back button didn't work when user came from email deep link (no navigation stack)
   - Impossible to cancel password reset flow
-- **Solution**: Changed from `context.go('/login')` to `context.pop()` to bypass router redirect logic entirely
+- **Solution**: Smart navigation - use `context.pop()` if possible, otherwise wait 500ms and navigate to login
 - **Files Changed**:
   - **MODIFIED**: `lib/features/auth/screens/reset_password_screen.dart`
-    - Back button handler: Changed to use `context.pop()` instead of `context.go('/login')` (lines 168-178)
+    - Back button handler: Check if can pop, if not navigate to login with 500ms delay (lines 168-187)
     - Success handler: Kept 300ms delay for normal password reset completion (lines 138-141)
 - **Technical Details**:
-  - Previous approach: `signOut()` → wait → `context.go('/login')` → router redirect logic runs → sees stale `recoverySentAt` → redirects back (LOOP!)
-  - New approach: `signOut()` → `context.pop()` → goes back in navigation stack without triggering router redirect logic
-  - `context.pop()` bypasses router's recovery session check entirely
-  - User ends up on login screen (or previous screen in navigation stack)
-- **Result**: ✅ Back button now correctly goes back without redirect loop
+  - Check `Navigator.of(context).canPop()` to see if there's a navigation stack
+  - If yes: Use `context.pop()` to go back (bypasses router redirect logic)
+  - If no: User came from email deep link - wait 500ms for auth state to propagate, then `context.go('/login')`
+  - 500ms delay (vs 300ms) ensures `recoverySentAt` is cleared before navigation
+  - After `signOut()`, user is unauthenticated, so router allows access to /login
+- **Result**: ✅ Back button works both from navigation stack AND from email deep links
 
 #### Password Reset Flow - Missing Icons & Broken Back Button (2025-11-20 11:05)
 - **Problem**: Password reset screens had missing icons AND back button didn't work on reset password screen

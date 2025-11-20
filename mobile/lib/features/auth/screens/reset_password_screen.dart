@@ -167,13 +167,22 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () async {
             // Sign out recovery session before going back
-            // Using pop() instead of go('/login') to bypass router redirect logic
             await ref.read(authServiceProvider).signOut();
 
-            // Use pop() to go back in navigation stack
-            // This avoids router's recovery session redirect logic entirely
-            if (mounted) {
+            if (!mounted) return;
+
+            // Check if we can pop (i.e., there's a previous screen in navigation stack)
+            // If user came from email deep link, there's nothing to pop back to
+            if (Navigator.of(context).canPop()) {
+              // Pop back to previous screen (likely login)
               context.pop();
+            } else {
+              // No previous screen - navigate to login explicitly
+              // Wait for auth state to propagate to avoid redirect loop
+              await Future.delayed(const Duration(milliseconds: 500));
+              if (mounted) {
+                context.go('/login');
+              }
             }
           },
         ),
