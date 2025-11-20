@@ -14,11 +14,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Problem**: Settings page only had email display and logout - needed comprehensive menu system with all user actions
 - **Root Cause**: Settings page was minimal MVP, not production-ready for beta launch
 - **Solution**: Complete redesign of settings page with full menu system matching design specifications
-  - **New Menu Items** (9 total):
+  - **New Menu Items** (7 total):
     - User Profile → Opens edit profile dialog
     - Dark mode → Toggle switch (shows "Coming soon" - UI only for now)
-    - Open Tutorial → Placeholder for tutorial access
-    - Reddit Community → Opens https://reddit.com/r/anchorapp in browser
     - Report an Issue → Opens GitHub issues in browser
     - Feature Requests → Opens GitHub discussions in browser
     - Terms and Conditions → Opens WebView with terms page
@@ -30,7 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - **Features Implemented**:
     - Section headers (Account, Support, Legal)
     - SVG icons from assets (user, logout, feature request, report issue, terms, privacy)
-    - Material icons for dark mode, tutorial, reddit community
+    - Material icons for dark mode
     - External link indicator icon for items that open in browser
     - Toggle switch for dark mode (UI only - shows "Coming soon" message)
     - App version display at bottom (using package_info_plus)
@@ -44,7 +42,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - `webview_flutter: ^4.13.0` - For in-app legal pages
   - `package_info_plus: ^9.0.0` - For app version display
 - **Placeholder URLs** (to be updated):
-  - Reddit: `https://reddit.com/r/anchorapp`
   - Report Issue: `https://github.com/amjed-fadul/anchor-app/issues`
   - Feature Requests: `https://github.com/amjed-fadul/anchor-app/discussions`
   - Terms: `https://anchor-app.com/terms`
@@ -65,7 +62,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Impact**: ⭐ HIGH - Essential for beta launch, provides all user-facing settings and support access
 - **User Benefits**:
   - Edit profile directly from app
-  - Quick access to community (Reddit)
   - Easy bug reporting and feature requests
   - Access to legal documents in-app
   - Clean, organized settings experience

@@ -7,8 +7,6 @@ library;
 /// Features:
 /// - User profile editing
 /// - Dark mode toggle (UI only - coming soon)
-/// - Tutorial access
-/// - Community links (Reddit)
 /// - Support links (Report Issue, Feature Requests)
 /// - Legal pages (Terms, Privacy Policy)
 /// - Sign out functionality
@@ -107,23 +105,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
               // SUPPORT SECTION
               _buildSectionHeader('Support'),
-
-              // Open Tutorial
-              _buildListTile(
-                iconPath: null, // Using Material icon for play
-                materialIcon: Icons.play_circle_outline,
-                title: 'Open Tutorial',
-                onTap: _showComingSoonMessage,
-              ),
-
-              // Reddit Community
-              _buildListTile(
-                iconPath: null, // Using Material icon for community
-                materialIcon: Icons.groups,
-                title: 'Reddit Community',
-                showExternalLinkIcon: true,
-                onTap: () => _launchUrl('https://reddit.com/r/anchorapp'),
-              ),
 
               // Report an Issue
               _buildListTile(
@@ -346,16 +327,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ref.invalidate(currentUserProvider);
       }
     });
-  }
-
-  /// Show "Coming soon" message
-  void _showComingSoonMessage() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Coming soon!'),
-        duration: Duration(seconds: 2),
-      ),
-    );
   }
 
   /// Launch external URL
