@@ -58,6 +58,12 @@ dependencies:
   # URL Launcher - Open links
   url_launcher: ^6.3.1
 
+  # WebView - Display web content in-app
+  webview_flutter: ^4.4.2
+
+  # Package Info - Get app version
+  package_info_plus: ^9.0.0
+
   # Deep Link Handling - Process password reset links
   app_links: ^6.3.4
 

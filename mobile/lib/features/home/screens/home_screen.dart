@@ -289,7 +289,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               GestureDetector(
                 onTap: () {
                   // Navigate to settings screen
-                  context.go('/settings');
+                  context.push('/settings');
                 },
                 child: CircleAvatar(
                   radius: 24,
