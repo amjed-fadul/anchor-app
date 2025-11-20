@@ -621,6 +621,162 @@ void main() {
       );
     });
   });
+
+  /// ==========================================
+  /// TEST GROUP: signOut() Method
+  /// ==========================================
+  ///
+  /// This method signs out the current user and clears their session.
+  /// It's CRITICAL for the password reset flow!
+  ///
+  /// 🎓 Learning: Why Test signOut()?
+  ///
+  /// We discovered a critical bug in the password reset flow where signOut()
+  /// was being called but the auth state wasn't updating fast enough.
+  /// The router would read stale session data and create a redirect loop!
+  ///
+  /// These tests ensure signOut() properly clears the session.
+  ///
+  /// What we're testing:
+  /// ✅ Success case: User signs out without error
+  /// ❌ Failure cases: AuthException and generic errors
+  group('signOut', () {
+    late MockSupabaseClient mockSupabaseClient;
+    late MockGoTrueClient mockAuth;
+    late AuthService authService;
+
+    setUp(() {
+      mockSupabaseClient = MockSupabaseClient();
+      mockAuth = MockGoTrueClient();
+      when(() => mockSupabaseClient.auth).thenReturn(mockAuth);
+      authService = AuthService(mockSupabaseClient);
+    });
+
+    /// Test #1: Success - User Signs Out Successfully
+    ///
+    /// This is the happy path: user clicks sign out, session is cleared.
+    ///
+    /// 🎓 Learning: Testing Void Methods
+    ///
+    /// signOut() returns Future<void> (no return value).
+    /// We just need to verify:
+    /// 1. It doesn't throw an error
+    /// 2. It actually calls Supabase's signOut
+    test('successfully signs out user and clears session', () async {
+      // ARRANGE: Mock successful sign out
+      //
+      // signOut returns void, so we use thenAnswer with empty implementation
+      when(() => mockAuth.signOut()).thenAnswer((_) async {});
+
+      // ACT: Call the method we're testing
+      //
+      // If this throws an exception, the test fails.
+      // If it completes without error, the test continues.
+      await authService.signOut();
+
+      // ASSERT: Verify Supabase's signOut was called
+      //
+      // This ensures our AuthService actually tried to sign out!
+      verify(() => mockAuth.signOut()).called(1);
+    });
+
+    /// Test #2: Failure - AuthException During Sign Out
+    ///
+    /// 🎓 Learning: When Can signOut Fail?
+    ///
+    /// In most cases, signOut should succeed even if:
+    /// - User is already logged out
+    /// - Session is expired
+    /// - Network is down
+    ///
+    /// However, Supabase might throw errors in edge cases:
+    /// - Server-side issues
+    /// - Invalid session state
+    ///
+    /// We want to ensure our code doesn't silently swallow these errors.
+    test('throws AuthException when Supabase returns auth error', () async {
+      // ARRANGE: Simulate Supabase rejecting sign out
+      final authException = createMockAuthException(
+        message: 'Failed to sign out',
+        statusCode: '500',
+      );
+
+      when(() => mockAuth.signOut()).thenThrow(authException);
+
+      // ACT & ASSERT: Expect the method to throw
+      //
+      // The error should propagate to the UI so it can show an error message
+      await expectLater(
+        () => authService.signOut(),
+        throwsA(isA<AuthException>()),
+      );
+
+      // Verify the attempt was made
+      verify(() => mockAuth.signOut()).called(1);
+    });
+
+    /// Test #3: Failure - Unexpected Error During Sign Out
+    ///
+    /// 🎓 Learning: Defensive Error Handling
+    ///
+    /// Not all errors are AuthExceptions! Sometimes:
+    /// - Network is down
+    /// - Timeout occurs
+    /// - Unexpected server error
+    ///
+    /// These throw generic Exceptions. We wrap them in AuthException
+    /// so the UI has a consistent error type to handle.
+    test('wraps unexpected errors in AuthException', () async {
+      // ARRANGE: Simulate unexpected error
+      when(() => mockAuth.signOut()).thenThrow(Exception('Network error'));
+
+      // ACT & ASSERT: Should throw an AuthException (wrapped)
+      //
+      // The original error message should be preserved inside
+      await expectLater(
+        () => authService.signOut(),
+        throwsA(
+          isA<AuthException>().having(
+            (e) => e.message,
+            'message',
+            contains('Unexpected error during sign out'),
+          ),
+        ),
+      );
+
+      // Verify the attempt was made
+      verify(() => mockAuth.signOut()).called(1);
+    });
+
+    /// Test #4: Real-World Scenario - Recovery Session Sign Out
+    ///
+    /// 🎓 Learning: Testing the Bug We Fixed!
+    ///
+    /// This test simulates the password reset flow scenario:
+    /// - User has a recovery session (from password reset link)
+    /// - User clicks "Back" button
+    /// - signOut() is called to clear the recovery session
+    /// - Router should NOT redirect back to reset password screen
+    ///
+    /// We can't test the full flow here (that's an integration test),
+    /// but we can ensure signOut() completes successfully.
+    test('successfully signs out recovery session (password reset flow)', () async {
+      // ARRANGE: Mock successful sign out (same as Test #1)
+      when(() => mockAuth.signOut()).thenAnswer((_) async {});
+
+      // ACT: Call signOut (simulating back button in reset password screen)
+      await authService.signOut();
+
+      // ASSERT: Verify sign out was called
+      //
+      // In the real app, this should:
+      // 1. Clear the recovery session
+      // 2. Emit SIGNED_OUT event on auth stream
+      // 3. Update providers with fresh (null) session data
+      // 4. Allow router to navigate to login without redirect loop
+      verify(() => mockAuth.signOut()).called(1);
+    });
+  });
 }
 
 /// 🎓 Learning Summary: What We Learned From These Tests
@@ -666,10 +822,12 @@ void main() {
 /// **Test Coverage:**
 /// ✅ updatePassword: 5 test cases
 /// ✅ resetPassword: 6 test cases
-/// ✅ Total: 11 test cases
+/// ✅ signUp: 5 test cases
+/// ✅ signOut: 4 test cases
+/// ✅ Total: 20 test cases
 ///
-/// These 11 tests give us confidence that AuthService handles
-/// the password reset flow correctly in ALL scenarios!
+/// These 20 tests give us confidence that AuthService handles
+/// authentication and password reset flow correctly in ALL scenarios!
 ///
 /// **Next:**
 /// Run the tests and watch them pass! (Or fail, then fix them - TDD!)

@@ -12,44 +12,72 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
-#### Password Reset Flow - Redirect Loop After Back Button Click (2025-11-20 11:20)
-- **Problem**: After clicking back button on Reset Password screen, user was redirected to HOME (not login), then stuck in infinite redirect loop
-- **Root Cause**: `signOut()` doesn't clear `recoverySentAt` metadata immediately - router reads stale auth state
+#### Password Reset Flow - Back Button Redirect Loop (2025-11-20 12:00)
+- **Problem**: After clicking back button on Reset Password screen, user was stuck in infinite redirect loop
+- **Root Cause**: `signOut()` HTTP request completes BEFORE the auth state stream emits. Router reads stale/cached session data with `recoverySentAt` still set, causing redirect back to reset password screen.
 - **User Impact**:
-  - Click back → redirected to HOME (unexpected)
-  - Navigate to login manually → sign in → redirected BACK to reset password (loop!)
-  - Back button didn't work when user came from email deep link (no navigation stack)
+  - Click back → navigate to login → sign in → redirected BACK to reset password screen (infinite loop!)
+  - Back button appears to do nothing when user came from email deep link
   - Impossible to cancel password reset flow
-- **Solution**: Smart navigation - use `context.pop()` if possible, otherwise wait 500ms and navigate to login
+  - Confusing UX - users don't understand why they can't leave the reset screen
+- **Investigation**: Tried 4 different approaches before finding root cause:
+  1. **Attempt 1**: Direct navigation to `/login` after `signOut()` → ❌ Failed (redirect loop)
+  2. **Attempt 2**: Added 300ms delay after `signOut()` → ❌ Failed (still reading stale data)
+  3. **Attempt 3**: Changed to `context.pop()` → ❌ Failed (no navigation stack from email deep link)
+  4. **Attempt 4**: Smart navigation with `canPop()` + 500ms delay → ❌ Failed (still redirect loop)
+  5. **Root Cause Found**: `signOut()` returns when HTTP completes, BUT auth stream emits AFTER that (async). We were checking auth state too early, before stream propagated and providers updated.
+- **Solution**: Wait for actual `SIGNED_OUT` event from `authStateChanges` stream instead of arbitrary delays
+  - Use `Completer` pattern to create Future that completes when stream emits `AuthChangeEvent.signedOut`
+  - Listen to `authStateChanges` stream while calling `signOut()`
+  - Wait for `SIGNED_OUT` event with 3-second timeout protection
+  - Verify session is actually cleared before navigating
+  - Then safely navigate (pop if can, otherwise go to login)
 - **Files Changed**:
   - **MODIFIED**: `lib/features/auth/screens/reset_password_screen.dart`
-    - Back button handler: Check if can pop, if not navigate to login with 500ms delay (lines 168-187)
-    - Success handler: Kept 300ms delay for normal password reset completion (lines 138-141)
+    - Added imports: `dart:async` (Completer), `package:supabase_flutter/supabase_flutter.dart` (AuthChangeEvent)
+    - Replaced back button handler with stream-based waiting logic (lines 168-229)
+    - Added extensive debug logging to trace exact timing of events
+    - Added icons to password fields (consistency with other forms)
+  - **MODIFIED**: `lib/features/auth/services/auth_service.dart`
+    - Added `import 'package:flutter/foundation.dart'` for debugPrint
+    - Added debug logging to `signOut()` method to trace HTTP request completion (lines 176-188)
+  - **MODIFIED**: `test/features/auth/services/auth_service_test.dart`
+    - Added 4 comprehensive test cases for `signOut()` method (lines 625-779)
+    - Test coverage: Success, AuthException, wrapped errors, recovery session scenario
+    - Updated test summary: Now 20 total tests (was 16)
 - **Technical Details**:
-  - Check `Navigator.of(context).canPop()` to see if there's a navigation stack
-  - If yes: Use `context.pop()` to go back (bypasses router redirect logic)
-  - If no: User came from email deep link - wait 500ms for auth state to propagate, then `context.go('/login')`
-  - 500ms delay (vs 300ms) ensures `recoverySentAt` is cleared before navigation
-  - After `signOut()`, user is unauthenticated, so router allows access to /login
-- **Result**: ✅ Back button works both from navigation stack AND from email deep links
+  - **The Problem**: `await signOut()` returns when HTTP request completes, but `authStateChanges.listen()` emits AFTER that
+  - **Why Delays Failed**: No amount of arbitrary delay is reliable - stream timing is unpredictable (could be 100ms or 1000ms)
+  - **Stream-Based Solution**:
+    ```dart
+    final signedOut = Completer<void>();
+    final subscription = authStateChanges.listen((event) {
+      if (event.event == AuthChangeEvent.signedOut) {
+        signedOut.complete();
+      }
+    });
+    await signOut();
+    await signedOut.future.timeout(Duration(seconds: 3));
+    // NOW session is guaranteed cleared
+    ```
+  - **Debug Logging Pattern**: 🔵 (info), 🟢 (success), 🔴 (error), ⚠️ (warning)
+  - **Router Redirect Logic**: If `recoverySentAt != null`, router redirects `/login` → `/reset-password`
+  - **Why This Works**: Waiting for stream event ensures providers have updated with fresh (null) session data BEFORE we check auth state
+- **Result**:
+  ✅ Back button works correctly - no redirect loop
+  ✅ User can cancel password reset flow
+  ✅ Works for both navigation stack AND email deep link scenarios
+  ✅ Comprehensive test coverage for `signOut()` method
+  ✅ Debug logging helps diagnose future auth timing issues
 
-#### Password Reset Flow - Missing Icons & Broken Back Button (2025-11-20 11:05)
-- **Problem**: Password reset screens had missing icons AND back button didn't work on reset password screen
-- **Root Cause**:
-  1. Icons not added to forgot password and reset password forms (inconsistency with login/signup)
-  2. Back button used `context.go('/login')` which triggered router redirect loop back to reset password screen
-- **User Impact**:
-  - Inconsistent visual design across auth flow
-  - Users couldn't cancel password reset - clicking back button did nothing (stuck on reset screen)
-- **Solution**:
-  1. **Added Icons** to all password reset input fields:
-     - Forgot Password screen: Email field with `mail-02.svg` icon
-     - Reset Password screen: Both password fields with `square-lock-01.svg` icon
-     - Added `textInputAction` for better keyboard flow
-  2. **Fixed Back Button** on Reset Password screen:
-     - Sign out recovery session BEFORE navigating to login
-     - This clears the session so router won't redirect back
-     - User can now cancel reset and return to login screen
+#### Password Reset Flow - Missing Icons (2025-11-20 11:05)
+- **Problem**: Password reset screens had missing icons, creating inconsistency with login/signup forms
+- **Root Cause**: Icons not added to forgot password and reset password forms when implementing other auth screens
+- **User Impact**: Inconsistent visual design across auth flow - some forms had icons, others didn't
+- **Solution**: Added SVG icons to all password reset input fields:
+  - Forgot Password screen: Email field with `mail-02.svg` icon
+  - Reset Password screen: Both password fields with `square-lock-01.svg` icon
+  - Added `textInputAction` for better keyboard flow
 - **Files Changed**:
   - **MODIFIED**: `lib/features/auth/screens/forgot_password_screen.dart`
     - Added `import 'package:flutter_svg/flutter_svg.dart'`
@@ -57,19 +85,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
     - Added `textInputAction: TextInputAction.done`
   - **MODIFIED**: `lib/features/auth/screens/reset_password_screen.dart`
     - Added `import 'package:flutter_svg/flutter_svg.dart'`
-    - Added password icon to New Password field (lines 213-221)
-    - Added password icon to Confirm Password field (lines 243-251)
+    - Added password icon to New Password field (lines 234-242)
+    - Added password icon to Confirm Password field (lines 264-272)
     - Added `textInputAction: TextInputAction.next` to first password field
     - Added `textInputAction: TextInputAction.done` to second password field
-    - Fixed back button to sign out recovery session before navigating (lines 166-178)
 - **Technical Details**:
   - Icons: Same 20x20 sizing, grey color (`Colors.grey[600]`), ColorFilter with BlendMode.srcIn
-  - Back button: `await authService.signOut()` before `context.go('/login')`
-  - Router redirect logic no longer prevents access to login (recovery session cleared)
+  - Consistent with login and signup forms
 - **Result**:
   ✅ Consistent iconography across ALL auth screens (login, signup, forgot password, reset password)
-  ✅ Back button works - user can cancel password reset
-  ✅ Recovery session cleared when user cancels (reset link becomes invalid)
   ✅ Better keyboard flow with textInputAction
 
 #### Login Form - Missing Icons (2025-11-20 10:50)

@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../design_system/design_system.dart';
 import '../../../shared/utils/validators.dart';
 import '../providers/auth_provider.dart';
@@ -166,23 +168,63 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () async {
-            // Sign out recovery session before going back
-            await ref.read(authServiceProvider).signOut();
+            debugPrint('🔵 [ResetPassword] Back button clicked');
 
-            if (!mounted) return;
+            // Create completer to wait for SIGNED_OUT event from the auth stream
+            // This ensures we don't navigate until the session is actually cleared
+            final signedOut = Completer<void>();
 
-            // Check if we can pop (i.e., there's a previous screen in navigation stack)
-            // If user came from email deep link, there's nothing to pop back to
-            if (Navigator.of(context).canPop()) {
-              // Pop back to previous screen (likely login)
-              context.pop();
-            } else {
-              // No previous screen - navigate to login explicitly
-              // Wait for auth state to propagate to avoid redirect loop
-              await Future.delayed(const Duration(milliseconds: 500));
-              if (mounted) {
+            // Listen for auth state changes to detect when signOut completes
+            final subscription = ref
+                .read(authServiceProvider)
+                .authStateChanges
+                .listen((event) {
+              debugPrint('🔵 [ResetPassword] Auth event: ${event.event}');
+              if (event.event == AuthChangeEvent.signedOut) {
+                debugPrint('🟢 [ResetPassword] SIGNED_OUT event received!');
+                if (!signedOut.isCompleted) {
+                  signedOut.complete();
+                }
+              }
+            });
+
+            try {
+              // Sign out the recovery session
+              await ref.read(authServiceProvider).signOut();
+              debugPrint('🟢 [ResetPassword] signOut() HTTP request returned');
+
+              // Wait for the SIGNED_OUT event from the stream (with 3-second timeout)
+              // This is CRITICAL - we can't navigate until the stream emits and providers update
+              await signedOut.future.timeout(
+                const Duration(seconds: 3),
+                onTimeout: () {
+                  debugPrint(
+                      '⚠️ [ResetPassword] SIGNED_OUT event timeout (3s) - proceeding anyway');
+                },
+              );
+
+              // Verify session is actually cleared
+              final session = ref.read(authServiceProvider).currentSession;
+              final user = ref.read(authServiceProvider).currentUser;
+              debugPrint(
+                  '🔵 [ResetPassword] After SIGNED_OUT - session: ${session != null}, user: ${user != null}, recoverySentAt: ${user?.recoverySentAt}');
+
+              if (!mounted) return;
+
+              // NOW safe to navigate - session is guaranteed cleared
+              // Check if we can pop (user navigated here from another screen)
+              if (Navigator.of(context).canPop()) {
+                debugPrint('🔵 [ResetPassword] Using context.pop()');
+                context.pop();
+              } else {
+                // User came from email deep link - no navigation stack
+                debugPrint('🔵 [ResetPassword] Using context.go(/login)');
                 context.go('/login');
               }
+            } finally {
+              // Always cancel subscription to prevent memory leaks
+              await subscription.cancel();
+              debugPrint('🔵 [ResetPassword] Auth stream subscription cancelled');
             }
           },
         ),

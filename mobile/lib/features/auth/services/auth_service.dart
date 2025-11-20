@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/config/supabase_config.dart';
 
@@ -175,10 +176,14 @@ class AuthService {
   /// ```
   Future<void> signOut() async {
     try {
+      debugPrint('🔵 [AuthService] signOut() START');
       await _supabase.auth.signOut();
-    } on AuthException {
+      debugPrint('🟢 [AuthService] signOut() HTTP request completed');
+    } on AuthException catch (e) {
+      debugPrint('🔴 [AuthService] signOut() FAILED: ${e.message}');
       rethrow;
     } catch (e) {
+      debugPrint('🔴 [AuthService] signOut() ERROR: $e');
       throw AuthException('Unexpected error during sign out: $e');
     }
   }
