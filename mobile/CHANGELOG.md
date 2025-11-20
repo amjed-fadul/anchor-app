@@ -12,6 +12,27 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+#### Login Form - Missing Icons (2025-11-20 10:50)
+- **Problem**: Login form email and password fields had no icons, creating inconsistency with signup form
+- **Root Cause**: Forgot to add SVG icons to login screen when adding them to signup screen
+- **User Impact**: Inconsistent visual design between login and signup forms
+- **Solution**: Added matching SVG icons to login form fields:
+  - Email field: `mail-02.svg` (grey mail icon)
+  - Password field: `square-lock-01.svg` (grey lock icon)
+  - Added `textInputAction` for better keyboard flow (Next → Done)
+- **Files Changed**:
+  - **MODIFIED**: `lib/features/auth/screens/login_screen.dart`
+    - Added `import 'package:flutter_svg/flutter_svg.dart'`
+    - Added `prefixIcon` with `SvgPicture.asset()` to email field (lines 151-159)
+    - Added `prefixIcon` with `SvgPicture.asset()` to password field (lines 181-189)
+    - Added `textInputAction: TextInputAction.next` to email field
+    - Added `textInputAction: TextInputAction.done` to password field
+- **Technical Details**:
+  - Same icon sizing: 20x20 pixels
+  - Same grey color: `Colors.grey[600]`
+  - Same ColorFilter with BlendMode.srcIn
+- **Result**: ✅ Login and signup forms now have consistent iconography and keyboard flow
+
 #### Home Screen - Error State Retry Functionality (2025-11-20 10:45)
 - **Problem**: When network errors occurred (e.g., DNS lookup failure), users saw error message with no way to retry loading links
 - **Root Cause**: Error state (`_buildErrorState()`) only displayed error message without any refresh mechanism

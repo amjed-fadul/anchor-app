@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../design_system/design_system.dart';
 import '../../../shared/utils/validators.dart';
@@ -147,7 +148,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   controller: _emailController,
                   label: 'Email',
                   hintText: 'your@email.com',
+                  prefixIcon: SvgPicture.asset(
+                    'assets/images/mail-02.svg',
+                    width: 20,
+                    height: 20,
+                    colorFilter: ColorFilter.mode(
+                      Colors.grey[600]!,
+                      BlendMode.srcIn,
+                    ),
+                  ),
                   keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
                   errorText: _emailError,
                   enabled: !_isLoading,
                   onChanged: (value) {
@@ -167,7 +178,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   controller: _passwordController,
                   label: 'Password',
                   hintText: 'Enter your password',
+                  prefixIcon: SvgPicture.asset(
+                    'assets/images/square-lock-01.svg',
+                    width: 20,
+                    height: 20,
+                    colorFilter: ColorFilter.mode(
+                      Colors.grey[600]!,
+                      BlendMode.srcIn,
+                    ),
+                  ),
                   isPassword: true,
+                  textInputAction: TextInputAction.done,
                   errorText: _passwordError,
                   enabled: !_isLoading,
                   onChanged: (value) {
