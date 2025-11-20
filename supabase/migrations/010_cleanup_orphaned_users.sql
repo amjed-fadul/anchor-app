@@ -28,10 +28,10 @@ ORDER BY u.created_at DESC;
 --   - All links in those spaces
 --   - All tags for those links
 
--- IMPORTANT: Temporarily disable the prevent_default_space_deletion trigger
+-- IMPORTANT: Temporarily disable the prevent_default_space_deletion_trigger
 -- This trigger blocks deletion of "Unread" and "Reference" spaces
 -- We need to bypass it to clean up orphaned users
-ALTER TABLE spaces DISABLE TRIGGER prevent_default_space_deletion;
+ALTER TABLE spaces DISABLE TRIGGER prevent_default_space_deletion_trigger;
 
 -- Now perform the cleanup
 DELETE FROM public.users
@@ -40,7 +40,7 @@ WHERE id NOT IN (
 );
 
 -- Re-enable the trigger to restore protection
-ALTER TABLE spaces ENABLE TRIGGER prevent_default_space_deletion;
+ALTER TABLE spaces ENABLE TRIGGER prevent_default_space_deletion_trigger;
 
 -- VERIFICATION: Check that no orphaned records remain
 -- This query should return 0
