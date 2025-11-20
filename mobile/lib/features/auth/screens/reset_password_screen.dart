@@ -166,20 +166,14 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () async {
-            // Sign out recovery session before navigating to login
-            // This prevents router from redirecting back to reset password screen
-
-            // Capture context before async call (to avoid lint warning)
-            final navigator = context;
-
+            // Sign out recovery session before going back
+            // Using pop() instead of go('/login') to bypass router redirect logic
             await ref.read(authServiceProvider).signOut();
 
-            // Wait for auth state to propagate through streams (300ms)
-            // This ensures recoverySentAt is cleared before navigation
-            await Future.delayed(const Duration(milliseconds: 300));
-
+            // Use pop() to go back in navigation stack
+            // This avoids router's recovery session redirect logic entirely
             if (mounted) {
-              navigator.go('/login');
+              context.pop();
             }
           },
         ),

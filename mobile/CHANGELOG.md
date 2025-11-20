@@ -14,23 +14,22 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 #### Password Reset Flow - Redirect Loop After Back Button Click (2025-11-20 11:20)
 - **Problem**: After clicking back button on Reset Password screen, user was redirected to HOME (not login), then stuck in infinite redirect loop
-- **Root Cause**: Timing issue - router redirect logic ran BEFORE `signOut()` fully cleared recovery session
+- **Root Cause**: `signOut()` doesn't clear `recoverySentAt` metadata immediately - router reads stale auth state
 - **User Impact**:
   - Click back → redirected to HOME (unexpected)
   - Navigate to login manually → sign in → redirected BACK to reset password (loop!)
   - Impossible to cancel password reset flow
-- **Solution**: Increased delay after `signOut()` from 100ms to 300ms to allow auth state to fully propagate
+- **Solution**: Changed from `context.go('/login')` to `context.pop()` to bypass router redirect logic entirely
 - **Files Changed**:
   - **MODIFIED**: `lib/features/auth/screens/reset_password_screen.dart`
-    - Back button handler: Added 300ms delay after signOut() (lines 175-177)
-    - Success handler: Increased delay from 100ms to 300ms (lines 138-141)
+    - Back button handler: Changed to use `context.pop()` instead of `context.go('/login')` (lines 168-178)
+    - Success handler: Kept 300ms delay for normal password reset completion (lines 138-141)
 - **Technical Details**:
-  - Race condition: `signOut()` is async, but `recoverySentAt` metadata persists briefly
-  - Router checks `user.recoverySentAt != null` before signOut completes
-  - Router redirects to `/reset-password` thinking it's still a recovery session
-  - 300ms delay ensures `recoverySentAt` is fully cleared before navigation
-  - Auth state propagates through all streams before router redirect logic runs
-- **Result**: ✅ Back button now correctly navigates to login screen without redirect loop
+  - Previous approach: `signOut()` → wait → `context.go('/login')` → router redirect logic runs → sees stale `recoverySentAt` → redirects back (LOOP!)
+  - New approach: `signOut()` → `context.pop()` → goes back in navigation stack without triggering router redirect logic
+  - `context.pop()` bypasses router's recovery session check entirely
+  - User ends up on login screen (or previous screen in navigation stack)
+- **Result**: ✅ Back button now correctly goes back without redirect loop
 
 #### Password Reset Flow - Missing Icons & Broken Back Button (2025-11-20 11:05)
 - **Problem**: Password reset screens had missing icons AND back button didn't work on reset password screen
