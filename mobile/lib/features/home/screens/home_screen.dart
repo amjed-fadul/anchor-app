@@ -493,36 +493,84 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// Build error state
   ///
   /// Shows error message when links fail to load.
+  ///
+  /// Features:
+  /// - Retry button to manually reload
+  /// - Pull-to-refresh gesture support
+  /// - Clear error feedback
   Widget _buildErrorState(String error) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.red,
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Failed to load links',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+    return RefreshIndicator(
+      color: AnchorColors.anchorTeal,
+      onRefresh: () async {
+        // Reload links when user pulls down
+        await ref.read(paginatedLinksProvider.notifier).refresh();
+      },
+      child: SingleChildScrollView(
+        // AlwaysScrollableScrollPhysics ensures pull-to-refresh works
+        // even when content doesn't fill the screen
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: SizedBox(
+          // Make content at least screen height so pull gesture works
+          height: MediaQuery.of(context).size.height * 0.7,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Colors.red,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Failed to load links',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    error,
+                    style: const TextStyle(
+                      color: Colors.grey,
+                      fontSize: 14,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  // Retry button
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      // Reload links when button is tapped
+                      ref.read(paginatedLinksProvider.notifier).refresh();
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AnchorColors.anchorTeal,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // Hint for pull-to-refresh
+                  Text(
+                    'or pull down to refresh',
+                    style: TextStyle(
+                      color: Colors.grey[500],
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              error,
-              style: const TextStyle(
-                color: Colors.grey,
-                fontSize: 14,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
+          ),
         ),
       ),
     );

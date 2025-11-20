@@ -12,6 +12,27 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+#### Home Screen - Error State Retry Functionality (2025-11-20 10:45)
+- **Problem**: When network errors occurred (e.g., DNS lookup failure), users saw error message with no way to retry loading links
+- **Root Cause**: Error state (`_buildErrorState()`) only displayed error message without any refresh mechanism
+- **User Impact**: Users had to force-quit and reopen the app to retry after network errors
+- **Solution**: Enhanced error state with dual retry mechanisms:
+  1. **Retry Button**: Teal button with refresh icon that calls `paginatedLinksProvider.notifier.refresh()`
+  2. **Pull-to-Refresh**: Wrapped error content in `RefreshIndicator` + `SingleChildScrollView` with `AlwaysScrollableScrollPhysics`
+  3. **Hint Text**: "or pull down to refresh" instruction below button
+- **Files Changed**:
+  - **MODIFIED**: `lib/features/home/screens/home_screen.dart` (lines 493-577)
+    - Wrapped error content in `RefreshIndicator`
+    - Added `SingleChildScrollView` with `AlwaysScrollableScrollPhysics` for pull gesture
+    - Added `ElevatedButton.icon` with refresh functionality
+    - Added hint text for pull-to-refresh
+- **Technical Details**:
+  - `RefreshIndicator.onRefresh` calls `ref.read(paginatedLinksProvider.notifier).refresh()`
+  - `AlwaysScrollableScrollPhysics` ensures pull gesture works even with minimal content
+  - `SizedBox` with height constraint (70% screen height) provides scrollable area
+  - Both button and pull gesture trigger same refresh method
+- **Result**: ✅ Users can now easily retry loading links after network errors using either button tap or pull-down gesture
+
 #### Signup Form - Replace Material Icons with SVG Icons (2025-11-20 09:15)
 - **What Changed**: Replaced all Material icons in signup form with custom SVG icons for brand consistency
 - **User Impact**: Signup form now uses consistent custom iconography matching the rest of the app
