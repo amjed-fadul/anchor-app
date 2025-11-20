@@ -86,6 +86,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               // Dark mode
               _buildToggleTile(
                 iconPath: 'assets/images/moon.svg',
+                iconColor: Colors.grey[600]!,
                 title: 'Dark mode',
                 value: _isDarkModeEnabled,
                 onChanged: (value) {
@@ -266,6 +267,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget _buildToggleTile({
     String? iconPath,
     IconData? materialIcon,
+    Color? iconColor,
     required String title,
     required bool value,
     required ValueChanged<bool> onChanged,
@@ -283,14 +285,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 iconPath,
                 width: 24,
                 height: 24,
-                colorFilter: const ColorFilter.mode(
-                  Colors.black,
+                colorFilter: ColorFilter.mode(
+                  iconColor ?? Colors.grey[600]!,
                   BlendMode.srcIn,
                 ),
               )
             : Icon(
                 materialIcon ?? Icons.settings,
-                color: Colors.black,
+                color: iconColor ?? Colors.grey[600]!,
                 size: 24,
               ),
         title: Text(

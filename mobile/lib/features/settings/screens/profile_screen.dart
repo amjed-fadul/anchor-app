@@ -16,6 +16,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../design_system/design_system.dart';
@@ -33,6 +34,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _nameController = TextEditingController();
   bool _isLoading = false;
   bool _isSaving = false;
+
+  // Track if user is editing (to show/hide save button)
+  bool _isEditing = false;
+  String _originalName = '';
 
   @override
   void initState() {
@@ -55,6 +60,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           user.email?.split('@')[0] ??
           '';
       _nameController.text = name;
+      _originalName = name; // Store original value
     }
   }
 
@@ -85,6 +91,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       // Invalidate provider to refresh user data
       ref.invalidate(currentUserProvider);
 
+      // Update original name and hide save button
+      _originalName = newName;
+      setState(() {
+        _isEditing = false;
+      });
+
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -93,9 +105,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           duration: Duration(seconds: 2),
         ),
       );
-
-      // Navigate back
-      context.pop();
     } catch (e) {
       if (!mounted) return;
 
@@ -204,136 +213,147 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
       ),
       body: SafeArea(
-        child: Stack(
+        child: Column(
           children: [
-            // Content
-            SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 8),
+            // Scrollable content
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 8),
 
-                    // Email field (read-only)
-                    AnchorTextField(
-                      label: 'Email',
-                      controller: TextEditingController(text: email),
-                      readOnly: true,
-                      prefixIcon: Icon(
-                        Icons.email_outlined,
-                        color: Colors.grey[600],
-                        size: 20,
+                      // Email field (disabled)
+                      AnchorTextField(
+                        label: 'Email',
+                        controller: TextEditingController(text: email),
+                        enabled: false,
+                        prefixIcon: SvgPicture.asset(
+                          'assets/images/mail-02.svg',
+                          width: 20,
+                          height: 20,
+                          colorFilter: ColorFilter.mode(
+                            Colors.grey[400]!,
+                            BlendMode.srcIn,
+                          ),
+                        ),
                       ),
-                    ),
 
-                    const SizedBox(height: 20),
+                      const SizedBox(height: 20),
 
-                    // User Name field (editable)
-                    AnchorTextField(
-                      label: 'User Name',
-                      controller: _nameController,
-                      hintText: 'Enter your name',
-                      prefixIcon: Icon(
-                        Icons.person_outline,
-                        color: Colors.grey[600],
-                        size: 20,
+                      // User Name field (editable)
+                      AnchorTextField(
+                        label: 'User Name',
+                        controller: _nameController,
+                        hintText: 'Enter your name',
+                        prefixIcon: SvgPicture.asset(
+                          'assets/images/user.svg',
+                          width: 20,
+                          height: 20,
+                          colorFilter: ColorFilter.mode(
+                            Colors.grey[600]!,
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                        keyboardType: TextInputType.name,
+                        textInputAction: TextInputAction.done,
+                        onChanged: (value) {
+                          // Show save button when user edits
+                          final hasChanged = value.trim() != _originalName;
+                          if (hasChanged != _isEditing) {
+                            setState(() {
+                              _isEditing = hasChanged;
+                            });
+                          }
+                        },
+                        onSubmitted: (_) {
+                          if (_isEditing) {
+                            _saveProfile();
+                          }
+                        },
                       ),
-                      keyboardType: TextInputType.name,
-                      textInputAction: TextInputAction.done,
-                      onSubmitted: (_) => _saveProfile(),
-                    ),
 
-                    const SizedBox(height: 300), // Spacer for delete button
-                  ],
+                      // Conditional Save button (appears when editing)
+                      if (_isEditing) ...[
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: _isSaving || _isLoading ? null : _saveProfile,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AnchorColors.anchorTeal,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: _isSaving
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Save',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
             ),
 
-            // Fixed buttons at bottom
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border(
-                    top: BorderSide(color: Colors.grey[200]!),
-                  ),
+            // Fixed delete button at bottom
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  top: BorderSide(color: Colors.grey[200]!),
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Save button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: _isSaving || _isLoading ? null : _saveProfile,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AnchorColors.anchorTeal,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: _isSaving
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Text(
-                                'Save',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                      ),
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: TextButton(
+                  onPressed: _isSaving || _isLoading ? null : _showDeleteConfirmation,
+                  style: TextButton.styleFrom(
+                    backgroundColor: const Color(0xffffe7eb), // Light pink
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-
-                    const SizedBox(height: 12),
-
-                    // Delete account button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: TextButton(
-                        onPressed: _isSaving || _isLoading ? null : _showDeleteConfirmation,
-                        style: TextButton.styleFrom(
-                          backgroundColor: const Color(0xffffe7eb), // Light pink
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Color(0xffe70c31),
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Delete my account',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xffe70c31), // Red
                           ),
                         ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  color: Color(0xffe70c31),
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Text(
-                                'Delete my account',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xffe70c31), // Red
-                                ),
-                              ),
-                      ),
-                    ),
-                  ],
                 ),
               ),
             ),

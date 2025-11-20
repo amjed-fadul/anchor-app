@@ -10,6 +10,43 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+#### Profile & Settings UX Improvements (2025-11-20 09:00)
+- **What Changed**: Fixed display name not updating in home screen + improved profile page UX
+- **User Impact**:
+  1. Display name now updates immediately in home greeting after editing
+  2. Profile page has cleaner UX with conditional save button
+  3. All icons are now consistently grey
+- **Issues Fixed**:
+  1. **Display Name Not Updating** (home screen):
+     - **Problem**: After updating display name in profile, home screen greeting still showed old name
+     - **Root Cause**: Home screen was deriving name from email instead of reading `display_name` from user metadata
+     - **Solution**: Changed to read from `user.userMetadata['display_name']` with fallback to email
+     - **File**: `lib/features/home/screens/home_screen.dart:275-282`
+  2. **Dark Mode Icon Color**:
+     - **Problem**: Dark mode icon was black instead of grey (inconsistent with other settings icons)
+     - **Solution**: Added `iconColor` parameter to `_buildToggleTile()` and passed `Colors.grey[600]`
+     - **File**: `lib/features/settings/screens/settings_screen.dart`
+  3. **Profile Page UX**:
+     - **Problem**: Save button always visible, email field read-only instead of disabled, Material icons instead of SVG, delete button not fixed to bottom
+     - **Solution**:
+       - Save button now appears ONLY when user starts editing (tracks original vs current value)
+       - Email field now fully disabled (greyed out, not editable)
+       - Replaced Material icons with SVG icons (`user.svg`, `mail-02.svg`)
+       - Delete account button fixed to bottom of page (always visible)
+     - **File**: `lib/features/settings/screens/profile_screen.dart`
+- **Files Changed**:
+  - **MODIFIED**: `lib/features/home/screens/home_screen.dart` (read display_name from metadata)
+  - **MODIFIED**: `lib/features/settings/screens/settings_screen.dart` (grey dark mode icon)
+  - **MODIFIED**: `lib/features/settings/screens/profile_screen.dart` (conditional save, SVG icons, fixed delete)
+- **Technical Details**:
+  - Home screen now watches `currentUserProvider` for display_name updates
+  - Profile page tracks editing state with `_isEditing` boolean and `_originalName` string
+  - Save button appears when `value.trim() != _originalName`
+  - After save, `_originalName` updated and `_isEditing` set to false
+- **Result**: ✅ Seamless profile editing with instant home screen updates and cleaner UX
+
 ### Added
 
 #### Signup Flow - User Name Field Required (2025-11-20 08:15)

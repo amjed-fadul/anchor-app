@@ -272,10 +272,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// │ [🔍 Search bookmarks, links...]     │ ← SearchBar (functional!)
   /// └─────────────────────────────────────┘
   Widget _buildHeader(BuildContext context, String? email) {
-    // Extract first name from email (before @)
-    final firstName = email?.split('@').first ?? 'User';
-    // Capitalize first letter
-    final displayName = firstName[0].toUpperCase() + firstName.substring(1);
+    // Get user from watched provider (this updates when user metadata changes!)
+    final user = ref.watch(currentUserProvider);
+
+    // Get display name from user metadata (set during signup or in profile)
+    // Falls back to email prefix if not set
+    final displayName = user?.userMetadata?['display_name'] as String? ??
+        email?.split('@').first ??
+        'User';
 
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 16, 8, 16),
