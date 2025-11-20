@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../design_system/design_system.dart';
 import '../../../shared/utils/validators.dart';
@@ -162,8 +163,18 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         title: const Text('Reset Password'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            context.go('/login');
+          onPressed: () async {
+            // Sign out recovery session before navigating to login
+            // This prevents router from redirecting back to reset password screen
+
+            // Capture context before async call (to avoid lint warning)
+            final navigator = context;
+
+            await ref.read(authServiceProvider).signOut();
+
+            if (mounted) {
+              navigator.go('/login');
+            }
           },
         ),
       ),
@@ -209,7 +220,17 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
           controller: _passwordController,
           label: 'New Password',
           hintText: 'At least 6 characters',
+          prefixIcon: SvgPicture.asset(
+            'assets/images/square-lock-01.svg',
+            width: 20,
+            height: 20,
+            colorFilter: ColorFilter.mode(
+              Colors.grey[600]!,
+              BlendMode.srcIn,
+            ),
+          ),
           isPassword: true,
+          textInputAction: TextInputAction.next,
           errorText: _passwordError,
           enabled: !_isLoading,
           onChanged: (value) {
@@ -229,7 +250,17 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
           controller: _confirmPasswordController,
           label: 'Confirm New Password',
           hintText: 'Re-enter your password',
+          prefixIcon: SvgPicture.asset(
+            'assets/images/square-lock-01.svg',
+            width: 20,
+            height: 20,
+            colorFilter: ColorFilter.mode(
+              Colors.grey[600]!,
+              BlendMode.srcIn,
+            ),
+          ),
           isPassword: true,
+          textInputAction: TextInputAction.done,
           errorText: _confirmPasswordError,
           enabled: !_isLoading,
           onChanged: (value) {

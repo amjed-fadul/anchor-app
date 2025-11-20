@@ -12,6 +12,45 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+#### Password Reset Flow - Missing Icons & Broken Back Button (2025-11-20 11:05)
+- **Problem**: Password reset screens had missing icons AND back button didn't work on reset password screen
+- **Root Cause**:
+  1. Icons not added to forgot password and reset password forms (inconsistency with login/signup)
+  2. Back button used `context.go('/login')` which triggered router redirect loop back to reset password screen
+- **User Impact**:
+  - Inconsistent visual design across auth flow
+  - Users couldn't cancel password reset - clicking back button did nothing (stuck on reset screen)
+- **Solution**:
+  1. **Added Icons** to all password reset input fields:
+     - Forgot Password screen: Email field with `mail-02.svg` icon
+     - Reset Password screen: Both password fields with `square-lock-01.svg` icon
+     - Added `textInputAction` for better keyboard flow
+  2. **Fixed Back Button** on Reset Password screen:
+     - Sign out recovery session BEFORE navigating to login
+     - This clears the session so router won't redirect back
+     - User can now cancel reset and return to login screen
+- **Files Changed**:
+  - **MODIFIED**: `lib/features/auth/screens/forgot_password_screen.dart`
+    - Added `import 'package:flutter_svg/flutter_svg.dart'`
+    - Added email icon to email field (lines 159-167)
+    - Added `textInputAction: TextInputAction.done`
+  - **MODIFIED**: `lib/features/auth/screens/reset_password_screen.dart`
+    - Added `import 'package:flutter_svg/flutter_svg.dart'`
+    - Added password icon to New Password field (lines 213-221)
+    - Added password icon to Confirm Password field (lines 243-251)
+    - Added `textInputAction: TextInputAction.next` to first password field
+    - Added `textInputAction: TextInputAction.done` to second password field
+    - Fixed back button to sign out recovery session before navigating (lines 166-178)
+- **Technical Details**:
+  - Icons: Same 20x20 sizing, grey color (`Colors.grey[600]`), ColorFilter with BlendMode.srcIn
+  - Back button: `await authService.signOut()` before `context.go('/login')`
+  - Router redirect logic no longer prevents access to login (recovery session cleared)
+- **Result**:
+  ✅ Consistent iconography across ALL auth screens (login, signup, forgot password, reset password)
+  ✅ Back button works - user can cancel password reset
+  ✅ Recovery session cleared when user cancels (reset link becomes invalid)
+  ✅ Better keyboard flow with textInputAction
+
 #### Login Form - Missing Icons (2025-11-20 10:50)
 - **Problem**: Login form email and password fields had no icons, creating inconsistency with signup form
 - **Root Cause**: Forgot to add SVG icons to login screen when adding them to signup screen
