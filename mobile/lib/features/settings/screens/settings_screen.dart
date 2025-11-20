@@ -86,8 +86,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
               // Dark mode
               _buildToggleTile(
-                iconPath: null, // Using Material icon for moon
-                materialIcon: Icons.nightlight_round,
+                iconPath: 'assets/images/moon.svg',
                 title: 'Dark mode',
                 value: _isDarkModeEnabled,
                 onChanged: (value) {

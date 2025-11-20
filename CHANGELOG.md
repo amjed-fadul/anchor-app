@@ -27,8 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
     - `WebViewScreen` - Generic WebView for legal pages with loading states, error handling
   - **Features Implemented**:
     - Section headers (Account, Support, Legal)
-    - SVG icons from assets (user, logout, feature request, report issue, terms, privacy)
-    - Material icons for dark mode
+    - SVG icons from assets (user, moon, logout, feature request, report issue, terms, privacy)
     - External link indicator icon for items that open in browser
     - Toggle switch for dark mode (UI only - shows "Coming soon" message)
     - App version display at bottom (using package_info_plus)
