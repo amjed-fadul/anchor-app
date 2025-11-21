@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "Anchor - Save Links Anywhere",
+  "version": "0.1.0",
+  "description": "Save links from any webpage to Anchor. Organize into spaces, add tags & notes. Sync with mobile app.",
+  "permissions": [
+    "storage",
+    "tabs",
+    "contextMenus",
+    "notifications"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "action": {
+    "default_popup": "index.html"
+  },
+  "background": {
+    "service_worker": "src/background/index.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["src/content/index.ts"]
+    }
+  ],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
+      "description": "Save current page to Anchor"
+    }
+  }
+}

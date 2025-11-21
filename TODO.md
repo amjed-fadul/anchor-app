@@ -1,6 +1,6 @@
 # TODO & Project Roadmap
 
-**Last Updated:** 2025-11-19 21:30
+**Last Updated:** 2025-11-20 22:45
 
 This file tracks active tasks, planned features, known issues, and future ideas for the Anchor App.
 
@@ -34,6 +34,98 @@ This file tracks active tasks, planned features, known issues, and future ideas 
   - See test/features/links/services/link_service_test.dart header for full explanation
 - **Priority:** COMPLETED (adequate TDD compliance achieved)
 - **Impact:** 227/237 tests passing (95.8%), core functionality fully verified
+
+### 🚧 Browser Extension Development (Started: 2025-11-20) 🟡 MEDIUM RISK
+
+**Status**: IN PROGRESS - Phase 1: Foundation & Authentication
+**Timeline**: 8 weeks to production-ready Chrome extension
+**Tech Stack**: React 18 + TypeScript + Vite + Supabase + Tailwind CSS
+
+**Progress**: 12/22 tasks complete (54.5%)
+
+#### Phase 1: Foundation & Authentication (Week 1-2) ✅ COMPLETE
+- ✅ Set up extension project structure (React + Vite + TypeScript) (2025-11-20 22:30)
+- ✅ Configure Manifest V3 (manifest.json) (2025-11-20 22:35)
+- ✅ Create content script to extract page metadata (2025-11-20 22:40)
+- ✅ Install dependencies (npm install - 308 packages) (2025-11-20 22:45)
+- ✅ Configure Supabase client and TypeScript types (2025-11-20 22:50)
+- ✅ Set up token storage in chrome.storage.local (2025-11-20 22:52)
+- ✅ Implement email authentication flow with Supabase (2025-11-20 22:55)
+- ✅ Create login/signup UI components (2025-11-20 23:00)
+
+#### Phase 2: Save Current Page (Week 3-4) ✅ COMPLETE
+- ✅ Build save form UI (space selection, tags, note) (2025-11-20 23:30)
+- ✅ Implement save functionality with Supabase integration (2025-11-20 23:35)
+- ✅ Keyboard shortcut (Cmd/Ctrl+Shift+S) - Already configured in manifest (2025-11-20 22:35)
+- ✅ Success/error feedback (toast notifications) (2025-11-20 23:32)
+
+#### Phase 3: Browse Saved Links (Week 5-6)
+- 📋 Build link list view with virtual scrolling
+- 📋 Implement real-time sync with Supabase Realtime
+- 📋 Set up IndexedDB cache for offline viewing
+- 📋 Add search bar with filtering functionality
+- 📋 Implement context menu actions (open, move to space, edit, delete)
+
+#### Phase 4: Polish & Launch (Week 7-8)
+- 📋 Add badge count for Unread space
+- 📋 Implement offline queue and background sync
+- 📋 Test extension on Chrome, Edge, and Brave
+- 📋 Optimize bundle size and performance
+- 📋 Prepare Chrome Web Store assets and submit
+
+**Key Changes from Original PRD**:
+- ✅ **Spaces-Only model** - No status field, use space selection instead
+- ✅ **Updated to match mobile app** - 14-color palette, same data model
+- ✅ **URL shortener support** - Auto-expand bit.ly, t.co links
+- ✅ **Real-time search** - 300ms debounce, client-side filtering
+
+**Files Created** (2025-11-20):
+
+**Configuration:**
+- `extension/package.json` - Dependencies and scripts
+- `extension/tsconfig.json` - TypeScript configuration
+- `extension/vite.config.ts` - Vite build configuration
+- `extension/tailwind.config.js` - Tailwind CSS (matches mobile design system)
+- `extension/.env` - Supabase credentials
+
+**Core App:**
+- `extension/src/manifest.json` - Chrome Extension Manifest V3
+- `extension/src/App.tsx` - Main React component (auth flow + save form)
+- `extension/src/main.tsx` - React entry point
+- `extension/src/index.css` - Global styles with animations
+
+**Components:**
+- `extension/src/components/Auth.tsx` - Login/signup UI
+- `extension/src/components/SaveForm.tsx` - Save current page form
+- `extension/src/components/Toast.tsx` - Success/error notifications
+
+**Backend Integration:**
+- `extension/src/lib/supabase.ts` - Supabase client + auth functions
+- `extension/src/lib/api.ts` - CRUD operations (links, spaces, tags)
+- `extension/src/lib/types.ts` - TypeScript types (matches mobile)
+- `extension/src/lib/database.types.ts` - Supabase schema types
+
+**Chrome Extension Scripts:**
+- `extension/src/background/index.ts` - Service worker (messaging, badge)
+- `extension/src/content/index.ts` - Page metadata extraction (OG tags)
+
+**Documentation:**
+- `extension/README.md` - Development guide
+
+**Phase 2 Highlights**:
+- ✅ **Complete save flow** - Detect current page, fetch metadata, save to Supabase
+- ✅ **Space selection** - Dropdown with user's spaces (Unread as default)
+- ✅ **Tag input** - Autocomplete from existing tags, create new tags inline
+- ✅ **Note field** - 200 character limit with counter
+- ✅ **Toast notifications** - Success/error feedback with animations
+- ✅ **API layer** - All CRUD operations for links, spaces, tags
+- ✅ **URL normalization** - Deduplication logic
+- ✅ **Tag usage tracking** - Auto-increment usage_count
+
+**Current Build Stats**:
+- Bundle size: 339 KB (97 KB gzipped)
+- Build time: ~1.7 seconds
+- Status: ✅ Ready to test!
 
 ---
 

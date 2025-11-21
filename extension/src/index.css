@@ -1,0 +1,97 @@
+/* Geist font (matching mobile app) - must be first */
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-gray-200;
+  }
+
+  body {
+    @apply bg-white text-black font-sans;
+    margin: 0;
+    padding: 0;
+    min-width: 800px;
+    min-height: 600px;
+  }
+
+  /* Chrome extension popup size - larger for browse mode */
+  #root {
+    width: 800px;
+    height: 600px;
+    overflow: hidden;
+  }
+}
+
+@layer components {
+  /* Primary button (matching mobile app) */
+  .btn-primary {
+    @apply bg-black text-white px-4 py-2 rounded-lg font-medium;
+    @apply hover:bg-gray-800 active:bg-gray-900;
+    @apply transition-colors duration-150;
+  }
+
+  /* Secondary button */
+  .btn-secondary {
+    @apply bg-gray-100 text-black px-4 py-2 rounded-lg font-medium;
+    @apply hover:bg-gray-200 active:bg-gray-300;
+    @apply transition-colors duration-150;
+  }
+
+  /* Input field */
+  .input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg;
+    @apply focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent;
+    @apply transition-all duration-150;
+  }
+
+  /* Card */
+  .card {
+    @apply bg-white border border-gray-200 rounded-lg p-3;
+    @apply shadow-sm hover:shadow-md transition-shadow duration-150;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .animate-slide-in {
+    animation: slide-in 0.3s ease-out;
+  }
+
+  @keyframes slide-in {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  .animate-modal-in {
+    animation: modal-in 0.2s ease-out;
+  }
+
+  @keyframes modal-in {
+    from {
+      transform: scale(0.95);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+}
