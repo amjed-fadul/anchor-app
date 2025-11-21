@@ -8,6 +8,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+#### Robust Metadata Extraction for All Sites (2025-11-21)
+- **Problem**: YouTube and other modern sites failed to fetch metadata, showing only domain name
+- **Root Cause**: Edge Function used slow DOM parsing (DOMParser) which timed out on large HTML pages (YouTube's HTML is ~1.6MB). Single bot User-Agent was easily blocked by anti-bot systems.
+- **Solution**: Complete rewrite of metadata extraction with multiple fallback sources and regex-based parsing
+  - **JSON-LD Extraction**: Primary source for modern sites (YouTube, news, e-commerce)
+    - Supports VideoObject, Article, NewsArticle, BlogPosting, WebPage, Product, Organization
+    - Handles @graph structure (common in WordPress)
+    - Uses regex extraction (faster than DOM parsing)
+  - **User-Agent Rotation**: 5 browser User-Agents (Chrome, Firefox, Safari on Windows/Mac/Linux)
+  - **Separate Timeouts**: 15s for download, fast regex for extraction (no DOM parsing timeout)
+  - **Multi-Source Fallback Chain**:
+    - Title: og:title → JSON-LD → twitter:title → \<title\> → h1 → domain
+    - Description: og:description → JSON-LD → twitter:description → meta description
+    - Thumbnail: og:image → JSON-LD → twitter:image
+  - **Additional Improvements**:
+    - HTML entity decoding for special characters
+    - Better error logging with emoji indicators
+    - Graceful fallback to domain if all extraction fails
+    - Relative URL to absolute URL conversion for thumbnails
+- **Files Changed**:
+  - `supabase/functions/fetch-metadata/index.ts` (complete rewrite, ~360 lines)
+- **Result**: ✅ Metadata extraction now works for YouTube, news sites, e-commerce, blogs, and SPAs
+- **Sites Now Supported**:
+  - YouTube (VideoObject JSON-LD)
+  - News sites (Article/NewsArticle JSON-LD)
+  - E-commerce (Product JSON-LD)
+  - Blogs/WordPress (@graph structure)
+  - SPAs with og:tags
+  - Sites with anti-bot protection (UA rotation)
+
 ### Added
 
 #### Settings Page Enhancement - Complete Menu System (2025-11-20 06:15)
