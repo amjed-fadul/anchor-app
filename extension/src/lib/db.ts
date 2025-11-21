@@ -21,6 +21,23 @@ export interface Space {
     color: string;
 }
 
+export interface Tag {
+    id: string;
+    name: string;
+    color: string;
+}
+
+// 14-color palette matching mobile app
+const TAG_COLORS = [
+    '#9b87f5', '#f97066', '#fb923c', '#facc15', '#4ade80',
+    '#2dd4bf', '#22d3ee', '#60a5fa', '#a78bfa', '#f472b6',
+    '#a3a3a3', '#78716c', '#1e3a5f', '#0d9488',
+];
+
+function getRandomTagColor(): string {
+    return TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)];
+}
+
 export const db = {
     // Fetch all links for the current user
     async getLinks(spaceId?: string | null): Promise<Link[]> {
@@ -91,6 +108,7 @@ export const db = {
         domain?: string | null;
         note?: string | null;
         spaceId?: string | null;
+        tagIds?: string[];
     }): Promise<Link> {
         // Get current user (required for RLS)
         const { data: { user } } = await supabase.auth.getUser();
@@ -119,6 +137,11 @@ export const db = {
             throw error;
         }
 
+        // Add tags to the link if provided
+        if (params.tagIds && params.tagIds.length > 0) {
+            await db.addTagsToLink(data.id, params.tagIds);
+        }
+
         return {
             id: data.id,
             url: data.url,
@@ -133,6 +156,80 @@ export const db = {
             opened_at: data.opened_at,
             tags: [],
         };
+    },
+
+    // Fetch all tags for the current user
+    async getTags(): Promise<Tag[]> {
+        const { data, error } = await supabase
+            .from('tags')
+            .select('id, name, color')
+            .order('name', { ascending: true });
+
+        if (error) {
+            console.error('Error fetching tags:', error);
+            throw error;
+        }
+
+        return data || [];
+    },
+
+    // Get or create a tag by name
+    async getOrCreateTag(name: string): Promise<Tag> {
+        const trimmedName = name.trim().toLowerCase();
+
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            throw new Error('User must be authenticated to create tags');
+        }
+
+        // First try to find existing tag (case-insensitive)
+        const { data: existing } = await supabase
+            .from('tags')
+            .select('id, name, color')
+            .ilike('name', trimmedName)
+            .single();
+
+        if (existing) {
+            return existing;
+        }
+
+        // Create new tag with random color
+        const { data, error } = await supabase
+            .from('tags')
+            .insert({
+                user_id: user.id,
+                name: trimmedName,
+                color: getRandomTagColor(),
+            })
+            .select('id, name, color')
+            .single();
+
+        if (error) {
+            console.error('Error creating tag:', error);
+            throw error;
+        }
+
+        return data;
+    },
+
+    // Link tags to a link (after link is created)
+    async addTagsToLink(linkId: string, tagIds: string[]): Promise<void> {
+        if (!tagIds.length) return;
+
+        const { error } = await supabase
+            .from('link_tags')
+            .insert(
+                tagIds.map(tagId => ({
+                    link_id: linkId,
+                    tag_id: tagId,
+                }))
+            );
+
+        if (error) {
+            console.error('Error linking tags:', error);
+            throw error;
+        }
     },
 
     // Get relative time string (e.g., "2h ago", "1d ago")

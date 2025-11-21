@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { X, Loader2, ExternalLink } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Loader2, ExternalLink, Plus } from 'lucide-react';
 import { db } from '../lib/db';
-import type { Space } from '../lib/db';
+import type { Space, Tag } from '../lib/db';
 import { fetchMetadata } from '../lib/metadata';
 import type { LinkMetadata } from '../lib/metadata';
 import { validateUrl, ensureProtocol, normalizeUrl, extractDomain, getCurrentTab } from '../utils/urlHelpers';
@@ -22,6 +22,28 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({ isOpen, onClose, onLinkAdde
     const [error, setError] = useState<string | null>(null);
     const [step, setStep] = useState<'input' | 'details'>('input');
     const [metadata, setMetadata] = useState<LinkMetadata | null>(null);
+
+    // Tag state
+    const [availableTags, setAvailableTags] = useState<Tag[]>([]);
+    const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+    const [tagInput, setTagInput] = useState('');
+    const [showTagSuggestions, setShowTagSuggestions] = useState(false);
+
+    // Load tags when entering details step
+    useEffect(() => {
+        if (step === 'details') {
+            loadTags();
+        }
+    }, [step]);
+
+    const loadTags = async () => {
+        try {
+            const tags = await db.getTags();
+            setAvailableTags(tags);
+        } catch (err) {
+            console.error('Failed to load tags:', err);
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -88,6 +110,7 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({ isOpen, onClose, onLinkAdde
                 domain,
                 note: note.trim() || null,
                 spaceId: selectedSpaceId,
+                tagIds: selectedTagIds,
             });
 
             // Success! Close modal and notify parent
@@ -108,7 +131,58 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({ isOpen, onClose, onLinkAdde
         setMetadata(null);
         setError(null);
         setStep('input');
+        // Reset tag state
+        setSelectedTagIds([]);
+        setTagInput('');
+        setShowTagSuggestions(false);
         onClose();
+    };
+
+    // Tag helper functions
+    const filteredTags = availableTags.filter(
+        (tag) =>
+            tag.name.toLowerCase().includes(tagInput.toLowerCase()) &&
+            !selectedTagIds.includes(tag.id)
+    );
+
+    const selectedTags = availableTags.filter((tag) => selectedTagIds.includes(tag.id));
+
+    const handleTagSelect = (tagId: string) => {
+        setSelectedTagIds([...selectedTagIds, tagId]);
+        setTagInput('');
+        setShowTagSuggestions(false);
+    };
+
+    const handleTagRemove = (tagId: string) => {
+        setSelectedTagIds(selectedTagIds.filter((id) => id !== tagId));
+    };
+
+    const handleCreateTag = async () => {
+        if (!tagInput.trim()) return;
+        try {
+            const newTag = await db.getOrCreateTag(tagInput.trim());
+            setAvailableTags([...availableTags, newTag]);
+            setSelectedTagIds([...selectedTagIds, newTag.id]);
+            setTagInput('');
+            setShowTagSuggestions(false);
+        } catch (err) {
+            console.error('Failed to create tag:', err);
+        }
+    };
+
+    const handleTagInputKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && tagInput.trim()) {
+            e.preventDefault();
+            // If there's an exact match, select it; otherwise create new
+            const exactMatch = filteredTags.find(
+                (tag) => tag.name.toLowerCase() === tagInput.toLowerCase()
+            );
+            if (exactMatch) {
+                handleTagSelect(exactMatch.id);
+            } else {
+                handleCreateTag();
+            }
+        }
     };
 
     return (
@@ -227,6 +301,87 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({ isOpen, onClose, onLinkAdde
                                             </option>
                                         ))}
                                     </select>
+                                </div>
+
+                                {/* Tags */}
+                                <div>
+                                    <label className="block text-sm font-medium text-anchor-charcoal mb-2">
+                                        Tags
+                                    </label>
+
+                                    {/* Selected Tags */}
+                                    {selectedTags.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 mb-2">
+                                            {selectedTags.map((tag) => (
+                                                <span
+                                                    key={tag.id}
+                                                    className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-white"
+                                                    style={{ backgroundColor: tag.color }}
+                                                >
+                                                    {tag.name}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleTagRemove(tag.id)}
+                                                        className="hover:bg-white/20 rounded-full p-0.5"
+                                                    >
+                                                        <X size={12} />
+                                                    </button>
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Tag Input */}
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            value={tagInput}
+                                            onChange={(e) => {
+                                                setTagInput(e.target.value);
+                                                setShowTagSuggestions(true);
+                                            }}
+                                            onFocus={() => setShowTagSuggestions(true)}
+                                            onBlur={() => {
+                                                // Delay hiding to allow click on suggestions
+                                                setTimeout(() => setShowTagSuggestions(false), 200);
+                                            }}
+                                            onKeyDown={handleTagInputKeyDown}
+                                            placeholder="Type to add tags..."
+                                            className="w-full px-3 py-2 border border-anchor-silver rounded-lg text-sm focus:ring-2 focus:ring-anchor-teal focus:outline-none"
+                                        />
+
+                                        {/* Tag Suggestions Dropdown */}
+                                        {showTagSuggestions && (tagInput || filteredTags.length > 0) && (
+                                            <div className="absolute z-10 w-full mt-1 bg-white border border-anchor-silver rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                                                {filteredTags.slice(0, 5).map((tag) => (
+                                                    <button
+                                                        key={tag.id}
+                                                        type="button"
+                                                        onClick={() => handleTagSelect(tag.id)}
+                                                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-anchor-ash transition-colors"
+                                                    >
+                                                        <span
+                                                            className="w-3 h-3 rounded-full"
+                                                            style={{ backgroundColor: tag.color }}
+                                                        />
+                                                        {tag.name}
+                                                    </button>
+                                                ))}
+                                                {tagInput.trim() && !filteredTags.some(
+                                                    (tag) => tag.name.toLowerCase() === tagInput.toLowerCase()
+                                                ) && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleCreateTag}
+                                                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left text-anchor-teal hover:bg-anchor-ash transition-colors"
+                                                    >
+                                                        <Plus size={14} />
+                                                        Create "{tagInput.trim()}"
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <div>
