@@ -150,4 +150,34 @@ export const db = {
         if (diffDays < 7) return `${diffDays}d ago`;
         return past.toLocaleDateString();
     },
+
+    // Get link counts per space
+    async getLinkCounts(): Promise<{ all: number; unsorted: number; bySpace: Record<string, number> }> {
+        const { data, error } = await supabase
+            .from('links')
+            .select('id, space_id');
+
+        if (error) {
+            console.error('Error fetching link counts:', error);
+            return { all: 0, unsorted: 0, bySpace: {} };
+        }
+
+        const links = data || [];
+        const bySpace: Record<string, number> = {};
+        let unsorted = 0;
+
+        links.forEach((link: any) => {
+            if (link.space_id) {
+                bySpace[link.space_id] = (bySpace[link.space_id] || 0) + 1;
+            } else {
+                unsorted++;
+            }
+        });
+
+        return {
+            all: links.length,
+            unsorted,
+            bySpace,
+        };
+    },
 };

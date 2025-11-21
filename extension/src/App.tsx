@@ -43,7 +43,7 @@ function App() {
 
   return (
     <div className="flex w-[800px] h-[600px] bg-white overflow-hidden font-sans text-anchor-charcoal">
-      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} session={session} />
       <MainContent activeTab={activeTab} />
     </div>
   );
