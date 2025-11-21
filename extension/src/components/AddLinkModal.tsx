@@ -49,6 +49,7 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({ isOpen, onClose, onLinkAdde
             // Fetch metadata from Edge Function
             console.log('Fetching metadata for:', fullUrl);
             const fetchedMetadata = await fetchMetadata(fullUrl);
+            console.log('Metadata received:', fetchedMetadata);
             setMetadata(fetchedMetadata);
 
             // Pre-fill title from metadata
@@ -58,7 +59,9 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({ isOpen, onClose, onLinkAdde
             setStep('details');
         } catch (err: any) {
             console.error('Metadata fetch error:', err);
-            // Even if metadata fails, move to details step with domain as title
+            // Show the actual error to the user
+            setError(`Failed to fetch metadata: ${err.message}`);
+            // Still move to details step with domain as title
             const domain = extractDomain(ensureProtocol(url));
             setTitle(domain);
             setStep('details');

@@ -14,30 +14,37 @@ export interface LinkMetadata {
  */
 export async function fetchMetadata(url: string): Promise<LinkMetadata> {
     try {
+        console.log('🔍 [METADATA] Starting fetch for:', url);
+        console.log('🔍 [METADATA] Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+
         const { data, error } = await supabase.functions.invoke('fetch-metadata', {
             body: { url },
         });
 
+        console.log('🔍 [METADATA] Response data:', data);
+        console.log('🔍 [METADATA] Response error:', error);
+
         if (error) {
-            console.error('Edge function error:', error);
-            throw error;
+            console.error('❌ [METADATA] Edge function error:', error);
+            throw new Error(`Edge Function error: ${error.message || JSON.stringify(error)}`);
         }
 
-        if (data.error) {
-            console.error('Metadata fetch error:', data.error);
-            throw new Error(data.error);
+        if (data?.error) {
+            console.error('❌ [METADATA] Data contains error:', data.error);
+            throw new Error(`Metadata fetch error: ${data.error}`);
         }
 
+        if (!data) {
+            throw new Error('No data returned from Edge Function');
+        }
+
+        console.log('✅ [METADATA] Successfully fetched:', data);
         return data as LinkMetadata;
-    } catch (error) {
-        console.error('Failed to fetch metadata:', error);
-        // Fallback: extract domain as title
-        const domain = new URL(url).hostname.replace(/^www\./, '');
-        return {
-            title: domain,
-            description: null,
-            thumbnailUrl: null,
-            domain,
-        };
+    } catch (error: any) {
+        console.error('❌ [METADATA] Failed to fetch metadata:', error);
+        console.error('❌ [METADATA] Error stack:', error.stack);
+
+        // Re-throw the error so we can see it in the UI
+        throw new Error(`Metadata fetch failed: ${error.message || 'Unknown error'}`);
     }
 }
