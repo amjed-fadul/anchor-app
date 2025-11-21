@@ -14,7 +14,7 @@ export interface LinkMetadata {
  */
 export async function fetchMetadata(url: string): Promise<LinkMetadata> {
     try {
-        const { data, error } = await supabase.functions.invoke('fetch-metadata', {
+        const { data, error } = await supabase.functions.invoke('rapid-function', {
             body: { url },
         });
 
