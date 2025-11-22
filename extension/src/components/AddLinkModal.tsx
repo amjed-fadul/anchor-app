@@ -5,6 +5,8 @@ import type { Space, Tag } from '../lib/db';
 import { fetchMetadata } from '../lib/metadata';
 import type { LinkMetadata } from '../lib/metadata';
 import { validateUrl, ensureProtocol, normalizeUrl, extractDomain, getCurrentTab } from '../utils/urlHelpers';
+import { getUserFriendlyError, type FriendlyError } from '../utils/errorMessages';
+import ErrorAlert from './ErrorAlert';
 
 interface AddLinkModalProps {
     isOpen: boolean;
@@ -19,7 +21,7 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({ isOpen, onClose, onLinkAdde
     const [note, setNote] = useState('');
     const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<FriendlyError | null>(null);
     const [step, setStep] = useState<'input' | 'details'>('input');
     const [metadata, setMetadata] = useState<LinkMetadata | null>(null);
 
@@ -58,7 +60,7 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({ isOpen, onClose, onLinkAdde
     const handleContinue = async () => {
         const validationError = validateUrl(url);
         if (validationError) {
-            setError(validationError);
+            setError(getUserFriendlyError(new Error(validationError)));
             return;
         }
 
@@ -81,8 +83,12 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({ isOpen, onClose, onLinkAdde
             setStep('details');
         } catch (err: any) {
             console.error('Metadata fetch error:', err);
-            // Show the actual error to the user
-            setError(`Failed to fetch metadata: ${err.message}`);
+            // Show user-friendly error but still allow proceeding
+            setError({
+                message: "Couldn't load page preview",
+                suggestion: "Your link will be saved with basic info",
+                type: 'warning'
+            });
             // Still move to details step with domain as title
             const domain = extractDomain(ensureProtocol(url));
             setTitle(domain);
@@ -117,7 +123,9 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({ isOpen, onClose, onLinkAdde
             onLinkAdded();
             handleClose();
         } catch (err: any) {
-            setError(err.message || 'Failed to save link');
+            console.error('Save link error:', err);
+            // Convert to user-friendly error
+            setError(getUserFriendlyError(err));
         } finally {
             setLoading(false);
         }
@@ -207,9 +215,12 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({ isOpen, onClose, onLinkAdde
                 {/* Content */}
                 <div className="p-6">
                     {error && (
-                        <div className="mb-4 p-3 bg-anchor-error-light/10 border border-anchor-error-light rounded-lg text-sm text-anchor-error-dark">
-                            {error}
-                        </div>
+                        <ErrorAlert
+                            message={error.message}
+                            suggestion={error.suggestion}
+                            type={error.type}
+                            onDismiss={() => setError(null)}
+                        />
                     )}
 
                     {step === 'input' ? (
