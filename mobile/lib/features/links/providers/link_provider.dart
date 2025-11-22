@@ -58,7 +58,7 @@ final linkServiceProvider = Provider<LinkService>((ref) {
 ///   data: (links) => ListView.builder(...),
 /// );
 /// ```
-final linksWithTagsProvider = AsyncNotifierProvider<LinksNotifier, List<LinkWithTags>>(
+final linksWithTagsProvider = AsyncNotifierProvider.autoDispose<LinksNotifier, List<LinkWithTags>>(
   LinksNotifier.new,
 );
 
@@ -69,7 +69,7 @@ final linksWithTagsProvider = AsyncNotifierProvider<LinksNotifier, List<LinkWith
 /// 2. Caches the result
 /// 3. Provides a method to refresh
 /// 4. Handles errors automatically
-class LinksNotifier extends AsyncNotifier<List<LinkWithTags>> {
+class LinksNotifier extends AutoDisposeAsyncNotifier<List<LinkWithTags>> {
   /// build - Called when the notifier is first accessed
   ///
   /// This is where we fetch the initial data.
@@ -253,7 +253,7 @@ class LinksNotifier extends AsyncNotifier<List<LinkWithTags>> {
 /// final linksAsync = ref.watch(paginatedLinksProvider);
 /// // Then call ref.read(paginatedLinksProvider.notifier).loadNextPage() when scrolling
 /// ```
-final paginatedLinksProvider = AsyncNotifierProvider<PaginatedLinksNotifier, List<LinkWithTags>>(
+final paginatedLinksProvider = AsyncNotifierProvider.autoDispose<PaginatedLinksNotifier, List<LinkWithTags>>(
   PaginatedLinksNotifier.new,
 );
 
@@ -261,7 +261,7 @@ final paginatedLinksProvider = AsyncNotifierProvider<PaginatedLinksNotifier, Lis
 ///
 /// This handles loading links in batches of 30 for better performance.
 /// Essential for users with 100+ links.
-class PaginatedLinksNotifier extends AsyncNotifier<List<LinkWithTags>> {
+class PaginatedLinksNotifier extends AutoDisposeAsyncNotifier<List<LinkWithTags>> {
   static const int _pageSize = 30; // Links per page
   int _currentPage = 0; // Current page number
   bool _hasMoreData = true; // Whether there are more pages to load

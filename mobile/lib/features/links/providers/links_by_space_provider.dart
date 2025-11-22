@@ -55,7 +55,7 @@ import '../../auth/providers/auth_provider.dart';
 /// );
 /// ```
 final linksBySpaceProvider =
-    AsyncNotifierProvider.family<LinksBySpaceNotifier, List<LinkWithTags>, String>(
+    AsyncNotifierProvider.autoDispose.family<LinksBySpaceNotifier, List<LinkWithTags>, String>(
   LinksBySpaceNotifier.new,
 );
 
@@ -71,7 +71,7 @@ final linksBySpaceProvider =
 /// Family Notifier vs Regular Notifier:
 /// - Regular: build() { ... } - no parameters
 /// - Family: build(String spaceId) { ... } - takes parameter
-class LinksBySpaceNotifier extends FamilyAsyncNotifier<List<LinkWithTags>, String> {
+class LinksBySpaceNotifier extends AutoDisposeFamilyAsyncNotifier<List<LinkWithTags>, String> {
   /// build - Called when the notifier is first accessed for a given spaceId
   ///
   /// This is where we fetch the initial data for the specified space.

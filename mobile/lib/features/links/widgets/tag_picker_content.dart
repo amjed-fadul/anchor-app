@@ -138,9 +138,7 @@ class _TagPickerContentState extends ConsumerState<TagPickerContent> {
 
           // Tag list or empty state (no extra spacing when no tags selected)
           Expanded(
-            child: widget.availableTags.isEmpty
-                ? _buildEmptyState()
-                : _buildTagList(),
+            child: _buildTagList(),
           ),
         ],
       ),
@@ -240,6 +238,24 @@ class _TagPickerContentState extends ConsumerState<TagPickerContent> {
         !filteredTags.any((tag) =>
             tag.name.toLowerCase() == _searchQuery.trim().toLowerCase());
 
+    // If no tags exist and no search query, show empty state
+    if (widget.availableTags.isEmpty && _searchQuery.trim().isEmpty) {
+      return _buildEmptyState();
+    }
+
+    // If no tags exist BUT user is typing, show ONLY the create button
+    if (widget.availableTags.isEmpty && showCreateSuggestion) {
+      return ListView(
+        shrinkWrap: true,
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
+        children: [
+          _buildCreateTagSuggestion(_searchQuery.trim()),
+        ],
+      );
+    }
+
+    // Otherwise show normal tag list with optional create button
     return ListView.separated(
       // Always enable scrolling - tag list scrolls independently
       shrinkWrap: true,

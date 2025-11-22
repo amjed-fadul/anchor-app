@@ -20,10 +20,22 @@ class TagService {
     required String name,
   }) async {
     try {
+      debugPrint('🔵 [TagService] getOrCreateTag START');
+      debugPrint('  - userId: $userId');
+      debugPrint('  - name: "$name"');
+
+      // Check current auth session
+      final session = _supabase.auth.currentSession;
+      debugPrint('  - auth session exists: ${session != null}');
+      debugPrint('  - auth user id: ${session?.user.id}');
+      debugPrint('  - userId matches auth: ${session?.user.id == userId}');
+
       // First, check if tag already exists for this user (with retry)
+      debugPrint('🔵 [TagService] Checking for existing tag...');
       List<dynamic>? existingTags;
       for (int attempt = 1; attempt <= 2; attempt++) {
         try {
+          debugPrint('  - Attempt $attempt/2: SELECT from tags');
           existingTags = await _supabase
               .from('tags')
               .select()
@@ -31,21 +43,29 @@ class TagService {
               .ilike('name', name) // Case-insensitive match
               .limit(1)
               .timeout(const Duration(seconds: 10));
+          debugPrint('  - Query succeeded, found ${existingTags.length} existing tags');
           break; // Success!
         } catch (e) {
+          debugPrint('🔴 [TagService] SELECT error (attempt $attempt/2): $e');
           if (attempt == 2) rethrow;
           await Future.delayed(const Duration(milliseconds: 500));
         }
       }
 
       if (existingTags!.isNotEmpty) {
+        debugPrint('🟢 [TagService] Tag already exists, returning existing tag');
+        debugPrint('  - Tag ID: ${existingTags.first['id']}');
         return Tag.fromJson(existingTags.first);
       }
 
       // Tag doesn't exist, create it (with retry)
+      debugPrint('🔵 [TagService] Tag not found, creating new tag...');
       Tag? newTag;
       for (int attempt = 1; attempt <= 2; attempt++) {
         try {
+          debugPrint('  - Attempt $attempt/2: INSERT into tags');
+          debugPrint('  - Data: {user_id: $userId, name: "${name.trim()}", color: ...}');
+
           final response = await _supabase
               .from('tags')
               .insert({
@@ -57,16 +77,27 @@ class TagService {
               .single()
               .timeout(const Duration(seconds: 10));
 
+          debugPrint('🟢 [TagService] INSERT succeeded!');
+          debugPrint('  - New tag ID: ${response['id']}');
+
           newTag = Tag.fromJson(response);
           break; // Success!
         } catch (e) {
+          debugPrint('🔴 [TagService] INSERT error (attempt $attempt/2): $e');
+          debugPrint('  - Error type: ${e.runtimeType}');
+          debugPrint('  - Error details: ${e.toString()}');
           if (attempt == 2) rethrow;
           await Future.delayed(const Duration(milliseconds: 500));
         }
       }
 
+      debugPrint('🟢 [TagService] getOrCreateTag SUCCESS');
       return newTag!;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('🔴 [TagService] getOrCreateTag FAILED');
+      debugPrint('  - Error: $e');
+      debugPrint('  - Error type: ${e.runtimeType}');
+      debugPrint('  - Stack trace: $stackTrace');
       throw Exception('Failed to get or create tag: $e');
     }
   }

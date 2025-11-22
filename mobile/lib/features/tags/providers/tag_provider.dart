@@ -41,7 +41,7 @@ import '../../auth/providers/auth_provider.dart';
 ///   ),
 /// );
 /// ```
-final tagsProvider = AsyncNotifierProvider<TagsNotifier, List<Tag>>(
+final tagsProvider = AsyncNotifierProvider.autoDispose<TagsNotifier, List<Tag>>(
   TagsNotifier.new,
 );
 
@@ -52,7 +52,7 @@ final tagsProvider = AsyncNotifierProvider<TagsNotifier, List<Tag>>(
 /// 2. Caches the result
 /// 3. Provides a method to refresh
 /// 4. Handles errors automatically
-class TagsNotifier extends AsyncNotifier<List<Tag>> {
+class TagsNotifier extends AutoDisposeAsyncNotifier<List<Tag>> {
   /// build - Called when the notifier is first accessed
   ///
   /// This is where we fetch the initial data.
@@ -62,7 +62,8 @@ class TagsNotifier extends AsyncNotifier<List<Tag>> {
     debugPrint('🔵 [TagsNotifier] build() START');
 
     // Get the current user from auth (matches SpacesProvider pattern)
-    final user = ref.read(currentUserProvider);
+    // IMPORTANT: Use ref.watch() not ref.read() so provider rebuilds on auth changes
+    final user = ref.watch(currentUserProvider);
     debugPrint('🔵 [TagsNotifier] currentUserProvider result: ${user != null ? "User(id: ${user.id})" : "null"}');
     final userId = user?.id;
 
