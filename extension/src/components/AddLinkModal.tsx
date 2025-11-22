@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Loader2, ExternalLink, Plus } from 'lucide-react';
+import { X, Loader2, ExternalLink, Plus, ChevronDown } from 'lucide-react';
 import { db } from '../lib/db';
 import type { Space, Tag } from '../lib/db';
 import { fetchMetadata } from '../lib/metadata';
@@ -24,6 +24,9 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({ isOpen, onClose, onLinkAdde
     const [error, setError] = useState<FriendlyError | null>(null);
     const [step, setStep] = useState<'input' | 'details'>('input');
     const [metadata, setMetadata] = useState<LinkMetadata | null>(null);
+
+    // Space dropdown state
+    const [showSpaceDropdown, setShowSpaceDropdown] = useState(false);
 
     // Tag state
     const [availableTags, setAvailableTags] = useState<Tag[]>([]);
@@ -139,6 +142,8 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({ isOpen, onClose, onLinkAdde
         setMetadata(null);
         setError(null);
         setStep('input');
+        // Reset space dropdown state
+        setShowSpaceDropdown(false);
         // Reset tag state
         setSelectedTagIds([]);
         setTagInput('');
@@ -300,18 +305,71 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({ isOpen, onClose, onLinkAdde
                                     <label className="block text-sm font-medium text-anchor-charcoal mb-2">
                                         Space
                                     </label>
-                                    <select
-                                        value={selectedSpaceId || ''}
-                                        onChange={(e) => setSelectedSpaceId(e.target.value || null)}
-                                        className="w-full px-3 py-2 border border-anchor-silver rounded-lg text-sm focus:ring-2 focus:ring-anchor-teal focus:outline-none"
-                                    >
-                                        <option value="">Unsorted</option>
-                                        {spaces.map((space) => (
-                                            <option key={space.id} value={space.id}>
-                                                {space.name}
-                                            </option>
-                                        ))}
-                                    </select>
+                                    <div className="relative">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowSpaceDropdown(!showSpaceDropdown)}
+                                            className="w-full flex items-center justify-between px-3 py-2 border border-anchor-silver rounded-lg text-sm focus:ring-2 focus:ring-anchor-teal focus:outline-none bg-white text-left"
+                                        >
+                                            <span className="flex items-center gap-2">
+                                                <span
+                                                    className="w-3 h-3 rounded-sm shrink-0"
+                                                    style={{
+                                                        backgroundColor: selectedSpaceId
+                                                            ? spaces.find(s => s.id === selectedSpaceId)?.color || '#d1d5db'
+                                                            : '#d1d5db'
+                                                    }}
+                                                />
+                                                {selectedSpaceId
+                                                    ? spaces.find(s => s.id === selectedSpaceId)?.name || 'Unsorted'
+                                                    : 'Unsorted'}
+                                            </span>
+                                            <ChevronDown
+                                                size={16}
+                                                className={`text-anchor-slateText transition-transform ${showSpaceDropdown ? 'rotate-180' : ''}`}
+                                            />
+                                        </button>
+
+                                        {showSpaceDropdown && (
+                                            <div className="absolute z-10 w-full mt-1 bg-white border border-anchor-silver rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                                                {/* Unsorted option */}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSelectedSpaceId(null);
+                                                        setShowSpaceDropdown(false);
+                                                    }}
+                                                    className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-anchor-ash transition-colors ${
+                                                        selectedSpaceId === null ? 'bg-anchor-ash' : ''
+                                                    }`}
+                                                >
+                                                    <span className="w-3 h-3 rounded-sm bg-gray-300 shrink-0" />
+                                                    Unsorted
+                                                </button>
+
+                                                {/* Space options */}
+                                                {spaces.map((space) => (
+                                                    <button
+                                                        key={space.id}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSelectedSpaceId(space.id);
+                                                            setShowSpaceDropdown(false);
+                                                        }}
+                                                        className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-anchor-ash transition-colors ${
+                                                            selectedSpaceId === space.id ? 'bg-anchor-ash' : ''
+                                                        }`}
+                                                    >
+                                                        <span
+                                                            className="w-3 h-3 rounded-sm shrink-0"
+                                                            style={{ backgroundColor: space.color }}
+                                                        />
+                                                        {space.name}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* Tags */}
