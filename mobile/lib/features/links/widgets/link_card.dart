@@ -490,25 +490,20 @@ class LinkCard extends ConsumerWidget {
     return _buildGradientPlaceholder();
   }
 
-  /// Build gradient placeholder for images
+  /// Build minimal placeholder for images (matches extension design)
   Widget _buildGradientPlaceholder() {
     return Container(
       width: double.infinity,
       height: 200, // Match image height
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xff075a52), // Anchor teal
-            const Color(0xff054139), // Darker teal
-          ],
+      color: const Color(0xFFF1F5F9), // Light gray (matches extension's anchor-ash)
+      child: Center(
+        child: Text(
+          '⚓', // Anchor emoji (matches extension exactly)
+          style: TextStyle(
+            fontSize: 36,
+            color: const Color(0xFF4A5568).withOpacity(0.2), // Slate gray at 20% opacity
+          ),
         ),
-      ),
-      child: const Icon(
-        Icons.link,
-        color: Colors.white54,
-        size: 40,
       ),
     );
   }
