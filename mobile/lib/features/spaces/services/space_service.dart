@@ -76,7 +76,12 @@ class SpaceService {
         }
       }
 
-      return spaces!;
+      // Explicit null check for safety
+      if (spaces == null) {
+        throw Exception('Failed to fetch spaces after retry attempts');
+      }
+
+      return spaces;
     } catch (e) {
       // Log error and rethrow
       debugPrint('🔴 [SpaceService] Failed to fetch spaces after retries: $e');
@@ -127,7 +132,12 @@ class SpaceService {
         }
       }
 
-      return createdSpace!;
+      // Explicit null check for safety
+      if (createdSpace == null) {
+        throw Exception('Failed to create space after retry attempts');
+      }
+
+      return createdSpace;
     } catch (e) {
       throw Exception('Failed to create space: $e');
     }
@@ -180,7 +190,12 @@ class SpaceService {
         }
       }
 
-      return updatedSpace!;
+      // Explicit null check for safety
+      if (updatedSpace == null) {
+        throw Exception('Failed to update space after retry attempts');
+      }
+
+      return updatedSpace;
     } catch (e) {
       throw Exception('Failed to update space: $e');
     }

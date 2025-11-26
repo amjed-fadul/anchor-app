@@ -52,7 +52,12 @@ class TagService {
         }
       }
 
-      if (existingTags!.isNotEmpty) {
+      // Explicit null check for safety
+      if (existingTags == null) {
+        throw Exception('Failed to query existing tags after retry attempts');
+      }
+
+      if (existingTags.isNotEmpty) {
         debugPrint('🟢 [TagService] Tag already exists, returning existing tag');
         debugPrint('  - Tag ID: ${existingTags.first['id']}');
         return Tag.fromJson(existingTags.first);
@@ -91,8 +96,13 @@ class TagService {
         }
       }
 
+      // Explicit null check for safety
+      if (newTag == null) {
+        throw Exception('Failed to create tag after retry attempts');
+      }
+
       debugPrint('🟢 [TagService] getOrCreateTag SUCCESS');
-      return newTag!;
+      return newTag;
     } catch (e, stackTrace) {
       debugPrint('🔴 [TagService] getOrCreateTag FAILED');
       debugPrint('  - Error: $e');
@@ -155,7 +165,12 @@ class TagService {
         }
       }
 
-      final tags = (response! as List).map((json) => Tag.fromJson(json)).toList();
+      // Explicit null check for safety
+      if (response == null) {
+        throw Exception('Failed to fetch tags after retry attempts');
+      }
+
+      final tags = (response as List).map((json) => Tag.fromJson(json)).toList();
       debugPrint('🟢 [TagService] Mapped to ${tags.length} Tag objects');
       return tags;
     } catch (e, stackTrace) {

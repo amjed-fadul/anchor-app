@@ -137,12 +137,17 @@ class LinkService {
         }
       }
 
+      // Explicit null check for safety
+      if (createdLink == null) {
+        throw Exception('Failed to create link after retry attempts');
+      }
+
       // Step 2: Create tag associations if tags were provided (with retry logic)
       if (tagIds != null && tagIds.isNotEmpty) {
         // Prepare link_tags junction table data
         final linkTagsData = tagIds.map((tagId) {
           return {
-            'link_id': createdLink!.id,
+            'link_id': createdLink.id,
             'tag_id': tagId,
           };
         }).toList();
@@ -162,7 +167,7 @@ class LinkService {
         }
       }
 
-      return createdLink!;
+      return createdLink;
     } catch (e) {
       // Re-throw with context
       throw Exception('Failed to create link: $e');
@@ -262,7 +267,12 @@ class LinkService {
         }
       }
 
-      return updatedLink!;
+      // Explicit null check for safety
+      if (updatedLink == null) {
+        throw Exception('Failed to update link after retry attempts');
+      }
+
+      return updatedLink;
     } catch (e) {
       throw Exception('Failed to update link: $e');
     }
@@ -667,10 +677,15 @@ class LinkService {
         }
       }
 
+      // Explicit null check for safety
+      if (response == null) {
+        throw Exception('Failed to fetch links by space after retry attempts');
+      }
+
       // Convert the response to our models
       final List<LinkWithTags> results = [];
 
-      for (final linkData in response!) {
+      for (final linkData in response) {
         // Create Link object
         final link = Link.fromJson(linkData);
 
@@ -753,8 +768,13 @@ class LinkService {
         }
       }
 
+      // Explicit null check for safety
+      if (response == null) {
+        throw Exception('Failed to fetch incomplete metadata links after retry attempts');
+      }
+
       // Convert response to Link objects
-      final List<Link> results = response!.map((linkData) {
+      final List<Link> results = response.map((linkData) {
         return Link.fromJson(linkData);
       }).toList();
 
