@@ -147,10 +147,13 @@ class LinkService {
 
       // Step 2: Create tag associations if tags were provided (with retry logic)
       if (tagIds != null && tagIds.isNotEmpty) {
+        // Extract link ID outside closure for Dart flow analysis
+        final linkId = link.id;
+
         // Prepare link_tags junction table data
         final linkTagsData = tagIds.map((tagId) {
           return {
-            'link_id': link.id,
+            'link_id': linkId,
             'tag_id': tagId,
           };
         }).toList();
