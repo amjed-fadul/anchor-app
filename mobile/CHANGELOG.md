@@ -12,6 +12,33 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+#### Null-Check Operator Crashes - Multiple Service Layer Unsafe Null Access (2025-11-26 12:00)
+- **Problem**: Mobile app crashed with "Null check operator used on a null value" when performing link/tag/space operations. Error appeared specifically when retry logic failed and nullable variables were accessed with `!` operator after being checked as null.
+- **Root Cause**:
+  1. Service layer (link_service.dart, tag_service.dart, space_service.dart) used retry patterns with nullable result variables
+  2. After retry loops, code used unsafe `!` operator (e.g., `existingTags!.isNotEmpty`, `newTag!`, `response!`)
+  3. If retries failed, variables remained null but code tried to access them anyway
+  4. Dart's flow analysis limitation: Doesn't promote nullable types inside closures (like `.map()`), even after explicit null checks
+- **User Impact**:
+  - App crashes when trying to view links with tags
+  - Random crashes when saving/editing links
+  - Tag picker wouldn't open reliably
+  - Space operations failed intermittently
+- **Solution**: Fixed 11 unsafe null-check operators + Dart flow analysis issue
+  1. **Added explicit null checks** after all retry loops (11 locations):
+     - After retry: `if (result == null) { throw Exception('Failed after retry attempts'); }`
+     - Then use result safely without `!` operator
+  2. **Fixed Dart closure flow analysis issue** in link_service.dart:
+     - Created non-nullable local variable after null check: `final link = createdLink;`
+     - Extracted property value BEFORE closure: `final linkId = link.id;`
+     - Used extracted value inside `.map()` closure: `'link_id': linkId`
+     - This satisfies Dart's flow analysis which can't promote types inside closures
+- **Files Changed**:
+  - `mobile/lib/features/tags/services/tag_service.dart` (3 fixes: lines 55, 95, 158)
+  - `mobile/lib/features/links/services/link_service.dart` (5 fixes: lines 141, 150-151, 265, 673, 757)
+  - `mobile/lib/features/spaces/services/space_service.dart` (3 fixes: lines 79, 130, 183)
+- **Result**: ✅ No more null-check crashes, all retry patterns safe, closures handle nullability correctly
+
 #### Authentication Error Messages - Raw Technical Exceptions Shown to Users (2025-11-20 14:30)
 - **Problem**: Auth screens displayed raw Supabase exceptions to users, showing technical error messages like "AuthApiException(message: Invalid login credentials, statusCode: 400, code: invalid_credentials)" instead of user-friendly messages
 - **Root Cause**:
