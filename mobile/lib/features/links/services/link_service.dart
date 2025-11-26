@@ -142,12 +142,15 @@ class LinkService {
         throw Exception('Failed to create link after retry attempts');
       }
 
+      // Create non-nullable reference for safe access
+      final link = createdLink;
+
       // Step 2: Create tag associations if tags were provided (with retry logic)
       if (tagIds != null && tagIds.isNotEmpty) {
         // Prepare link_tags junction table data
         final linkTagsData = tagIds.map((tagId) {
           return {
-            'link_id': createdLink.id,
+            'link_id': link.id,
             'tag_id': tagId,
           };
         }).toList();
@@ -167,7 +170,7 @@ class LinkService {
         }
       }
 
-      return createdLink;
+      return link;
     } catch (e) {
       // Re-throw with context
       throw Exception('Failed to create link: $e');
